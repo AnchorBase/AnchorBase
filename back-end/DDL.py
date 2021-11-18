@@ -17,6 +17,7 @@ from SystemObjects import Constant as const
 class DDL:
     #TODO: для update_dttm и атрибута таблицы attribute сделать проверки по типам данных
     #TODO: вынести проверки в отдельный метод отдельного класса
+    # Устаревший класс
 
     @staticmethod
     def create_stage_table(name,attr,source_schema,tran,source_id):
