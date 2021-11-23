@@ -427,7 +427,15 @@ class Table:
     Класс по работе с таблицами
     """
 
-    def __init__(self, p_table_type: str, p_table_id: str, p_table_name: str,  p_table_attrs: list, p_source_tables: list =None):
+    def __init__(self,
+                 p_table_type: str,
+                 p_table_id: str,
+                 p_table_name: str,
+                 p_table_attrs: list =None,
+                 p_source_tables: list =None,
+                 p_source_schema: str =None,
+                 p_source_table_name: str =None
+    ):
         """
         Конструктор
 
@@ -436,12 +444,16 @@ class Table:
         :param p_table_attrs: словарь атрибутов таблицы
         :param p_table_type: тип таблицы
         :param p_source_table: Список таблиц источиков (объекты класса SourceTable)
+        :param p_source_schema: Наименование схемы таблицы на источнике (заполняется только у queue таблиц)
+        :param p_source_table_name: Наименование таблицы на источнике (заполняется только у queue таблиц)
         """
         self._table_id=p_table_id
         self._table_name=p_table_name
         self._table_attrs=p_table_attrs
         self._table_type=p_table_type
         self._source_tables=p_source_tables
+        self._source_schema=p_source_schema
+        self._source_table_name=p_source_table_name
 
         # определение параметров класса в соответсвии с типом таблицы
         l_table_components=const('C_TABLE_COMPONENTS').constant_value.get(self.table_type,None) # достаем компоненты таблицы в соответствии с типом
@@ -596,6 +608,9 @@ class Table:
         """
         Таблицы источники
         """
+        # проверка, что таблицы источники указаны
+        if self._source_tables is None:
+            sys.exit("Не указан источник у таблицы "+self.table_id)
         # проверка, что таблицы источники указаны верно в соответствии с типом таблицы
         l_source_table_type_list_purpose=list(self.table_etl_template_variables.keys())
         for i_source_table_type_list_purpose in l_source_table_type_list_purpose: # удаляем из списка все, что не относится к типам таблиц
@@ -612,6 +627,67 @@ class Table:
                 sys.exit("Указаны не все таблицы  для таблицы "+self._table_id) #TODO: реализовать вывод ошибок, как сделал Рустем
 
         return self._source_tables
+
+    def attribute_id_sql(self, p_attribute_type: list=None):
+        """
+        Перечисление id атрибутов для insert запроса
+        :param p_attribute_type: cписок типов атрибутов, которые требуется включить в перечисление
+        """
+        l_attribute_list_sql=""
+        for i_attribute in self.table_attrs:
+            l_attribute_type_list=p_attribute_type or [i_attribute.attribute_type]
+            if i_attribute.attribute_type in l_attribute_type_list:
+                l_attribute_list_sql=l_attribute_list_sql+'"'+str(i_attribute.attribute_id)+'"'+","
+        l_attribute_list_sql=l_attribute_list_sql[:-1]
+        return l_attribute_list_sql
+
+    def attribute_name_sql(self, p_attribute_type: list=None):
+        """
+        Перечисление name атрибутов для insert запроса
+        :param p_attribute_type: cписок типов атрибутов, которые требуется включить в перечисление
+
+        """
+        l_attribute_list_sql=""
+        for i_attribute in self.table_attrs:
+            l_attribute_type_list=p_attribute_type or [i_attribute.attribute_type]
+            if i_attribute.attribute_type in l_attribute_type_list:
+                l_attribute_list_sql=l_attribute_list_sql+'"'+str(i_attribute.attribute_name)+'"'+","
+        l_attribute_list_sql=l_attribute_list_sql[:-1]
+        return l_attribute_list_sql
+
+    @property
+    def cast_attribute_sql(self, p_attribute_type: list=None):
+        """
+        Перечисление атрибутов таблицы с cast для insert. Заместо  id атрибута вставляет порядковый номер в запросе к источнику
+        :param p_attribute_type: cписок типов атрибутов, которые требуется включить в перечисление
+
+        """
+        l_attribute_cast_sql="("
+        l_num=0
+        for i_attribute in self.table_attrs:
+            l_attribute_cast_sql=l_attribute_cast_sql+i_attribute.cast_attribute_script(p_attribute_name=l_num,p_datatype=None)+","
+            l_num=l_num+1
+        l_attribute_cast_sql=l_attribute_cast_sql[:-1]+")"
+        return l_attribute_cast_sql
+
+    @property
+    def source_schema(self):
+        """
+        Схема таблицы на источнике
+        """
+        if self._source_schema is None:
+            sys.exit("Не указана схема таблицы источника у таблицы "+self._table_id) #TODO: реализовать вывод ошибок, как сделал Рустем
+        return self._source_schema
+
+    @property
+    def source_table_name(self):
+        """
+        Наименование таблицы на источнике
+        """
+        if self._source_table_name is None:
+            sys.exit("Не указано наименование таблицы источника у таблицы "+self._table_id) #TODO: реализовать вывод ошибок, как сделал Рустем
+        return self._source_table_name
+
 
 
 
@@ -721,19 +797,24 @@ class Attribute:
         l_attribute_ddl='"'+self.attribute_id+'"'+" AS "+'"'+self.attribute_name+'"'
         return l_attribute_ddl
 
-    @property
-    def cast_attribute_script(self,p_datatype: object =None):
+    def cast_attribute_script(self,p_datatype: object =None, p_attribute_name: str =None):
         """
         Делает конструкцию CAST(attribute_id as datatype)
 
         :param p_datatype: новый тип данных для атрибута (объект класса DataType)
+        :param p_attribute_name: алиас атрибута
         """
         l_data_type_ddl=""
         if p_datatype is not None and type(p_datatype).__name__=="DataType":
             l_data_type_ddl=p_datatype.data_type_sql
         else:
             l_data_type_ddl=self.data_type_ddl
-        l_cast_attribute_script=const('C_CAST').constant_value+"("+'"'+self.attribute_id+'"'+" AS "+l_data_type_ddl+")"
+        l_attribute_name=""
+        if p_attribute_name is not None:
+            l_attribute_name=str(p_attribute_name)
+        else:
+            l_attribute_name=self.attribute_id
+        l_cast_attribute_script=const('C_CAST').constant_value+"("+'"'+l_attribute_name+'"'+" AS "+l_data_type_ddl+")"
         return l_cast_attribute_script
 
 class SourceTable:
@@ -741,7 +822,12 @@ class SourceTable:
     Таблица источник
     """
 
-    def __init__(self,p_table: object, p_source_table_type: str, p_source_table_attr: list, p_source_id: str=None):
+    def __init__(self,
+                 p_table: object,
+                 p_source_table_type: str,
+                 p_source_table_attr: list =None,
+                 p_source_id: str =None
+    ):
         """
         Конструктор
 
@@ -861,7 +947,7 @@ class ETL:
         :param p_queue_table_id: id queue таблицы
         :param p_temp_table_num: порядковый номер временной таблицы
         """
-        return str(p_queue_table_id)+"_"+str(p_temp_table_num)
+        return Metadata.Metadata.generate_guid()
 
 
     def get_nk_cast_sql(self,p_nk_list):
@@ -900,6 +986,9 @@ class ETL:
         l_etl_templates = [] # лист словарей с переменными и подставленными значениями
         l_etl = [] # лист etl процедур
         l_queue_source_table_list = []
+        if self.table.table_type==const('C_QUEUE_TABLE_TYPE_NAME').constant_value:
+            l_etl_templates.append(self.get_etl_template(p_source_tables=[])) # у таблицы queue нет источников
+            return l_etl_templates
         for i_source_table in self.table.source_tables:
             if i_source_table.source_table_type==const('C_QUEUE_TABLE_TYPE_NAME').constant_value:
                 l_queue_source_table_list.append(i_source_table)
@@ -941,6 +1030,20 @@ class ETL:
                 l_target_table_dict.get(self.table.table_type,None):self.table.table_id
             }
         )
+        # если queue таблица, то отдельная обработка
+        if self.table.table_type==const('C_QUEUE_TABLE_TYPE_NAME').constant_value:
+            # проставляем перечисление атрибутов через запятую
+            l_etl_template_variables_dict.update(
+                {
+                    self.table.table_etl_template_variables.get(const("C_LIST_OF_ATTRIBUTES").constant_value,None):self.table.attribute_id_sql()
+                }
+            )
+            # проставляем перечисление атрибутов с cast
+            l_etl_template_variables_dict.update(
+                {
+                    self.table.table_etl_template_variables.get(const("C_VALUE_DATA_SOURCE").constant_value,None):self.table.cast_attribute_sql()
+                }
+            )
         # проставляем значения переменных у таблиц источников
         l_source_table_etl_template_types=list(self.table.table_etl_template_variables.keys()) # список типов всех таблиц из словаря с переменными
         for i_source_table_template_type in l_source_table_etl_template_types: # проходимся по всем типам таблиц источников
@@ -1046,6 +1149,21 @@ class ETL:
         """
         l_template_list=self.get_all_etl_templates() # формируем словари с переменными и их значениями
         return self.get_all_etl_script(l_template_list) # отдаем etl-скрипты
+
+    def get_data_extract_script(self):
+        """
+        Формирует sql-запрос к источнику (только для queue таблиц)
+        """
+        if self.table.table_type!=const("C_QUEUE_TABLE_TYPE_NAME").constant_value:
+            sys.exit("Таблица "+self.table.table_id+" не queue таблица") #TODO: реализовать вывод ошибок, как сделал Рустем
+        l_data_extract_sql="select "+"\n"+self.table.attribute_name_sql(p_attribute_type=[const("C_QUEUE_ATTR_TYPE_NAME").constant_value])
+        l_data_extract_sql=l_data_extract_sql+"\n"+"from "+'"'+str(self.table.source_schema)+'"'+"."+'"'+str(self.table.source_table_name)+'"'
+        return l_data_extract_sql
+
+
+
+
+
 
 
 

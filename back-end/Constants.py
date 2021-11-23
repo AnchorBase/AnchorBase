@@ -9,6 +9,7 @@
 
 # основные понятия
 C_TABLE = "table" # таблица
+C_SCHEMA = "schema" # схема
 C_NAME = "name" # наименование
 C_DDL = "ddl"
 C_VIEW = "view"
@@ -154,7 +155,9 @@ C_ATTRIBUTE_TABLE_TYPE_LIST = [
     C_FROM_TYPE_NAME,
     C_TO_TYPE_NAME,
     C_QUEUE_ATTR_TYPE_NAME,
-    C_UPDATE_TYPE_NAME
+    C_UPDATE_TYPE_NAME,
+    C_LINK_RK_TYPE_NAME,
+    C_LINK_NK_TYPE_NAME
 ]
 
 C_SOURCE_ATTRIBUTE_TABLE_TYPE_LIST = [
@@ -273,6 +276,11 @@ C_VIEW_TEMPLATE = C_VIEW.upper()+"_"+C_TEMPLATE_POSTFIX # наименовани
 C_CONCAT_NK_VAR = "&&concat_nkey_sql" # переменная в etl-шаблоне
 C_CONCAT_LINK_NK_VAR="&&link_concat_nkey_sql" # переменная в etl-шаблоне
 C_SOURCE_VAR = "&&source_id" # переменная в etl-шаблоне
+C_VALUE_DATA_SOURCE = "data source value" # данные с источника
+C_LIST_OF_ATTRIBUTES = "list of attributes" # лист атрибутов
+C_LIST_OF_ATTRIBUTES_VAR="&&list_of_attributes_id" # переменная в etl-шаблоне
+C_VALUE_DATA_SOURCE_VAR="&&values_sql" # переменная в etl-шаблоне
+
 
 C_ANCHOR_ETL_TEMPLATE_VARIABLES = {
     C_TABLE:{
@@ -317,6 +325,70 @@ C_ATTRIBUTE_ETL_TEMPLATE_VARIABLES = {
 
 }
 
+C_TIE_ETL_TEMPLATE_VARIABLES={
+    C_TABLE:{
+        C_TIE_TABLE_TYPE_NAME:"&&tie_id",
+        C_ETL_TYPE_NAME:"&&etl_id",
+        C_RK_TYPE_NAME:"&&tie_rk_id",
+        C_LINK_RK_TYPE_NAME:"&&link_anchor_rk_id",
+        C_FROM_TYPE_NAME:"&&from_dttm_id",
+        C_TO_TYPE_NAME:"&&to_dttm_id"
+    },
+    C_IDMAP_TABLE_TYPE_NAME:{
+        C_IDMAP_TABLE_TYPE_NAME:"&&idmap_id",
+        C_NK_TYPE_NAME:"&&idmap_nk_id",
+        C_RK_TYPE_NAME:"&&idmap_rk_id"
+    },
+    C_LINK_IDMAP_TABLE_TYPE_NAME:{
+        C_LINK_IDMAP_TABLE_TYPE_NAME:"&&link_idmap_id",
+        C_NK_TYPE_NAME:"&&link_idmap_nk_id",
+        C_RK_TYPE_NAME:"&&link_idmap_rk_id"
+    },
+    C_QUEUE_TABLE_TYPE_NAME:{
+        C_QUEUE_TABLE_TYPE_NAME:"&&stg_table_id",
+        C_NK_TYPE_NAME:C_CONCAT_NK_VAR,
+        C_LINK_NK_TYPE_NAME:C_CONCAT_LINK_NK_VAR,
+        C_UPDATE_TYPE_NAME:"&&update_timestamp_id",
+        C_SOURCE:"&&source_id"
+    },
+    C_TEMP_TABLE:{
+        1:"&&temp_rnum_table_id",
+        2:"&&temp_change_table_id",
+        3:"&&temp_insert_table_id"
+    }
+}
+
+C_IDMAP_ETL_TEMPLATE_VARIABLES={
+    C_TABLE:{
+        C_IDMAP_TABLE_TYPE_NAME:"&&idmap_id",
+        C_RK_TYPE_NAME:"&&idmap_rk_id",
+        C_NK_TYPE_NAME:"&&idmap_nk_id",
+        C_ETL_TYPE_NAME:"&&etl_id"
+    },
+    C_QUEUE_TABLE_TYPE_NAME:{
+        C_QUEUE_TABLE_TYPE_NAME:"&&stg_table_id",
+        C_NK_TYPE_NAME:"&&concat_nkey_sql",
+        C_SOURCE:"&&source_id"
+    },
+    C_TEMP_TABLE:{
+        1:"&&temp_concat_table_id",
+        2:"&&temp_nkey_table_id"
+    }
+}
+
+C_QUEUE_ETL_TEMPLATE_VARIABLES={
+    C_TABLE:{
+        C_QUEUE_TABLE_TYPE_NAME:"&&stg_table_id"
+    },
+    C_LIST_OF_ATTRIBUTES:C_LIST_OF_ATTRIBUTES_VAR,
+    C_VALUE_DATA_SOURCE:C_VALUE_DATA_SOURCE_VAR
+}
+
+C_DATA_EXTRACT_TEMPLATE_VARIABLES={
+    C_LIST_OF_ATTRIBUTES:"@@list_of_attributes",
+    C_SCHEMA:"@@schema",
+    C_TABLE:"@@table"
+}
 # Компоненты таблицы: атрибуты, DDL компоненты, ETL компоненты в соответствии с типом таблицы
 C_TABLE_ATTRIBUTES = "table_attributes"
 C_TABLE_DDL_COMPONENTS = "table_ddl"
@@ -334,15 +406,18 @@ C_TABLE_COMPONENTS = {
     },
     C_TIE_TABLE_TYPE_NAME:{
         C_TABLE_ATTRIBUTES:C_TABLE_TIE_ATTR_TYPE_LIST,
-        C_TABLE_DDL_COMPONENTS:C_TABLE_TIE_TEMPLATE_VARIABLES_DICT
+        C_TABLE_DDL_COMPONENTS:C_TABLE_TIE_TEMPLATE_VARIABLES_DICT,
+        C_TABLE_ETL_COMPONENTS:C_TIE_ETL_TEMPLATE_VARIABLES
     },
     C_IDMAP_TABLE_TYPE_NAME:{
         C_TABLE_ATTRIBUTES:C_TABLE_IDMAP_ATTR_TYPE_LIST,
-        C_TABLE_DDL_COMPONENTS:C_TABLE_IDMAP_TEMPLATE_VARIABLES_DICT
+        C_TABLE_DDL_COMPONENTS:C_TABLE_IDMAP_TEMPLATE_VARIABLES_DICT,
+        C_TABLE_ETL_COMPONENTS:C_IDMAP_ETL_TEMPLATE_VARIABLES
     },
     C_QUEUE_TABLE_TYPE_NAME:{
         C_TABLE_ATTRIBUTES:C_TABLE_QUEUE_ATTR_TYPE_LIST,
-        C_TABLE_DDL_COMPONENTS:C_TABLE_QUEUE_TEMPLATE_VARIABLES_DICT
+        C_TABLE_DDL_COMPONENTS:C_TABLE_QUEUE_TEMPLATE_VARIABLES_DICT,
+        C_TABLE_ETL_COMPONENTS:C_QUEUE_ETL_TEMPLATE_VARIABLES
     }
 }
 
