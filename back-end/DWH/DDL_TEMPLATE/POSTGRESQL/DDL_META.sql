@@ -1,6 +1,7 @@
 
+--устаревший файл
 --Создание схем
--- DROP SCHEMA am;
+-- DROP SCHEMA am
 
 CREATE SCHEMA am;
 

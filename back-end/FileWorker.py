@@ -6,14 +6,12 @@ class File:
     Класс по работе с файлами
     """
     # конструктор
-    def __init__(self, p_file_name : str, p_file_path : str, p_file_body =None):
+    def __init__(self, p_file_path : str, p_file_body =None):
         """
-        :param p_file_name: имя файла
         :param p_file_path: путь до файла
         :param p_file_path: тип файла
         :param p_file_body: наполнение файла
         """
-        self._file_name=p_file_name
         self._file_path=p_file_path
         self._file_body=p_file_body
 
@@ -23,13 +21,6 @@ class File:
         Путь до файла
         """
         return self._file_path
-
-    @property
-    def file_name(self) -> str:
-        """
-        Имя файла
-        """
-        return self._file_name
 
     @property
     def file_body(self):
@@ -58,17 +49,14 @@ class File:
         l_file.close()
         return l_file_body
 
-    def write_file(self) -> str:
+    def write_file(self):
         """
-        Создает файл
+        Создает файл/Переписывает файл
 
-        :param p_file_body: наполнение файла
-        :return: краткое имя файла
         """
-        l_file = open(self.file_path,'x')
+        l_file = open(self.file_path,'w')
         l_file.write(self.file_body)
         l_file.close()
-        return self.file_name
 
     def replace_in_body(self, p_params_dict: dict):
         """

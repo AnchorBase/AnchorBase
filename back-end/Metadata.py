@@ -1,17 +1,22 @@
 # coding=utf-8
 import psycopg2
+import Postgresql as pgsql
 import sys
 from datetime import datetime
 import json
 import Support
 import SQLScript
+from SystemObjects import Constant as const
+import metadata_config
+import uuid
+import copy
 from settings.settings import C_POSTGRESQL_DATABASE, \
     C_POSTGRESQL_HOST, C_POSTGRESQL_PASSWORD, \
     C_POSTGRESQL_PORT, C_POSTGRESQL_USER
 
 #Работа с метаданными
 class Metadata:
-
+    # TODO:устаревший класс
     # выполняет SQL-запросы к метаданным и возвращает результат запроса
     @staticmethod
     def meta_sql_exec(sql, noresult=None):
@@ -292,8 +297,238 @@ class Metadata:
         status_id=Metadata.select_meta("status",None,None,{"code":code})[0]
         return status_id.get("id")
 
-# print(json.dumps(Metadata.object_meta("queue_table")))
-#
+def sql_exec(p_sql: str, p_result: int =1):
+    """
+    Выполняет запросы к метаданным
+    :param p_sql: SQL-запрос
+    """
+    l_result=pgsql.sql_exec(
+        p_database=metadata_config.database,
+        p_server=metadata_config.server,
+        p_user=metadata_config.user,
+        p_password=metadata_config.password,
+        p_port=metadata_config.port,
+        p_sql=p_sql,
+        p_result=p_result
+    )
+    return l_result
+
+def uuid_generate():
+    """
+    Генерирует новый uuid
+    """
+    return uuid.uuid4()
+
+def search_uuid_sql(p_uuid_list: list):
+    """
+    Формирует запрос поиска по метаданным с помощью uuid
+
+    :param p_uuid_list: список uuid объекта/объектов метаданных
+    """
+    l_sql=" AND id IN ("
+    for i_uuid in p_uuid_list:
+        l_sql=l_sql+"'"+str(i_uuid)+"'"+","
+    return l_sql[:-1]+")"
+
+def search_attr_sql(p_attr_dict: dict):
+    """
+    Формирует SQL запрос поиска по метаданным с помощью параметров атрибута
+
+    :param p_attr_dict: Словарь параметров атрибута
+    """
+    l_sql=""
+    l_attr_key_list=list(p_attr_dict.keys())
+    for i_attr_key in l_attr_key_list:
+        l_sql=l_sql+" AND value ->> '"+str(i_attr_key)+"'='"+str(p_attr_dict.get(i_attr_key,None))+"'"
+    return l_sql
+
+def insert_object_sql(p_type: str, p_uuid: str, p_attrs: dict):
+    """
+    Формирует запрос вставки метаданных
+
+    :param p_type: тип объекта метаданных
+    :param p_uuid: uuid объекта метаданных
+    :param p_attrs: атрибуты объекта метаданных
+    """
+    l_attrs=json.dumps(p_attrs) # преобразуем в json строку
+    l_sql='INSERT INTO "'+p_type+'"'+" (id, value) VALUES \n('"+str(p_uuid)+"','"+l_attrs+"');"
+    return l_sql
+
+def update_object_sql(p_type: str, p_uuid: str, p_attrs: dict):
+    """
+    Формирует запрос изменения данных
+    :param p_type: тип объекта метаданных
+    :param p_uuid: uuid объекта метаданных
+    :param p_attrs: атрибуты объекта метаданных
+    """
+    l_attrs=json.dumps(p_attrs) # преобразуем в json строку
+    l_sql='UPDATE "'+p_type+'"'+"\nSET value='"+l_attrs+"'\nWHERE id='"+str(p_uuid)+"';"
+    return l_sql
+
+
+
+def search_object(p_type: str, p_uuid: list =None, p_attrs: dict =None) -> list:
+    """
+    Поиск объекта/объектов в метаданных
+    :param p_type: тип объекта метаданных
+    :param p_uuid: uuid объекта метаданных
+    :param p_attrs: атрибуты объекта метаданных
+    """
+    # проверка заданного типа объекта метаданных
+    l_type=p_type.lower()
+    if l_type not in const('C_META_TABLES').constant_value:
+        sys.exit("Нет объекта метаданных "+l_type) #TODO: переделать
+    # фомируем SELECT
+    l_sql='SELECT * FROM "'+l_type+'"'+" WHERE 1=1"
+    # добавляем условия фильтрации
+    l_where=""
+    # фильтрация по id
+    if p_uuid is not None:
+        l_where=l_where+search_uuid_sql(p_uuid)
+    # фильтрация по attr
+    if p_attrs is not None:
+        l_where=l_where+search_attr_sql(p_attrs)
+    l_sql=l_sql+l_where+";" # финальный SQL-запрос к метаданным
+    l_result=sql_exec(l_sql) # выполняем запрос в БД метаданных
+    if l_result.__len__()==0:
+        return l_result
+    l_objects=[]
+    for i_obj in l_result:
+        l_obj=MetaObject(
+            p_uuid=i_obj[0],
+            p_type=p_type,
+            p_attrs=i_obj[1]
+        )
+        l_objects.append(l_obj)
+    return l_objects
+
+def create_object(p_object: object):
+    """
+    Запись в метаданные объекта
+
+    :param p_object: объект метаданных (объект класса MetaObject)
+    """
+    # проверка, что передаваемый объект - объект класса MetaObject
+    if type(p_object).__name__!="MetaObject":
+        sys.exit("Объект не является объектом класса MetaObject") #TODO: переделать
+    # формируем SQL-запрос
+    l_sql=insert_object_sql(
+        p_type=p_object.type,
+        p_uuid=p_object.uuid,
+        p_attrs=p_object.attrs
+    )
+    sql_exec(p_sql=l_sql, p_result=0) # выполняем sql-запрос
+
+def update_object(p_object: object):
+    """
+    Обновление метаданных объекта.
+    Все атрибуты в метаданных будут заменены на атрибуты передаваемого объекта
+
+    :param p_object: объект класса MetaObject
+    """
+    if type(p_object).__name__!="MetaObject":
+        sys.exit("Объект не является объектом класса MetaObject") #TODO: переделать
+    # формируем SQL-запрос
+    l_sql=update_object_sql(
+        p_type=p_object.type,
+        p_uuid=p_object.uuid,
+        p_attrs=p_object.attrs
+    )
+    # выполняем запрос
+    sql_exec(
+        p_sql=l_sql,
+        p_result=0
+    )
+
+
+
+
+
+
+class MetaObject:
+    """
+    Объект метаданных
+    """
+    def __init__(self,
+                 p_type: str,
+                 p_attrs: dict,
+                 p_uuid: str =None
+    ):
+        """
+        Конструктор
+
+        :param p_type: тип объекта метаданных
+        :param p_uuid: uuid объекта метаданных
+        :param p_attrs: атрибуты объекта метаданных
+        """
+        self._type=p_type
+        self._uuid=p_uuid
+        self._attrs=p_attrs
+
+        self.l_uuid_copy=copy.copy(uuid.uuid4()) # для того, чтобы uuid не изменялся каждый раз при вызове
+
+    @property
+    def type(self) -> str:
+        """
+        Тип объекта метаданных
+        """
+        l_meta_object=self._type.lower()
+        if l_meta_object not in const('C_META_TABLES').constant_value:
+            sys.exit("Нет объекта метаданных "+l_meta_object) #TODO: переделать
+        return l_meta_object
+
+    @property
+    def uuid(self) -> str:
+        """
+        Id объекта метаданных
+        """
+        if self._uuid is None:
+            return self.l_uuid_copy
+        return self._uuid
+
+    @property
+    def attrs(self):
+        """
+        Атрибуты объекта метаданных
+        """
+        # проверяем на корректность
+        self.attrs_checker()
+        return self._attrs
+
+
+    def attrs_checker(self):
+        """
+        Проверка атрибутов объекта метаданных
+        """
+        l_all_attrs_dict=const('C_META_ATTRIBUTES').constant_value.get(self.type,None) # достаем атрибуты объекта и их свойства
+        l_all_attrs_list=list(l_all_attrs_dict.keys()) # список всех атрибутов объекта
+        l_attr_list = list(self._attrs.keys()) # список указанных атрибутов объекта
+        l_necessary_attrs_list=[]# необходимые атрибуты объекта
+        # проверка, что все необходимые атрибуты указаны
+        for i_attr in l_all_attrs_list: # собираем список необходимых атрибутов объекта
+            if l_all_attrs_dict.get(i_attr,None).get(const('C_NOT_NULL_VALUE').constant_value,None)==1:
+                l_necessary_attrs_list.append(i_attr)
+        for i_attr in l_necessary_attrs_list:
+            if i_attr not in l_attr_list:
+                sys.exit("Не указан атрибут "+i_attr)
+        for i_attr in l_attr_list:
+            # проверка, что атрибут указан верно
+            if i_attr not in l_all_attrs_list:
+                sys.exit("Некорректный атрибут "+str(i_attr))
+            # проверка, что тип данных у атрибутов указан верно
+            if type(self._attrs.get(i_attr,None)).__name__!=l_all_attrs_dict.get(i_attr,None).get(const('C_TYPE_VALUE').constant_value):
+                sys.exit("Значение атрибута "+str(i_attr)+" некорректное")
+
+
+
+
+
+
+
+
+
+
+
 
 
 

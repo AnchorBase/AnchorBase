@@ -4,7 +4,7 @@ import sys
 import datetime
 import json
 import MSSQL
-import Postgres
+import Postgresql
 import Metadata
 from pathlib import Path
 import FileWorker
@@ -35,7 +35,7 @@ class Driver:
         if type=="mssql":
             return MSSQL.Connection.sql_exec(cnct_attr, sql)
         if type=="postgresql":
-            return Postgres.Postgres.sql_exec(cnct_attr,sql, noresult)
+            return Postgresql.Postgres.sql_exec(cnct_attr, sql, noresult)
         else:
             error = Support.Support.error_output("Driver","sql_exec","DBMS '"+str(type)+"' is not allowed")
             sys.exit(error)
@@ -131,25 +131,25 @@ class Driver:
     @staticmethod
     def create_table_ddl(schema, table, attr):
         if Driver.dwh_type=="postgresql":
-            return Postgres.Postgres.create_table_ddl(schema, table, attr)
+            return Postgresql.Postgres.create_table_ddl(schema, table, attr)
 
     # генерирует ddl view
     @staticmethod
     def create_view_sql(schema, view, source_schema, source_table, attr, vers=None):
         if Driver.dwh_type=="postgresql":
-            return Postgres.Postgres.create_view_sql(schema, view, source_schema, source_table, attr, vers)
+            return Postgresql.Postgres.create_view_sql(schema, view, source_schema, source_table, attr, vers)
 
     # генерирует drop table
     @staticmethod
     def drop_table_sql(schema,table):
         if Driver.dwh_type=="postgresql":
-            return Postgres.Postgres.drop_table_sql(schema,table)
+            return Postgresql.Postgres.drop_table_sql(schema, table)
 
     # скрипт, определяющий макс update_dttm
     @staticmethod
     def max_update_dttm_sql(table):
         if Driver.dwh_type=="postgresql":
-            return Postgres.Postgres.max_update_dttm_sql(table)
+            return Postgresql.Postgres.max_update_dttm_sql(table)
 
     # скрипт, достающий данный из таблицы источника
     @staticmethod
@@ -162,13 +162,13 @@ class Driver:
     @staticmethod
     def insert_data_into_bus(table, column):
         if Driver.dwh_type=="postgresql":
-            return Postgres.Postgres.insert_data_into_bus(table, column)
+            return Postgresql.Postgres.insert_data_into_bus(table, column)
 
     # скрипт вставки данных через values
     @staticmethod
     def insert_data_into_queue(table, column, source_table):
         if Driver.dwh_type=="postgresql":
-            return Postgres.Postgres.insert_data_into_queue(table, column, source_table)
+            return Postgresql.Postgres.insert_data_into_queue(table, column, source_table)
 
     # проверка, что у атрибута инкремента соответствующий тип данных
     @staticmethod
@@ -189,32 +189,32 @@ class Driver:
     @staticmethod
     def current_timestamp_sql():
         if Driver.dwh_type=="postgresql":
-            return Postgres.Postgres.current_timestamp_sql()
+            return Postgresql.Postgres.current_timestamp_sql()
 
     # скрипт генерации uuid
     @staticmethod
     def generate_uuid_sql():
         if Driver.dwh_type=="postgresql":
-            return Postgres.Postgres.generate_uuid_sql()
+            return Postgresql.Postgres.generate_uuid_sql()
 
     # генерация суррогатов с помощью idmap
     @staticmethod
     def insert_data_into_idmap(idmap, nkey, queue_table, source_id):
         if Driver.dwh_type=="postgresql":
-            return Postgres.Postgres.insert_data_into_idmap(idmap, nkey, queue_table, source_id)
+            return Postgresql.Postgres.insert_data_into_idmap(idmap, nkey, queue_table, source_id)
 
     # запись данных в anchor
     @staticmethod
     def insert_data_into_anchor(anchor_table, idmap_table):
         if Driver.dwh_type=="postgresql":
-            return Postgres.Postgres.insert_data_into_anchor(anchor_table, idmap_table)
+            return Postgresql.Postgres.insert_data_into_anchor(anchor_table, idmap_table)
 
     # генерация скрипта для вью на актуальный срез
     # работает только для таблиц типа attribute
     @staticmethod
     def create_lv_view_sql(schema, view, lv_view, mxdttm_table, view_rk):
         if Driver.dwh_type=="postgresql":
-            return Postgres.Postgres.create_lv_view_sql(schema, view, lv_view, mxdttm_table, view_rk)
+            return Postgresql.Postgres.create_lv_view_sql(schema, view, lv_view, mxdttm_table, view_rk)
 
 
     @staticmethod
@@ -243,7 +243,7 @@ class Driver:
             SQL-скрипт
     """
         if Driver.dwh_type=="postgresql":
-            return Postgres.Postgres.insert_data_into_attribute(
+            return Postgresql.Postgres.insert_data_into_attribute(
                 attribute_table,
                 attribute_lv_view,
                 attribute_column,
@@ -279,7 +279,7 @@ class Driver:
             SQL-скрипт
         """
         if Driver.dwh_type=="postgresql":
-            return Postgres.Postgres.insert_data_into_tie(
+            return Postgresql.Postgres.insert_data_into_tie(
                 tie_table,
                 tie_rk1,
                 tie_rk2,

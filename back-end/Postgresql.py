@@ -1,5 +1,6 @@
 import psycopg2
 import sys
+import copy
 import datetime
 import json
 import Metadata
@@ -7,6 +8,7 @@ import Support
 # класс по работе с базой Postgres
 
 class Postgres:
+    #TODO: Устаревший класс
     # подключается к Postgres и выполняет запросы
     @staticmethod
     def sql_exec(cnct_attr, sql, noresult=None):
@@ -386,6 +388,51 @@ class Postgres:
             return script
 
 
+def sql_exec(
+        p_database: str,
+        p_server: str,
+        p_user: str,
+        p_password: str,
+        p_port: int,
+        p_sql: str,
+        p_result: int =1
+):
+    """
+    Выполняет запросы в PostgreSQL
+    :param p_database: база данных
+    :param p_server: сервер
+    :param p_user: пользователь
+    :param p_password: пароль
+    :param p_port: порт
+    :param p_sql: SQL-запрос
+    :param p_result: Признак наличия результата запроса (по умолчанию 1)
+    """
+    try: # проверяем подключение
+        cnct = psycopg2.connect(
+            dbname=p_database,
+            user=p_user,
+            password=p_password,
+            host=p_server,
+            port=p_port
+        )
+    except psycopg2.OperationalError as e:
+        sys.exit(e) #TODO: реализовать вывод ошибок, как сделал Рустем
+    cnct.autocommit = False
+    crsr = cnct.cursor()
+    try:
+        crsr.execute(p_sql)
+        if p_result==1: # если нужен результат запроса
+            l_query_output = crsr.fetchall()
+        else:
+            l_query_output = 1
+        cnct.commit() # комит транзакции
+    except psycopg2.Error as e:
+        cnct.rollback() # при возникновении ошибки - откат транзакции
+        sys.exit(e) #TODO: реализовать вывод ошибок, как сделал Рустем
+    finally:
+        crsr.close()
+        cnct.close()
+    return l_query_output
 
 
 

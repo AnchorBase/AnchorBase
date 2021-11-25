@@ -1,0 +1,6 @@
+server = "localhost"
+database = "anchorbase_metadata"
+user = "anchorbase"
+password = "1234"
+port = "5433"
+dbms_type = "postgresql"

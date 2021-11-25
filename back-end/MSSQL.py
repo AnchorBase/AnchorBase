@@ -5,9 +5,10 @@ import struct
 import datetime
 import json
 from platform import system
+from SystemObjects import Constant as const
 # если запускать программу на macos обязательно нужно использовать freetds и файл libtdsobc
 class Connection:
-
+    #TODO: Устаревший класс
 
     # проверяет подключение к MSSQL
     @staticmethod
@@ -73,7 +74,7 @@ class Connection:
         else: return query_output
 
 class SQLScript:
-
+    # устаревший класс
     @staticmethod
     def select_object_sql(database=None, schema=None, table=None):
         select = "select " \
@@ -134,3 +135,58 @@ class SQLScript:
             return 0
         elif increment_datatype in {"date","datetime"}:
             return "1900-01-01"
+
+
+def sql_exec(
+        p_server: str,
+        p_database: str,
+        p_user: str,
+        p_password: str,
+        p_port: int,
+        p_sql: str,
+        p_result: int =1
+):
+    """
+    Выполняет запросы на MSSQL
+    :param p_server: сервер
+    :param p_database: БД
+    :param p_user: пользователь
+    :param p_password: пароль
+    :param p_port: порт
+    :param p_result: признак наличия результата запроса (по умолчанию 1)
+    """
+    try:
+        if system() == "Darwin": # если macos нужно прописать путь до драйвера
+            mssql_cnct = pyodbc.connect(
+                server=p_server,
+                database=p_database,
+                uid=p_user,
+                tds_version=const('C_TDS_VERSION').constant_value,
+                pwd=p_password,
+                port=p_port,
+                driver=const('C_MSSQL_DRIVER_MACOS_PATH').constant_value,
+            )
+        else:
+            mssql_cnct = pyodbc.connect(
+                server=p_server,
+                database=p_database,
+                uid=p_user,
+                pwd=p_password,
+                port=p_port
+            )
+    except pyodbc.OperationalError as e:
+        sys.exit(e) #TODO: переделать
+    crsr =mssql_cnct.cursor()
+    try:
+        crsr.execute(p_sql)
+        if p_result==1:
+            query_output=crsr.fetchall()
+        else:
+            query_output=1
+    except pyodbc.Error as e:
+        sys.exit(e) #TODO: переделать
+    finally:
+        crsr.close()
+        mssql_cnct.close()
+
+    return query_output

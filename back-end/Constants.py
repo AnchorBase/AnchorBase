@@ -29,6 +29,40 @@ C_TEMP_TABLE = "temp_table" # временная таблица
 C_CAST = "CAST" # операция CAST
 C_CONCAT_SYMBOL = "@@" #символ для конкатенации
 
+# настройки приложения
+C_CONFIG_FILE_PATH = "dwh_config.py" # путь до файла с конфигами подключения к ХД
+C_MSSQL_DRIVER_MACOS_PATH = "/usr/local/lib/libtdsodbc.so" # расположение драйвера в MacOS
+C_TDS_VERSION = '7.3' # версия TDS для pyodbc
+
+# метаданные
+# !!! При добавлении новой переменной метаданных, добавить ее в список C_META_TABLES
+C_SOURCE_META = "source" # наименование таблицы с параметрами источников
+
+C_META_TABLES = [
+    C_SOURCE_META
+]
+
+
+# !!! При добавлении новой переменной метаданных, добавить ее в список C_META_TABLES
+C_NOT_NULL_VALUE = "not null" # наименование признака обязательного атрибута
+C_TYPE_VALUE = "type" # наименование признака - тип атрибута
+C_SOURCE_META_ATTRIBUTES = { # необходимые атрибуты источника для метаданных
+    "server":{C_NOT_NULL_VALUE:1,C_TYPE_VALUE:"str"},
+    "database":{C_NOT_NULL_VALUE:1,C_TYPE_VALUE:"str"},
+    "user":{C_NOT_NULL_VALUE:1,C_TYPE_VALUE:"str"},
+    "password":{C_NOT_NULL_VALUE:1,C_TYPE_VALUE:"str"},
+    "port":{C_NOT_NULL_VALUE:1,C_TYPE_VALUE:"int"},
+    "type":{C_NOT_NULL_VALUE:1,C_TYPE_VALUE:"str"},
+    "name":{C_NOT_NULL_VALUE:1,C_TYPE_VALUE:"str"},
+    "description":{C_NOT_NULL_VALUE:0,C_TYPE_VALUE:"str"},
+    "deleted":{C_NOT_NULL_VALUE:1,C_TYPE_VALUE:"int"}
+}
+
+C_META_ATTRIBUTES = { # таблица метаданных и необходимые атрибуты
+    C_SOURCE_META:C_SOURCE_META_ATTRIBUTES
+}
+
+
 # СУБД
 C_MSSQL = "mssql"
 C_POSTGRESQL = "postgresql"

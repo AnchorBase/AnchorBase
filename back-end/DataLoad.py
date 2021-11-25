@@ -14,7 +14,7 @@ C_DUMMY_TRAN = {"id": "67b2aba4-c34f-4999-a3eb-62ebb77a3776"}
 
 # класс по загрузке данных в ХД
 class DataLoad:
-
+    #TODO: Устаревший класс
     # прогрузка данных в таблицу очереди
     @staticmethod
     def to_queue_table(queue_table, tran):

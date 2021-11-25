@@ -5,6 +5,12 @@ import DataLoad
 import Driver
 import ETL
 import DDL
+import DWH
+import Postgresql
+from platform import system
+import MSSQL
+import copy
+
 
 
 ##########
@@ -332,6 +338,19 @@ table_etl=DDL.ETL(
 #     crm_client_table.attribute_name_sql(p_attribute_type=["queue_attr"])
 # )
 
+# print(
+#     table_etl.get_data_extract_script()
+# )
+
+
+x = Metadata.MetaObject(
+    p_type="source",
+    p_attrs={'server': '77.37.162.204', 'database': 'CRM', 'user': 'AnchorBI', 'password': 'AnchorBI', 'name': 'Test source', 'type': 'MSSQL', 'port': 1433, 'deleted': 0},
+    p_uuid='0a884f59-48b6-4afe-838e-57bdbbb9ec7c'
+)
+
 print(
-    table_etl.get_data_extract_script()
+    Metadata.update_object(
+        x
+    )
 )
