@@ -7,6 +7,9 @@ from SystemObjects import Constant as const
 import Driver
 import Postgresql as pgsql
 import FileWorker as fw
+import copy
+import uuid
+import Metadata as meta
 
 class Connection:
     """
@@ -155,8 +158,44 @@ class Job:
     def __init__(self, p_entity_id: list =None):
         """
         Конструктор
+        :param p_entity_id: id сущности, таблицы которой требуется обновить
         """
         self._entity_id=p_entity_id
+
+        self.l_job_id=copy.copy(uuid.uuid4()) # для того, чтобы uuid не изменялся каждый раз при вызове
+
+    @property
+    def id(self):
+        """
+        Id job-а
+        """
+        return self.l_job_id
+
+    def get_table_uuid(self, p_table_type: str):
+        """
+        Получает все uuid таблиц определенного типа
+
+        :param p_table_type: тип таблицы
+        """
+        # проверка заданного типа таблицы
+        if p_table_type not in const('C_TABLE_TYPE_LIST').constant_value:
+            sys.exit("Некорректный тип таблицы "+p_table_type)
+        # выбираем uuid из метаданных
+        l_table_uuid_list=meta.search_object(
+            p_type=p_table_type,
+            p_attrs={
+                const('C_DELETED_META_ATTR').constant_value:0 # выбираем только неудаленные объекты
+            }
+        )
+        return l_table_uuid_list
+
+
+    def __get_table_etl(self):
+        """
+        Получает скрипт ETL загрузки данных таблицы
+        """
+        pass
+
 
 
 def get_values_sql(p_data_frame: list, p_cast_list: dict):

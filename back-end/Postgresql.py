@@ -1,11 +1,16 @@
+# coding=utf-8
 import psycopg2
+import psycopg2.extensions
 import sys
 import copy
 import datetime
 import json
 import Metadata
 import Support
-# класс по работе с базой Postgres
+
+#TODO: проблема со вставкой русских символов
+
+psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
 
 class Postgres:
     #TODO: Устаревший класс

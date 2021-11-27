@@ -9,6 +9,7 @@
 
 # основные понятия
 C_TABLE = "table" # таблица
+C_COLUMN = "column" # колонка
 C_SCHEMA = "schema" # схема
 C_NAME = "name" # наименование
 C_DDL = "ddl"
@@ -42,20 +43,27 @@ C_META_TABLES = [
     C_SOURCE_META
 ]
 
+# часто используемые атрибуты объектов метаданных
+C_DELETED="deleted" # признак удаления
 
-# !!! При добавлении новой переменной метаданных, добавить ее в список C_META_TABLES
-C_NOT_NULL_VALUE = "not null" # наименование признака обязательного атрибута
+# атрибуты метаданных
+
+C_NOT_NULL = "not null" # наименование признака обязательного атрибута
 C_TYPE_VALUE = "type" # наименование признака - тип атрибута
+C_PK = "pk" # наименование признака ключ у атрибута метаданных
+C_DESC="description"
+C_SOURCE_ID="source_id"
 C_SOURCE_META_ATTRIBUTES = { # необходимые атрибуты источника для метаданных
-    "server":{C_NOT_NULL_VALUE:1,C_TYPE_VALUE:"str"},
-    "database":{C_NOT_NULL_VALUE:1,C_TYPE_VALUE:"str"},
-    "user":{C_NOT_NULL_VALUE:1,C_TYPE_VALUE:"str"},
-    "password":{C_NOT_NULL_VALUE:1,C_TYPE_VALUE:"str"},
-    "port":{C_NOT_NULL_VALUE:1,C_TYPE_VALUE:"int"},
-    "type":{C_NOT_NULL_VALUE:1,C_TYPE_VALUE:"str"},
-    "name":{C_NOT_NULL_VALUE:1,C_TYPE_VALUE:"str"},
-    "description":{C_NOT_NULL_VALUE:0,C_TYPE_VALUE:"str"},
-    "deleted":{C_NOT_NULL_VALUE:1,C_TYPE_VALUE:"int"}
+    C_SERVER:{C_NOT_NULL:1,C_TYPE_VALUE:"str", C_PK:0},
+    C_DATABASE:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:0},
+    C_USER:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:0},
+    C_PASSWORD:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:0},
+    C_PORT:{C_NOT_NULL:1,C_TYPE_VALUE:"int",C_PK:0},
+    C_TYPE_VALUE:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:0},
+    C_NAME:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:1},
+    C_DESC:{C_NOT_NULL:0,C_TYPE_VALUE:"str",C_PK:0},
+    C_DELETED:{C_NOT_NULL:1,C_TYPE_VALUE:"int",C_PK:0},
+    C_SOURCE_ID:{C_NOT_NULL:1,C_TYPE_VALUE:"int",C_PK:1} # ключ источника типа int для source_system_id
 }
 
 C_META_ATTRIBUTES = { # таблица метаданных и необходимые атрибуты

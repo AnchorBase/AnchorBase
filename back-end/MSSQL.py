@@ -165,6 +165,7 @@ def sql_exec(
                 pwd=p_password,
                 port=p_port,
                 driver=const('C_MSSQL_DRIVER_MACOS_PATH').constant_value,
+                timeout=10
             )
         else:
             mssql_cnct = pyodbc.connect(
@@ -172,9 +173,10 @@ def sql_exec(
                 database=p_database,
                 uid=p_user,
                 pwd=p_password,
-                port=p_port
+                port=p_port,
+                timeout=10
             )
-    except pyodbc.OperationalError as e:
+    except pyodbc.Error as e:
         sys.exit(e) #TODO: переделать
     crsr =mssql_cnct.cursor()
     try:
