@@ -343,38 +343,122 @@ import copy
 #     table_etl.get_data_extract_script()
 # )
 
+source=Source.Source(
+    p_id='0a884f59-48b6-4afe-838e-57bdbbb9ec7c'
+)
 
-x = Metadata.MetaObject(
-    p_type="source",
-    p_attrs={
-        'server': '77.37.162.204',
-        'database': 'CRM',
-        'user': 'AnchorBI',
-        'password': 'AnchorBI',
-        'name': 'Test source',
-        'type': 'MSSQL',
-        'port': 1433,
-        'deleted': 0,
-        'source_id':2
-    },
-    p_uuid='0f884f59-48b6-4afe-838e-57bdbbb9ec7c'
+# entity = DWH.Entity(
+#     p_id='0a884f59-48b6-4afe-838e-57bdbbb9ec7c',
+#     p_name='Client'
+# )
+
+entity2 = DWH.Entity(
+    p_name="order"
+)
+#
+entity_attribute_client_id = DWH.Attribute(
+    p_entity=entity2,
+    p_type="entity",
+    p_name="Client_FIO"
+)
+#
+# entity_attribute_client_name = DWH.Attribute(
+#     p_name="client_name",
+#     p_datatype="varchar",
+#     p_length=10,
+#     p_type="entity"
+# )
+#
+# # entity.add_entity_attrubute(entity_attribute_client_name)
+# # entity.remove_entity_attribute(entity_attribute_client_id)
+#
+client_source_table=DWH.SourceTable(
+    p_id="0d884f59-48b6-4afe-838e-57bdbbb9ec7c"
+)
+
+client_id_queue_attr=DWH.Attribute(
+    p_id='0a884f59-48b6-4afe-838e-57bdbbb9ec7c',
+    p_type="queue"
+)
+
+client_name_queue_attr=DWH.Attribute(
+    p_name="client_name",
+    p_datatype="int",
+    p_attribute_type="queue_attr",
+    p_type="queue",
+    p_source_table=client_source_table
+)
+
+idmap=DWH.Idmap(
+    p_entity=entity2,
+    p_source_table=[client_source_table, client_source_table],
+    p_source_attribute_nk=[client_id_queue_attr]
 )
 
 
-y = Source.Source(
-    p_name='test18',
-    p_database='CRM',
-    p_server='77.37.162.204',
-    p_user='AnchorBI',
-    p_password='AnchorBI',
-    p_type='mssql',
-    p_port=1433,
-    p_desc='Test source',
-    p_id='cbbf1a60-b5d0-481f-ad59-f92d6f452b89'
-
+#
+#
+anchor=DWH.Anchor(
+    p_entity=entity2,
+    p_idmap=idmap
 )
+#
+#
+# attribute=DWH.AttributeTable(
+#     p_entity=entity2,
+#     p_name="id",
+#     p_entity_attribute=entity_attribute_client_id
+# )
+#
+# attribute2=DWH.AttributeTable(
+#     p_entity=entity2,
+#     p_name="name"
+# )
+#
+# queue_attr=DWH.Attribute(
+#     p_name="client_fio",
+#     p_type="queue"
+# )
+#
+# update_attr=DWH.Attribute(
+#     p_name="update_dttm",
+#     p_type="queue",
+#     p_datatype="datetime",
+#     p_attribute_type="update"
+# )
+#
+# etl_attr=DWH.Attribute(
+#     p_name="etl_id",
+#     p_type="queue",
+#     p_datatype="int",
+#     p_attribute_type="etl"
+# )
 
+# DWH.add_attribute(p_table=client_source_table,p_attribute=queue_attr)
+# DWH.add_attribute(p_table=client_source_table,p_attribute=update_attr)
+# DWH.add_attribute(p_table=client_source_table,p_attribute=etl_attr)
+# client_source_table.increment=increment_attr
+
+# tie=DWH.Tie(
+#     p_entity=entity2,
+#     p_link_entity=entity
+# )
 
 print(
-    y.sql_exec("select 1")
+    DWH.create_table_ddl(p_table=anchor)
 )
+
+print(
+    DWH.create_view_ddl(p_table=anchor)
+)
+
+print(
+    DWH.get_anchor_etl(
+        p_anchor=anchor,
+        p_etl_id="1"
+    )
+)
+
+
+
+

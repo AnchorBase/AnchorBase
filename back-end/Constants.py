@@ -8,10 +8,14 @@
 
 
 # основные понятия
+C_ENTITY = "entity" # сущность
+C_LINK_ENTITY = "link_entity"
+C_ENTITY_ATTRIBUTE = "entity_attribute" # атрибут сущности
 C_TABLE = "table" # таблица
 C_COLUMN = "column" # колонка
 C_SCHEMA = "schema" # схема
 C_NAME = "name" # наименование
+C_SOURCE_NAME = "source_name" # наименование на источнике
 C_DDL = "ddl"
 C_VIEW = "view"
 C_ETL = "etl"
@@ -30,6 +34,43 @@ C_TEMP_TABLE = "temp_table" # временная таблица
 C_CAST = "CAST" # операция CAST
 C_CONCAT_SYMBOL = "@@" #символ для конкатенации
 
+# Наименование типов таблиц
+#!!! При создании нового типа таблицы добавить константу в список C_TABLE_TYPE_LIST
+C_ANCHOR_TABLE_TYPE_NAME = "anchor" # наименование типа таблицы anchor
+C_ATTRIBUTE_TABLE_TYPE_NAME = "attribute" # наименование типа таблицы attribute
+C_TIE_TABLE_TYPE_NAME = "tie" # наименование типа таблицы tie
+C_IDMAP_TABLE_TYPE_NAME = "idmap" # наименование типа таблицы idmap
+C_QUEUE_TABLE_TYPE_NAME = "queue" # наименование типа таблицы queue
+C_LINK_IDMAP_TABLE_TYPE_NAME = "link_idmap" # наименование типа таблицы idmap связанной сущности (для ETL в tie)
+
+# Наименование типов атрибутов таблиц
+#!!! При создании нового типа атрибута добавить константу в список C_ATTRIBUTE_TABLE_TYPE_LIST
+C_RK_TYPE_NAME = "rk" # наименование типа атрибута - суррогатный ключ
+C_NK_TYPE_NAME = "nk" # наименование типа атрибута - натуральный ключ
+C_SOURCE_TYPE_NAME = "source" # наименование типа атрибута - источник
+C_ETL_TYPE_NAME = "etl" # наименование типа атрибута - идентификатор процесса загрузки данных
+C_VALUE_TYPE_NAME = "value" # наименование типа атрибута - значение атрибута в таблице типа attribute
+C_FROM_TYPE_NAME = "from" # наименование типа атрибута - дата начала действия записи
+C_TO_TYPE_NAME = "to" # наименование типа атрибута - дата окончания действия записи
+C_LINK_RK_TYPE_NAME = "link_rk" # наименование типа атрибута - суррогатный ключ связанной сущности в таблице tie
+C_LINK_NK_TYPE_NAME = "link_nk" # наименование типа атрибута - натуральный ключ связанной сущности в таблице tie
+C_QUEUE_ATTR_TYPE_NAME = "queue_attr" # наименование типа атрибута - атрибут таблицы queue
+C_UPDATE_TYPE_NAME = "update" # наименование типа атрибута - атрибут, хранящий инкремент, таблицы queue
+
+C_SOURCE_ATTRIBUTE_NAME="source_system_id"
+C_ETL_ATTRIBUTE_NAME="etl_id"
+C_FROM_ATTRIBUTE_NAME="from_dttm"
+C_TO_ATTRIBUTE_NAME="to_dttm"
+
+# потсфиксы таблиц
+C_TABLE_NAME_POSTFIX={
+    C_ANCHOR_TABLE_TYPE_NAME:"_an",
+    C_ATTRIBUTE_TABLE_TYPE_NAME:"_attr",
+    C_TIE_TABLE_TYPE_NAME:"_tie",
+    C_IDMAP_TABLE_TYPE_NAME:"_idmap",
+    C_QUEUE_TABLE_TYPE_NAME:"_queue"
+}
+
 # настройки приложения
 C_CONFIG_FILE_PATH = "dwh_config.py" # путь до файла с конфигами подключения к ХД
 C_MSSQL_DRIVER_MACOS_PATH = "/usr/local/lib/libtdsodbc.so" # расположение драйвера в MacOS
@@ -38,10 +79,39 @@ C_TDS_VERSION = '7.3' # версия TDS для pyodbc
 # метаданные
 # !!! При добавлении новой переменной метаданных, добавить ее в список C_META_TABLES
 C_SOURCE_META = "source" # наименование таблицы с параметрами источников
+C_QUEUE_COLUMN = "queue_column"
+C_IDMAP_COLUMN = "idmap_column"
+C_INCREMENT = "increment"
 
 C_META_TABLES = [
-    C_SOURCE_META
+    C_SOURCE_META,
+    C_ENTITY,
+    C_ENTITY+"_"+C_COLUMN,
+    C_QUEUE_TABLE_TYPE_NAME,
+    C_QUEUE_TABLE_TYPE_NAME+"_"+C_COLUMN,
+    C_IDMAP_TABLE_TYPE_NAME,
+    C_IDMAP_TABLE_TYPE_NAME+"_"+C_COLUMN,
+    C_ANCHOR_TABLE_TYPE_NAME,
+    C_ANCHOR_TABLE_TYPE_NAME+"_"+C_COLUMN,
+    C_ATTRIBUTE_TABLE_TYPE_NAME,
+    C_ATTRIBUTE_TABLE_TYPE_NAME+"_"+C_COLUMN,
+    C_TIE_TABLE_TYPE_NAME,
+    C_TIE_TABLE_TYPE_NAME+"_"+C_COLUMN,
+    C_QUEUE_TABLE_TYPE_NAME+"_"+C_INCREMENT
 ]
+
+C_STG_SCHEMA="stg"
+C_IDMAP_SCHEMA="idmap"
+C_AM_SCHEMA="am"
+C_WRK_SCHEMA="wrk"
+
+C_SCHEMA_TABLE_TYPE = { # наименование схемы в соответствии с типом таблицы
+    C_QUEUE_TABLE_TYPE_NAME:C_STG_SCHEMA,
+    C_IDMAP_TABLE_TYPE_NAME:C_IDMAP_SCHEMA,
+    C_ANCHOR_TABLE_TYPE_NAME:C_AM_SCHEMA,
+    C_ATTRIBUTE_TABLE_TYPE_NAME:C_AM_SCHEMA,
+    C_TIE_TABLE_TYPE_NAME:C_AM_SCHEMA
+}
 
 # часто используемые атрибуты объектов метаданных
 C_DELETED="deleted" # признак удаления
@@ -53,6 +123,8 @@ C_TYPE_VALUE = "type" # наименование признака - тип ат�
 C_PK = "pk" # наименование признака ключ у атрибута метаданных
 C_DESC="description"
 C_SOURCE_ID="source_id"
+C_ATTRIBUTE_NK = "column_nk"
+
 C_SOURCE_META_ATTRIBUTES = { # необходимые атрибуты источника для метаданных
     C_SERVER:{C_NOT_NULL:1,C_TYPE_VALUE:"str", C_PK:0},
     C_DATABASE:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:0},
@@ -62,12 +134,81 @@ C_SOURCE_META_ATTRIBUTES = { # необходимые атрибуты исто�
     C_TYPE_VALUE:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:0},
     C_NAME:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:1},
     C_DESC:{C_NOT_NULL:0,C_TYPE_VALUE:"str",C_PK:0},
-    C_DELETED:{C_NOT_NULL:1,C_TYPE_VALUE:"int",C_PK:0},
     C_SOURCE_ID:{C_NOT_NULL:1,C_TYPE_VALUE:"int",C_PK:1} # ключ источника типа int для source_system_id
 }
 
+
+C_ENTITY_META_ATTRIBUTES = {
+    C_NAME:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:1},
+    C_DESC:{C_NOT_NULL:0,C_TYPE_VALUE:"str",C_PK:0},
+    C_ENTITY+"_"+C_COLUMN:{C_NOT_NULL:1,C_TYPE_VALUE:"list",C_PK:0},
+    C_SOURCE_META:{C_NOT_NULL:1,C_TYPE_VALUE:"list",C_PK:0},
+    C_QUEUE_TABLE_TYPE_NAME:{C_NOT_NULL:1,C_TYPE_VALUE:"list",C_PK:0},
+    C_IDMAP_TABLE_TYPE_NAME:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:0},
+    C_ANCHOR_TABLE_TYPE_NAME:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:0},
+    C_ATTRIBUTE_TABLE_TYPE_NAME:{C_NOT_NULL:1,C_TYPE_VALUE:"list",C_PK:0},
+    C_TIE_TABLE_TYPE_NAME:{C_NOT_NULL:1,C_TYPE_VALUE:"list",C_PK:0}
+}
+
+C_ENTITY_ATTRIBUTE_META_ATTRIBUTES = {
+    C_NAME:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:1},
+    C_PK:{C_NOT_NULL:1,C_TYPE_VALUE:"int",C_PK:0},
+    C_DESC:{C_NOT_NULL:0,C_TYPE_VALUE:"str",C_PK:0},
+    C_ENTITY:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:0},
+    C_DATATYPE:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:0},
+    C_LENGTH:{C_NOT_NULL:0,C_TYPE_VALUE:"int",C_PK:0},
+    C_SCALE:{C_NOT_NULL:0,C_TYPE_VALUE:"int",C_PK:0},
+    C_LINK_ENTITY:{C_NOT_NULL:0,C_TYPE_VALUE:"str",C_PK:0}
+}
+
+C_QUEUE_META_ATTRIBUTES = {
+    C_NAME:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:1},
+    C_SOURCE_NAME:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:0},
+    C_SCHEMA:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:0},
+    C_SOURCE:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:0},
+    C_QUEUE_TABLE_TYPE_NAME+"_"+C_COLUMN:{C_NOT_NULL:1,C_TYPE_VALUE:"list",C_PK:0},
+    C_INCREMENT:{C_NOT_NULL:0,C_TYPE_VALUE:"str",C_PK:0}
+}
+
+C_QUEUE_COLUMN_META_ATTRIBUTES = {
+    C_NAME:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:1},
+    C_QUEUE_TABLE_TYPE_NAME:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:0},
+    C_DATATYPE:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:0},
+    C_LENGTH:{C_NOT_NULL:0,C_TYPE_VALUE:"int",C_PK:0},
+    C_SCALE:{C_NOT_NULL:0,C_TYPE_VALUE:"int",C_PK:0},
+    C_TYPE_VALUE:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:0},
+}
+
+C_IDMAP_META_ATTRIBUTES = {
+    C_NAME:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:1},
+    C_ENTITY:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:0},
+    C_IDMAP_TABLE_TYPE_NAME+"_"+C_COLUMN:{C_NOT_NULL:1,C_TYPE_VALUE:"list",C_PK:0},
+    C_QUEUE_TABLE_TYPE_NAME:{C_NOT_NULL:1,C_TYPE_VALUE:"list",C_PK:0},
+    C_ATTRIBUTE_NK:{C_NOT_NULL:1,C_TYPE_VALUE:"list",C_PK:0},
+}
+
+C_IDMAP_COLUMN_META_ATTRIBUTES = {
+    C_NAME:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:1},
+    C_IDMAP_TABLE_TYPE_NAME:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:0},
+    C_DATATYPE:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:0},
+    C_LENGTH:{C_NOT_NULL:0,C_TYPE_VALUE:"int",C_PK:0},
+    C_SCALE:{C_NOT_NULL:0,C_TYPE_VALUE:"int",C_PK:0},
+    C_TYPE_VALUE:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:0}
+}
+
+C_QUEUE_INCREMENT_META_ATTRIBUTES = {
+    C_INCREMENT:{C_NOT_NULL:0,C_TYPE_VALUE:"str",C_PK:0}
+}
+
 C_META_ATTRIBUTES = { # таблица метаданных и необходимые атрибуты
-    C_SOURCE_META:C_SOURCE_META_ATTRIBUTES
+    C_SOURCE_META:C_SOURCE_META_ATTRIBUTES,
+    C_ENTITY:C_ENTITY_META_ATTRIBUTES,
+    C_ENTITY+"_"+C_COLUMN:C_ENTITY_ATTRIBUTE_META_ATTRIBUTES,
+    C_QUEUE_TABLE_TYPE_NAME:C_QUEUE_META_ATTRIBUTES,
+    C_QUEUE_TABLE_TYPE_NAME+"_"+C_COLUMN:C_QUEUE_COLUMN_META_ATTRIBUTES,
+    C_IDMAP_TABLE_TYPE_NAME:C_IDMAP_META_ATTRIBUTES,
+    C_IDMAP_TABLE_TYPE_NAME+"_"+C_COLUMN:C_IDMAP_COLUMN_META_ATTRIBUTES,
+    C_QUEUE_TABLE_TYPE_NAME+"_"+C_INCREMENT:C_QUEUE_INCREMENT_META_ATTRIBUTES
 }
 
 
@@ -108,6 +249,7 @@ C_DATE = "date"
 C_TIME = "time"
 C_INTERVAL = "interval"
 C_BOOLEAN = "boolean"
+C_DATETIME = "datetime"
 
 # PostgreSQL
 C_POSTGRESQL_DATA_TYPE_LIST = [ # фиксированный список типов данных для PostgreSQL, с которыми умеет работать AnchorBase
@@ -135,6 +277,11 @@ C_POSTGRESQL_DATA_TYPE_LIST = [ # фиксированный список тип
     ,C_BOOLEAN
 ]
 
+C_TIMESTAMP_DBMS={ #тип данных даты и времени в разных СУБД
+    C_MSSQL:C_DATETIME,
+    C_POSTGRESQL:C_TIMESTAMP
+}
+
 C_POSTGRESQL_TEMPLATE_FOLDER = "POSTGRESQL" # наименование папки с шаблонами SQL для PostgreSQL
 
 # компоненты СУБД: типы данных и т.д.
@@ -147,15 +294,6 @@ C_DBMS_COMPONENTS = {
 
 # свойства основных понятий
 C_NAME_TABLE = C_TABLE+"_"+C_NAME # наименование таблицы
-
-# Наименование типов таблиц
-#!!! При создании нового типа таблицы добавить константу в список C_TABLE_TYPE_LIST
-C_ANCHOR_TABLE_TYPE_NAME = "anchor" # наименование типа таблицы anchor
-C_ATTRIBUTE_TABLE_TYPE_NAME = "attribute" # наименование типа таблицы attribute
-C_TIE_TABLE_TYPE_NAME = "tie" # наименование типа таблицы tie
-C_IDMAP_TABLE_TYPE_NAME = "idmap" # наименование типа таблицы idmap
-C_QUEUE_TABLE_TYPE_NAME = "queue" # наименование типа таблицы queue
-C_LINK_IDMAP_TABLE_TYPE_NAME = "link_idmap" # наименование типа таблицы idmap связанной сущности (для ETL в tie)
 
 C_TABLE_TYPE_LIST = [ # фиксированный список типов таблиц
     C_ANCHOR_TABLE_TYPE_NAME,
@@ -174,19 +312,6 @@ C_SOURCE_TABLE_TYPE_LIST = [ # фиксированный список типо�
     C_LINK_IDMAP_TABLE_TYPE_NAME
 ]
 
-# Наименование типов атрибутов таблиц
-#!!! При создании нового типа атрибута добавить константу в список C_ATTRIBUTE_TABLE_TYPE_LIST
-C_RK_TYPE_NAME = "rk" # наименование типа атрибута - суррогатный ключ
-C_NK_TYPE_NAME = "nk" # наименование типа атрибута - натуральный ключ
-C_SOURCE_TYPE_NAME = "source" # наименование типа атрибута - источник
-C_ETL_TYPE_NAME = "etl" # наименование типа атрибута - идентификатор процесса загрузки данных
-C_VALUE_TYPE_NAME = "value" # наименование типа атрибута - значение атрибута в таблице типа attribute
-C_FROM_TYPE_NAME = "from" # наименование типа атрибута - дата начала действия записи
-C_TO_TYPE_NAME = "to" # наименование типа атрибута - дата окончания действия записи
-C_LINK_RK_TYPE_NAME = "link_rk" # наименование типа атрибута - суррогатный ключ связанной сущности в таблице tie
-C_LINK_NK_TYPE_NAME = "link_nk" # наименование типа атрибута - натуральный ключ связанной сущности в таблице tie
-C_QUEUE_ATTR_TYPE_NAME = "queue_attr" # наименование типа атрибута - атрибут таблицы queue
-C_UPDATE_TYPE_NAME = "update" # наименование типа атрибута - атрибут, хранящий инкремент, таблицы queue
 
 C_ATTRIBUTE_TABLE_TYPE_LIST = [
     C_RK_TYPE_NAME,

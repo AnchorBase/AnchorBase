@@ -192,3 +192,55 @@ def sql_exec(
         mssql_cnct.close()
 
     return query_output
+
+def get_objects(
+        p_server: str,
+        p_database: str,
+        p_user: str,
+        p_password: str,
+        p_port: int
+):
+    l_sql="""
+SELECT
+    tab.table_catalog,
+    tab.table_schema,
+    tab.table_name,
+    tab.table_type,
+    col.column_name,
+    col.data_type,
+    COALESCE(
+        col.character_maximum_length,
+        CASE WHEN col.numeric_scale<>0 AND col.data_type='decimal'
+    THEN col.numeric_precision
+    END
+    ) AS character_maximum_length,
+    col.numeric_precision,
+    col.numeric_scale,
+    CASE WHEN ky.constraint_name IS NOT NULL THEN 1 ELSE 0 END
+    FROM information_schema.tables tab
+    LEFT JOIN information_schema.columns col
+        ON 1=1
+        AND tab.table_catalog=col.table_catalog
+        AND tab.table_schema=col.table_schema
+        AND tab.table_name=col.table_name
+    LEFT JOIN information_schema.key_column_usage ky  
+        ON 1=1  
+        AND tab.table_catalog=ky.table_catalog  
+        AND tab.table_schema=ky.table_schema  
+        AND tab.table_name=ky.table_name  
+        AND col.column_name=ky.column_name  
+        AND substring(ky.constraint_name,1,2)='PK'
+"""
+    l_result=sql_exec(
+        p_server=p_server,
+        p_database=p_database,
+        p_user=p_user,
+        p_password=p_password,
+        p_port=p_port,
+        p_sql=l_sql,
+        p_result=1
+    )
+    return l_result
+
+C_CURRENT_TIMESTAMP_SQL="CURRENT_TIMESTAMP"
+

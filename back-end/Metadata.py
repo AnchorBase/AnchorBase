@@ -311,15 +311,12 @@ def sql_exec(p_sql: str, p_result: int =1):
         p_sql=p_sql,
         p_result=p_result
     )
-    return l_result
+    if l_result[1]:
+        sys.exit(l_result[1])
+    else:
+        return l_result[0]
 
-def uuid_generate():
-    """
-    Генерирует новый uuid
-    """
-    return uuid.uuid4()
-
-def search_uuid_sql(p_uuid_list: list):
+def __search_uuid_sql(p_uuid_list: list):
     """
     Формирует запрос поиска по метаданным с помощью uuid
 
@@ -330,7 +327,7 @@ def search_uuid_sql(p_uuid_list: list):
         l_sql=l_sql+"'"+str(i_uuid)+"'"+","
     return l_sql[:-1]+")"
 
-def search_attr_sql(p_attr_dict: dict):
+def __search_attr_sql(p_attr_dict: dict):
     """
     Формирует SQL запрос поиска по метаданным с помощью параметров атрибута
 
@@ -342,7 +339,7 @@ def search_attr_sql(p_attr_dict: dict):
         l_sql=l_sql+" AND value ->> '"+str(i_attr_key)+"'='"+str(p_attr_dict.get(i_attr_key,None))+"'"
     return l_sql
 
-def insert_object_sql(p_type: str, p_uuid: str, p_attrs: dict):
+def __insert_object_sql(p_type: str, p_uuid: str, p_attrs: dict):
     """
     Формирует запрос вставки метаданных
 
@@ -354,7 +351,7 @@ def insert_object_sql(p_type: str, p_uuid: str, p_attrs: dict):
     l_sql='INSERT INTO "'+p_type+'"'+" (id, value) VALUES \n('"+str(p_uuid)+"','"+l_attrs+"');"
     return l_sql
 
-def update_object_sql(p_type: str, p_uuid: str, p_attrs: dict):
+def __update_object_sql(p_type: str, p_uuid: str, p_attrs: dict):
     """
     Формирует запрос изменения данных
     :param p_type: тип объекта метаданных
@@ -384,12 +381,12 @@ def search_object(p_type: str, p_uuid: list =None, p_attrs: dict =None) -> list:
     l_where=""
     # фильтрация по id
     if p_uuid is not None and p_uuid.count(None)==0:
-        l_where=l_where+search_uuid_sql(p_uuid)
+        l_where= l_where + __search_uuid_sql(p_uuid)
     elif p_uuid is not None and p_uuid.count(None)>0:
         sys.exit("Пустое значение uuid")
     # фильтрация по attr
     if p_attrs is not None:
-        l_where=l_where+search_attr_sql(p_attrs)
+        l_where= l_where + __search_attr_sql(p_attrs)
     l_sql=l_sql+l_where+";" # финальный SQL-запрос к метаданным
     l_result=sql_exec(l_sql) # выполняем запрос в БД метаданных
     if l_result.__len__()==0:
@@ -414,7 +411,7 @@ def create_object(p_object: object):
     if type(p_object).__name__!="MetaObject":
         sys.exit("Объект не является объектом класса MetaObject") #TODO: переделать
     # формируем SQL-запрос
-    l_sql=insert_object_sql(
+    l_sql=__insert_object_sql(
         p_type=p_object.type,
         p_uuid=p_object.uuid,
         p_attrs=p_object.attrs
@@ -431,7 +428,7 @@ def update_object(p_object: object):
     if type(p_object).__name__!="MetaObject":
         sys.exit("Объект не является объектом класса MetaObject") #TODO: переделать
     # формируем SQL-запрос
-    l_sql=update_object_sql(
+    l_sql=__update_object_sql(
         p_type=p_object.type,
         p_uuid=p_object.uuid,
         p_attrs=p_object.attrs
@@ -533,7 +530,6 @@ class MetaObject:
                 # если уже есть объекты метаданных с таким значением ключевого атрибута и их uuid отличаются от self.uuid (объект не он сам)
                 if l_meta_attr_objs.__len__()>0 and self.uuid not in l_meta_attr_objs_uuid_list:
                     sys.exit("Уже присутствует объект "+self.type+" с "+i_attr+"="+str(self._attrs.get(i_attr,None))) #TODO: переделать
-
 
 
 

@@ -283,20 +283,38 @@ class Source:
         return self._type or self.__source_meta_attrs.get(const('C_TYPE_VALUE').constant_value,None)
 
     @property
-    def deleted(self):
+    def __source_objects(self):
         """
-        Признак удаленного источника
+        Получает таблицы и атрибуты источника
         """
-        return self.__source_meta_attrs.get(const('C_DELETED').constant_value,None) or self._deleted
+        l_source_meta_objects=self.__cnct.get_objects(
+            p_server=self.server,
+            p_database=self.database,
+            p_user=self.user,
+            p_password=self.password,
+            p_port=self.port
+        ) # получаем метаданные источника
+        return l_source_meta_objects
 
-    @deleted.setter
-    def deleted(self, p_new_deleted: int):
+    @property
+    def source_tables(self):
         """
-        Сеттер признака удаления
+        Все таблицы источника
+        """
+        l_source_table=set() # множетво таблиц (не повторяются наименования таблиц)
+        for i_source_meta_object in self.__source_objects:
+            l_source_table.add(str(i_source_meta_object[0]).lower()+"."+str(i_source_meta_object[1]).lower()) # добавляем в список и приводим к нижнему регистру
+        return l_source_table
+    @property
+    def source_attributes(self):
+        """
+        Все атрибуты источника
+        """
+        l_source_attributes=set()
+        for i_source_attributes in self.__source_objects:
+            l_source_attributes.add(str(i_source_attributes[0]).lower()+"."+str(i_source_attributes[1]).lower()+"."+str(i_source_attributes[4]).lower()) # добавляем в список и приводим к нижнему регистру
+        return l_source_attributes
 
-        :param p_new_deleted: новый признак
-        """
-        self._deleted=p_new_deleted
 
     @property
     def __cnct(self):
@@ -352,7 +370,6 @@ class Source:
                 const('C_TYPE_VALUE').constant_value:self.type,
                 const('C_NAME').constant_value:self.name,
                 const('C_DESC').constant_value:self.description,
-                const('C_DELETED').constant_value:self.deleted,
                 const('C_SOURCE_ID').constant_value:self.source_id
             },
             p_uuid=self._id
@@ -390,6 +407,13 @@ class Source:
         Metadata.update_object(
             p_object=self.__meta_obj
         )
+
+    @property
+    def current_timestamp_sql(self):
+        """
+        Скрипт текущей даты и времени
+        """
+        return self.__cnct.C_CURRENT_TIMESTAMP_SQL
 
 
 

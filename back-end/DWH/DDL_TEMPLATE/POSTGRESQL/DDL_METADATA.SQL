@@ -9,15 +9,15 @@ CREATE TABLE "source" (
     id uuid PRIMARY KEY,
 	value json NOT NULL
 );
-CREATE TABLE "idmap_table" (
+CREATE TABLE "entity" (
 	id uuid PRIMARY KEY,
 	value json NOT NULL
 );
-CREATE TABLE "idmap_column" (
+CREATE TABLE "entity_column" (
 	id uuid PRIMARY KEY,
 	value json NOT NULL
 );
-CREATE TABLE "queue_table" (
+CREATE TABLE "queue" (
 	id uuid PRIMARY KEY,
 	value json NOT NULL
 );
@@ -25,7 +25,15 @@ CREATE TABLE "queue_column" (
 	id uuid PRIMARY KEY,
 	value json NOT NULL
 );
-CREATE TABLE "anchor_table" (
+CREATE TABLE "idmap" (
+	id uuid PRIMARY KEY,
+	value json NOT NULL
+);
+CREATE TABLE "idmap_column" (
+	id uuid PRIMARY KEY,
+	value json NOT NULL
+);
+CREATE TABLE "anchor" (
 	id uuid PRIMARY KEY,
 	value json NOT NULL
 );
@@ -33,7 +41,7 @@ CREATE TABLE "anchor_column" (
 	id uuid PRIMARY KEY,
 	value json NOT NULL
 );
-CREATE TABLE "attribute_table" (
+CREATE TABLE "attribute" (
 	id uuid PRIMARY KEY,
 	value json NOT NULL
 );
@@ -41,11 +49,16 @@ CREATE TABLE "attribute_column" (
 	id uuid PRIMARY KEY,
 	value json NOT NULL
 );
-CREATE TABLE "tie_table" (
+CREATE TABLE "tie" (
 	id uuid PRIMARY KEY,
 	value json NOT NULL
 );
 CREATE TABLE "tie_column" (
+	id uuid PRIMARY KEY,
+	value json NOT NULL
+);
+CREATE TABLE "queue_increment"
+(
 	id uuid PRIMARY KEY,
 	value json NOT NULL
 );

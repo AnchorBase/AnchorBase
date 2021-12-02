@@ -7,6 +7,7 @@ import datetime
 import json
 import Metadata
 import Support
+from SystemObjects import Constant as const
 
 #TODO: проблема со вставкой русских символов
 
@@ -412,6 +413,8 @@ def sql_exec(
     :param p_sql: SQL-запрос
     :param p_result: Признак наличия результата запроса (по умолчанию 1)
     """
+    l_query_output=None
+    l_error=None
     try: # проверяем подключение
         cnct = psycopg2.connect(
             dbname=p_database,
@@ -421,7 +424,8 @@ def sql_exec(
             port=p_port
         )
     except psycopg2.OperationalError as e:
-        sys.exit(e) #TODO: реализовать вывод ошибок, как сделал Рустем
+        # sys.exit(e) #TODO: реализовать вывод ошибок, как сделал Рустем
+        l_error=e
     cnct.autocommit = False
     crsr = cnct.cursor()
     try:
@@ -433,12 +437,120 @@ def sql_exec(
         cnct.commit() # комит транзакции
     except psycopg2.Error as e:
         cnct.rollback() # при возникновении ошибки - откат транзакции
-        sys.exit(e) #TODO: реализовать вывод ошибок, как сделал Рустем
+        # sys.exit(e) #TODO: реализовать вывод ошибок, как сделал Рустем
+        l_error=e
     finally:
         crsr.close()
         cnct.close()
-    return l_query_output
+    return l_query_output, l_error
 
+C_CURRENT_TIMESTAMP_SQL="CURRENT_TIMESTAMP"
+
+def get_source_table_etl(
+        p_source_table_id: str,
+        p_source_attribute: str,
+        p_source_attribute_value: str
+):
+    """
+    Генерирует ETL-скрипт для queue таблицы
+
+    :param p_source_table_id: id таблицы
+    :param p_source_attribute: атрибуты таблицы (список должен быть отсортирован в соответствии с наименованием атрибута)
+    :param p_source_attribute_value: значения атрибутов
+    """
+    l_etl="INSERT INTO "+'"'+const('C_STG_SCHEMA').constant_value+'"'+"."+'"'+str(p_source_table_id)+'"'+"\n\t"\
+          "("+p_source_attribute+")\n\t"\
+          "VALUES\n\t"+p_source_attribute_value+";\n"
+    return l_etl
+
+
+def get_idmap_etl(
+      p_idmap_id: str,
+      p_source_table_id: str,
+      p_attribute_nk: str,
+      p_source_id: str,
+      p_idmap_nk_id: str,
+      p_idmap_rk_id: str,
+      p_etl_id: str,
+      p_etl_value: str
+):
+    """
+    Генерирует ETL для Idmap
+
+    :param p_idmap_id: id idmap
+    :param p_source_table_id: id таблицы источника
+    :param p_attribute_nk: скрипт конкатенации натуральных ключей из таблицы источника
+    :param p_source_id: source_system_id источника
+    :param p_idmap_nk_id: id атрибута натурального ключа
+    :param p_idmap_rk_id: id атрибута суррогатного ключа
+    :param p_etl_id: id атрибута etl_id
+    :param p_etl_value: значение для атрибута etl_id
+    """
+    l_etl="DROP TABLE IF EXISTS "+'"'+const('C_WRK_SCHEMA').constant_value+'"'+"."+'"'+str(p_idmap_id)+"_1"+'"'+";\n"\
+          "CREATE TABLE "+'"'+const('C_WRK_SCHEMA').constant_value+'"'+"."+'"'+str(p_idmap_id)+"_1"+'"'+" AS (\n"\
+          "SELECT\n\t"\
+          "DISTINCT\n\t"\
+          "CAST(\n\t\t"+p_attribute_nk+"\n\t\t||'@@'||\n\t\t"+"CAST('"+str(p_source_id)+"' AS VARCHAR(1000))\n\t"\
+          "AS VARCHAR (1000)) AS idmap_nk\n\t"\
+          "FROM "+'"'+const('C_STG_SCHEMA').constant_value+'"'+"."+'"'+str(p_source_table_id)+'"\n'+");\n"\
+          "DROP TABLE IF EXISTS "+'"'+const('C_WRK_SCHEMA').constant_value+'"'+"."+'"'+str(p_idmap_id)+"_2"+'"'+";\n"\
+          "CREATE TABLE "+'"'+const('C_WRK_SCHEMA').constant_value+'"'+"."+'"'+str(p_idmap_id)+"_2"+'"'+" AS (\n\t"\
+          "SELECT\n\t"\
+          "nk.idmap_nk\n\t"\
+          ",mx_rk.max_rk + ROW_NUMBER() OVER (ORDER BY 1) AS idmap_rk\n\t"\
+          "FROM "+'"'+const('C_WRK_SCHEMA').constant_value+'"'+"."+'"'+str(p_idmap_id)+"_1"+'"'+" as nk\n\t"\
+          "LEFT JOIN "+'"'+const('C_IDMAP_SCHEMA').constant_value+'"'+"."+'"'+str(p_idmap_id)+'"'+" as idmp\n\t\t"\
+          "ON 1=1\n\t\t"\
+          "AND nk.idmap_nk=idmp."+'"'+str(p_idmap_nk_id)+'"'+"\n\t" \
+          "CROSS JOIN (\n\t\tSELECT \n\t\tMAX("+'"'+str(p_idmap_rk_id)+'"'+") as max_rk \n\t\tFROM "\
+          +'"'+const('C_IDMAP_SCHEMA').constant_value+'"'+"."+'"'+str(p_idmap_id)+'"'+"\n\t) as mx_rk\n\t"\
+          "WHERE 1=1\n\t\t"\
+          "AND idmp."+'"'+str(p_idmap_rk_id)+'"'+" IS NULL\n);\n"\
+          "INSERT INTO idmap."+'"'+str(p_idmap_id)+'"'+"\n"\
+          "(\n\t"+'"'+str(p_idmap_rk_id)+'"\n\t'+","+'"'+str(p_idmap_nk_id)+'"\n\t'+","+'"'+str(p_etl_id)+'"\n'+")\n\t"\
+          "SELECT\n\t"\
+          "idmap_rk,\n\t"\
+          "idmap_nk,\n\tCAST('"+str(p_etl_value)+"' AS BIGINT)\n\t"\
+          "FROM "+'"'+const('C_WRK_SCHEMA').constant_value+'"'+"."+'"'+str(p_idmap_id)+"_2"+'"'+"\n;\n"\
+          "DROP TABLE IF EXISTS "+'"'+const('C_WRK_SCHEMA').constant_value+'"'+"."+'"'+str(p_idmap_id)+"_1"+'"'+";\n"\
+          "DROP TABLE IF EXISTS "+'"'+const('C_WRK_SCHEMA').constant_value+'"'+"."+'"'+str(p_idmap_id)+"_2"+'"'+";"
+    return l_etl
+
+def get_anchor_etl(
+        p_anchor_id: str,
+        p_anchor_rk_id: str,
+        p_anchor_source_id: str,
+        p_anchor_etl_id: str,
+        p_idmap_id: str,
+        p_idmap_rk_id: str,
+        p_idmap_nk_id: str,
+        p_etl_value: str
+):
+    """
+    Герерирует etl для anchor таблицы
+
+    :param p_anchor_id: id якорной таблицы
+    :param p_anchor_rk_id: id rk атрибута якорной таблицы
+    :param p_anchor_source_id: id атрибута source_system_id
+    :param p_anchor_etl_id: id атрибута etl_id
+    :param p_idmap_id: id idmap
+    :param p_idmap_rk_id: id атрибута rk idmap
+    :param p_idmap_nk_id: id атрибута nk idmap
+    :param p_etl_value: etl процесс
+    """
+    l_etl="INSERT INTO "+'"'+const('C_AM_SCHEMA').constant_value+'"'+"."+'"'+str(p_anchor_id)+'"'+"\n(\n\t"\
+          +'"'+str(p_anchor_rk_id)+'"'+",\n\t"+'"'+str(p_anchor_source_id)+'"'+",\n\t"+'"'+str(p_anchor_etl_id)+'"'+"\n)\n\t"\
+          "SELECT\n\t" \
+          +'"'+str(p_idmap_rk_id)+'"'+"\n\t"\
+         ",CAST(REVERSE(SUBSTR(REVERSE("+'"'+str(p_idmap_nk_id)+'"'+"),1,POSITION('@@' IN REVERSE("+'"'+str(p_idmap_nk_id)+'"'+"))-1)) AS INT)\n\t"\
+         ",CAST('"+str(p_etl_value)+"' AS BIGINT)\n\t"\
+         "FROM "+'"'+const('C_IDMAP_SCHEMA').constant_value+'"'+"."+'"'+str(p_idmap_id)+'"'+"\n\t"\
+         "CROSS JOIN (\n\t\t"\
+         "SELECT MAX("+'"'+str(p_anchor_rk_id)+'"'+") AS max_rk \n\t\t"\
+         "FROM "+'"'+const('C_AM_SCHEMA').constant_value+'"'+"."+'"'+str(p_anchor_id)+'"'+"\n\t) AS mx_rk\n\t"\
+         "WHERE 1=1\n\t\t"\
+         "AND " +'"'+str(p_idmap_rk_id)+'"'+">mx_rk.max_rk;"
+    return l_etl
 
 
 
