@@ -516,12 +516,11 @@ class MetaObject:
                 sys.exit("Значение атрибута "+str(i_attr)+" некорректное")
             # проверка на дубль значения атрибута (только у ключевых атрибутов метаданных)
             if l_all_attrs_dict.get(i_attr, None).get(const('C_PK').constant_value)==1: # если атрибут ключевой
-                # достаем все неудаленные объекты метаданных с таким же значением атрибута
+                # достаем в объекты метаданных с таким же значением атрибута
                 l_meta_attr_objs=search_object(
                     p_type=self.type,
                     p_attrs={
-                        i_attr:self._attrs.get(i_attr,None),
-                        const('C_DELETED').constant_value:0
+                        i_attr:self._attrs.get(i_attr,None)
                     }
                 )
                 l_meta_attr_objs_uuid_list=[] # добавляем все uuid полученных объектов в список

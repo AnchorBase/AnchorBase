@@ -218,6 +218,7 @@ def _get_object(p_id, p_class_name: str, p_type: str=None):
             return None
         return l_entity
 
+
 def get_values_sql(p_data_frame: list, p_cast_list: dict):
     """
     Возвращает преобразованный data frame в конструкцию values (...,...),
@@ -286,6 +287,79 @@ def _get_attribute_type(p_attribute: object):
     if p_attribute.type==const('C_TIE_COLUMN').constant_value:
         return "tie_attribute"
 
+def _get_table_attribute_property(p_table: object):
+    """
+    Получает атрибуты таблицы в зависимости от ее типа
+
+    :param p_table: таблица
+    """
+    if p_table.type==const('C_QUEUE_TABLE_TYPE_NAME').constant_value:
+        return getattr(p_table, "source_attribute")
+    if p_table.type==const('C_IDMAP_TABLE_TYPE_NAME').constant_value:
+        return getattr(p_table, "idmap_attribute")
+    if p_table.type==const('C_ANCHOR_TABLE_TYPE_NAME').constant_value:
+        return getattr(p_table, "anchor_attribute")
+    if p_table.type==const('C_ATTRIBUTE_TABLE_TYPE_NAME').constant_value:
+        return getattr(p_table, "attribute_table_attribute")
+    if p_table.type==const('C_TIE_TABLE_TYPE_NAME').constant_value:
+        return getattr(p_table, "tie_attribute")
+    if p_table.type==const('C_ENTITY').constant_value:
+        return getattr(p_table, "entity_attribute")
+
+def _get_table_property(p_table: object):
+    """
+    Получает наименование свойства таблицы в зависимости от ее типа
+
+    :param p_table: таблица
+    """
+    if p_table.type==const('C_QUEUE_TABLE_TYPE_NAME').constant_value:
+        return "source_table"
+    if p_table.type==const('C_IDMAP_TABLE_TYPE_NAME').constant_value:
+        return "idmap"
+    if p_table.type==const('C_ANCHOR_TABLE_TYPE_NAME').constant_value:
+        return "anchor"
+    if p_table.type==const('C_ATTRIBUTE_TABLE_TYPE_NAME').constant_value:
+        return "attribute_table"
+    if p_table.type==const('C_TIE_TABLE_TYPE_NAME').constant_value:
+        return "tie_table"
+    if p_table.type==const('C_ENTITY').constant_value:
+        return "entity"
+
+def _add_object(p_parent_object: object, p_object: object, p_object_type: str):
+    """
+    Добавляет объект в родительский объект
+
+    :param p_parent_object: родительский объект
+    :param p_object: добавляемый объект
+    :param p_object_type: тип добавляемого объекта (наименование атрибута класса)
+    :return:
+    """
+
+    l_object=getattr(p_parent_object,p_object_type)
+    if type(l_object).__name__=="list": # если уже есть атрибуты - добавляем в список
+        l_object.append(p_object)
+        setattr(p_parent_object,p_object_type,l_object)# добавление дочернего элемента
+    elif type(l_object).__name__=="object": # если атрибут есть, но он один - ошибка
+        sys.exit("Похоже нельзя добавить больше одного атрибута")
+    elif not l_object: # если нет атрибутов - добавляем список
+        setattr(p_parent_object,p_object_type,[p_object])
+
+def add_table(p_object: object, p_table: object):
+    """
+    Добавляет таблицу объекту (таблица или атрибут)
+
+    :param p_object: объект (таблица/атрибут)
+    :param p_table: добавляемая табица
+    """
+    p_table_property=_get_table_property(p_table=p_table)
+    _add_object(
+        p_parent_object=p_object,
+        p_object=p_table,
+        p_object_type=p_table_property
+    )
+
+
+
 def add_attribute(p_table: object, p_attribute: object):
     """
     Добавляет дочерний объект в родительский объект
@@ -295,15 +369,15 @@ def add_attribute(p_table: object, p_attribute: object):
     """
     # проверка
     _object_class_checker(p_class_name="Attribute", p_object=p_attribute)
+    # добавляем атрибут в таблицу
+    _add_object(
+        p_parent_object=p_table,
+        p_object=p_attribute,
+        p_object_type=_get_attribute_type(p_attribute)
+    )
+    # добавляем таблицу в атрибут
+    setattr(p_attribute, _get_table_property(p_table=p_table), p_table)
 
-    l_attribute=getattr(p_table,_get_attribute_type(p_attribute))
-    if type(l_attribute).__name__=="list": # если уже есть атрибуты - добавляем в список
-        l_attribute.append(p_attribute)
-        setattr(p_table,_get_attribute_type(p_attribute),l_attribute)# добавление дочернего элемента
-    elif type(l_attribute).__name__=="object": # если атрибут есть, но он один - ошибка
-        sys.exit("Похоже нельзя добавить больше одного атрибута")
-    elif not l_attribute: # если нет атрибутов - добавляем список
-        setattr(p_table,_get_attribute_type(p_attribute),[p_attribute])
 
 def remove_attribute(p_table: object, p_attribute: object):
     """
@@ -360,7 +434,7 @@ def create_table_ddl(p_table: object):
     l_schema=const('C_SCHEMA_TABLE_TYPE').constant_value.get(p_table.type,None) # схема таблицы
     p_attribute_sql="" # перечисление атрибутов
     p_attribute_partition_sql="" # указание атрибута для партиции
-    for i_attribute in p_table.attribute: # проходимся по всем атрибутам и формируем ddl
+    for i_attribute in _get_table_attribute_property(p_table=p_table): # проходимся по всем атрибутам и формируем ddl
         p_attribute_sql=p_attribute_sql+"\n"+'"'+str(i_attribute.id)+'"'+" AS "+i_attribute.datatype.data_type_sql+","
         if i_attribute.attribute_type==const('C_FROM_TYPE_NAME').constant_value:
             p_attribute_partition_sql="\nPARTITION BY RANGE ("+'"'+str(i_attribute.id)+'"'+")"
@@ -377,7 +451,7 @@ def create_view_ddl(p_table: object):
     """
     l_schema=const('C_SCHEMA_TABLE_TYPE').constant_value.get(p_table.type,None) # схема таблицы
     p_attribute_sql="" # перечисление атрибутов
-    for i_attribute in p_table.attribute:
+    for i_attribute in _get_table_attribute_property(p_table=p_table):
         p_attribute_sql=p_attribute_sql+"\n"+'"'+str(i_attribute.id)+'"'+" AS "+'"'+i_attribute.name+'"'+","
     p_attribute_sql=p_attribute_sql[:-1] # убираем последнюю запятую
     p_attribute_sql=p_attribute_sql[1:] # убираем первый перенос строк
@@ -385,7 +459,7 @@ def create_view_ddl(p_table: object):
           +"\nFROM "+l_schema+"."+'"'+str(p_table.id)+'";'
     return l_sql
 
-def get_source_table_etl(p_source_table: object, p_attribute_value: tuple, p_etl_id: int):
+def get_source_table_etl(p_source_table: object, p_attribute_value: list, p_etl_id: int):
     """
     ETL таблицы источника
 
@@ -396,7 +470,7 @@ def get_source_table_etl(p_source_table: object, p_attribute_value: tuple, p_etl
     l_attribute_name_list=[]
     l_update_attribute_sql=""
     l_etl_update_sql=""
-    for i_attribute in p_source_table.attribute:
+    for i_attribute in _get_table_attribute_property(p_table=p_source_table):
         if i_attribute.attribute_type not in ( # атрибуты etl и update добавляются в конец
                 [
                     const('C_ETL_TYPE_NAME').constant_value,
@@ -412,7 +486,7 @@ def get_source_table_etl(p_source_table: object, p_attribute_value: tuple, p_etl
     # сортируем id в соответствии с наименованием атрибутов
     l_attribute_sql="\n\t\t"
     for i_attribute_name in l_attribute_name_list:
-        for i_attribute in p_source_table.attribute:
+        for i_attribute in _get_table_attribute_property(p_table=p_source_table):
             if i_attribute.name==i_attribute_name:
                 l_attribute_sql=l_attribute_sql+'"'+str(i_attribute.id)+'"'+",\n\t\t"
     l_attribute_sql=l_attribute_sql+l_update_attribute_sql+",\n\t\t"+l_etl_update_sql+"\n\t"
@@ -448,17 +522,17 @@ def get_idmap_etl(
     l_idmap_nk_column=None
     l_idmap_rk_column=None
     l_etl_column=None
-    for i_attribute in p_idmap.attribute:
+    for i_attribute in _get_table_attribute_property(p_table=p_idmap):
         if i_attribute.attribute_type==const('C_RK_TYPE_NAME').constant_value:
             l_idmap_rk_column=i_attribute.id
         if i_attribute.attribute_type==const('C_NK_TYPE_NAME').constant_value:
             l_idmap_nk_column=i_attribute.id
         if i_attribute.attribute_type==const('C_ETL_TYPE_NAME').constant_value:
             l_etl_column=i_attribute.id
-    for i_source_table in p_idmap.source_table:
+    for i_source_table in p_idmap.entity.source_table:
         l_column_nk_sql=""
         for i_column_nk in p_idmap.source_attribute_nk:
-            if i_source_table.id==i_column_nk.source_table.id:
+            if i_source_table.id==i_column_nk.id:
                 l_column_nk_sql=l_column_nk_sql+"CAST("+'"'+str(i_column_nk.id)+'"'+" AS VARCHAR(4000))\n\t\t||'@@'||\n\t\t"
         l_column_nk_sql=l_column_nk_sql[:-14]
         l_source_id=i_source_table.source.source_id
@@ -492,14 +566,14 @@ def get_anchor_etl(
     l_anchor_etl_id=None
     l_idmap_rk_id=None
     l_idmap_nk_id=None
-    for i_attribute in p_anchor.attribute:
+    for i_attribute in _get_table_attribute_property(p_table=p_anchor):
         if i_attribute.attribute_type==const('C_RK_TYPE_NAME').constant_value:
             l_anchor_rk_id=i_attribute.id
         if i_attribute.attribute_type==const('C_SOURCE_TYPE_NAME').constant_value:
             l_anchor_source_id=i_attribute.id
         if i_attribute.attribute_type==const('C_ETL_TYPE_NAME').constant_value:
             l_anchor_etl_id=i_attribute.id
-    for i_attribute in p_anchor.entity.idmap.attribute:
+    for i_attribute in p_anchor.entity.idmap.idmap_attribute:
         if i_attribute.attribute_type==const('C_RK_TYPE_NAME').constant_value:
             l_idmap_rk_id=i_attribute.id
         if i_attribute.attribute_type==const('C_NK_TYPE_NAME').constant_value:
@@ -532,7 +606,7 @@ def get_attribute_etl(p_attribute_table: object, p_etl_id: str):
     l_idmap_rk_id=None
     l_idmap_nk_id=None
     l_column_value_datatype=None
-    for i_attribute in p_attribute_table.attribute:
+    for i_attribute in _get_table_attribute_property(p_table=p_attribute_table):
         if i_attribute.attribute_type==const('C_RK_TYPE_NAME').constant_value:
             l_attribute_rk_id=i_attribute.id
         if i_attribute.attribute_type==const('C_VALUE_TYPE_NAME').constant_value:
@@ -544,19 +618,19 @@ def get_attribute_etl(p_attribute_table: object, p_etl_id: str):
             l_to_dttm_id=i_attribute.id
         if i_attribute.attribute_type==const('C_ETL_TYPE_NAME').constant_value:
             l_etl_id=i_attribute.id
-    for i_attribute in p_attribute_table.entity.idmap.attribute:
+    for i_attribute in p_attribute_table.entity.idmap.idmap_attribute:
         if i_attribute.attribute_type==const('C_RK_TYPE_NAME').constant_value:
             l_idmap_rk_id=i_attribute.id
         if i_attribute.attribute_type==const('C_NK_TYPE_NAME').constant_value:
             l_idmap_nk_id=i_attribute.id
-    for i_source_attribute in p_attribute_table.entity_attibute.source_attribute:
+    for i_source_attribute in p_attribute_table.entity_attribute.source_attribute:
         l_column_nk_sql=""
         for i_column_nk in p_attribute_table.entity.idmap.source_attribute_nk:
             if i_source_attribute.source_table.id==i_column_nk.source_table.id:
                 l_column_nk_sql=l_column_nk_sql+"CAST("+'"'+str(i_column_nk.id)+'"'+" AS VARCHAR(4000))\n\t\t||'@@'||\n\t\t"
         l_column_value_id=i_source_attribute.id
         l_update_timestamp_id=None
-        for i_source_attribute_all in i_source_attribute.source_table.attribute:
+        for i_source_attribute_all in i_source_attribute.source_table.source_attribute:
             if i_source_attribute_all.attribute_type==const('C_UPDATE_TYPE_NAME').constant_value:
                 l_update_timestamp_id=i_source_attribute_all.id
         l_column_nk_sql=l_column_nk_sql[:-14]
@@ -586,7 +660,7 @@ def get_attribute_etl(p_attribute_table: object, p_etl_id: str):
 
 def get_tie_etl(
         p_tie: object,
-        p_etl: str
+        p_etl_id: str
 ):
     """
     Генерирует etl для таблицы Tie
@@ -604,7 +678,7 @@ def get_tie_etl(
     l_idmap_nk_id=None
     l_link_idmap_rk_id=None
     l_link_idmap_nk_id=None
-    for i_attribute in p_tie.attribute:
+    for i_attribute in _get_table_attribute_property(p_table=p_tie):
         if i_attribute.attribute_type==const('C_RK_TYPE_NAME').constant_value:
             l_anchor_rk_id=i_attribute.id
         if i_attribute.attribute_type==const('C_LINK_RK_TYPE_NAME').constant_value:
@@ -615,12 +689,12 @@ def get_tie_etl(
             l_to_dttm_id=i_attribute.id
         if i_attribute.attribute_type==const('C_ETL_TYPE_NAME').constant_value:
             l_etl_id=i_attribute.id
-    for i_attribute in p_tie.entity.idmap.attribute:
+    for i_attribute in p_tie.entity.idmap.idmap_attribute:
         if i_attribute.attribute_type==const('C_RK_TYPE_NAME').constant_value:
             l_idmap_rk_id=i_attribute.id
         if i_attribute.attribute_type==const('C_NK_TYPE_NAME').constant_value:
             l_idmap_nk_id=i_attribute.id
-    for i_attribute in p_tie.link_entity.idmap.attribute:
+    for i_attribute in p_tie.link_entity.idmap.idmap_attribute:
         if i_attribute.attribute_type==const('C_RK_TYPE_NAME').constant_value:
             l_link_idmap_rk_id=i_attribute.id
         if i_attribute.attribute_type==const('C_NK_TYPE_NAME').constant_value:
@@ -631,11 +705,12 @@ def get_tie_etl(
             if i_source_table.id==i_column_nk.source_table.id:
                 l_column_nk_sql=l_column_nk_sql+"CAST("+'"'+str(i_column_nk.id)+'"'+" AS VARCHAR(4000))\n\t\t||'@@'||\n\t\t"
         l_link_column_nk_sql=""
-        for i_column_nk in p_tie.source_attribute_link_nk:
-            if i_source_table.id==i_column_nk.source_table.id:
-                l_link_column_nk_sql=l_link_column_nk_sql+"CAST("+'"'+str(i_column_nk.id)+'"'+" AS VARCHAR(4000))\n\t\t||'@@'||\n\t\t"
+        for i_entity_link_attribute in p_tie.entity_attribute:
+            for i_column_nk in i_entity_link_attribute.source_attribute:
+                if i_source_table.id==i_column_nk.source_table.id:
+                    l_link_column_nk_sql=l_link_column_nk_sql+"CAST("+'"'+str(i_column_nk.id)+'"'+" AS VARCHAR(4000))\n\t\t||'@@'||\n\t\t"
         l_update_timestamp_id=None
-        for i_source_attribute in i_source_table.attribute:
+        for i_source_attribute in i_source_table.source_attribute:
             if i_source_attribute.attribute_type==const('C_UPDATE_TYPE_NAME').constant_value:
                 l_update_timestamp_id=i_source_attribute.id
         l_column_nk_sql=l_column_nk_sql[:-14]
@@ -660,7 +735,7 @@ def get_tie_etl(
                 p_stg_table_id=i_source_table.id,
                 p_update_timestamp_id=l_update_timestamp_id,
                 p_source_id=i_source_table.source.source_id,
-                p_etl_value=p_etl
+                p_etl_value=p_etl_id
             )
         )
         return l_etl
@@ -687,8 +762,7 @@ class _DWHObject:
                  p_tie =None,
                  p_tie_attribute =None,
                  p_desc: str =None,
-                 p_source =None,
-                 p_link_entity_attribute =None
+                 p_source =None
     ):
         """
         Конструктор
@@ -714,7 +788,6 @@ class _DWHObject:
         self._tie_attribute=p_tie_attribute
         self._desc=p_desc
         self._source=p_source
-        self._link_entity_attribute=p_link_entity_attribute
 
 
     @property
@@ -866,25 +939,6 @@ class _DWHObject:
     def entity_attribute(self, p_new_entity_attribute):
 
         self._entity_attribute=p_new_entity_attribute
-
-    @property
-    def link_entity_attribute(self):
-        """
-        Таблицы источники
-        """
-        # проверка объекта
-        _class_checker(p_class_name="Attribute",p_object=self._link_entity_attribute)
-        # собираем метаданные, если указаны
-        l_meta_obj=self.object_attrs_meta.get(const('C_LINK_ENTITY_COLUMN').constant_value,None)
-        # выбираем из метаданных
-        l_object=_get_object(p_id=l_meta_obj, p_class_name="Attribute",p_type=const('C_LINK_ENTITY_COLUMN').constant_value)
-
-        return self._link_entity_attribute or l_object
-
-    @link_entity_attribute.setter
-    def link_entity_attribute(self, p_new_link_entity_attribute):
-
-        self._link_entity_attribute=p_new_link_entity_attribute
 
     @property
     def idmap(self):
@@ -1050,6 +1104,199 @@ class _DWHObject:
 
         self._desc=p_new_desc
 
+    def __get_property_id(self,p_property):
+        """
+        Получает id свойства объекта
+        """
+        l_id=None
+        if not p_property:
+            return None
+        if type(p_property).__name__=="list": # если свойство объекта - лист
+            l_id=[]
+            for i_property in p_property:
+                l_id.append(str(i_property.id))
+        else:
+            l_id=str(p_property.id)
+        return l_id
+
+    @property
+    def metadata_json(self):
+        """
+        Метаданные объекта в формате json
+        """
+        l_json={}
+        l_all_attribute_list=dir(self) # лист с атрибутами и переменными объекта
+        l_constant_name="C_"+str(self.type).upper()+"_META_ATTRIBUTES" # имя константы, содержащей атрибуты метаданных объекта
+        l_metadata_attributes=list(const(l_constant_name).constant_value.keys())
+
+        # основные атрибуты
+        l_json.update(
+            {
+                const('C_NAME').constant_value:self.name,
+            }
+        )
+        # атрибуты объекта Attribute
+        if type(self).__name__=="Attribute":
+            l_json.update(
+                {
+                    const('C_TYPE_VALUE').constant_value:self.attribute_type,
+                    const('C_DATATYPE').constant_value:self.datatype.data_type_name,
+                    const('C_LENGTH').constant_value:self.datatype.data_type_length,
+                    const('C_SCALE').constant_value:self.datatype.data_type_scale
+                }
+            )
+            if self.type==const('C_ENTITY_COLUMN').constant_value: # если атрибут сущности
+                l_json.update(
+                    {
+                        const('C_PK').constant_value:self.pk,
+                    }
+                )
+                l_json.pop(const('C_TYPE_VALUE').constant_value) # убираем атрибут type
+
+        # атрибуты queue таблицы
+        if self.type==const('C_QUEUE_TABLE_TYPE_NAME').constant_value:
+            l_json.update(
+                {
+                    const('C_SCHEMA').constant_value:self.schema,
+                    const('C_SOURCE_NAME').constant_value:self.name,
+                    const('C_NAME').constant_value:self.queue_name # переопределяем наименование
+                }
+            )
+        # если указана связанная queue таблица
+        if self.source_table:
+            l_json.update(
+                {
+                    const('C_QUEUE_TABLE_TYPE_NAME').constant_value:self.__get_property_id(p_property=self.source_table)
+                }
+            )
+        # если указан атрибут источника
+        if self.source_attribute:
+            l_json.update(
+                {
+                    const('C_QUEUE_COLUMN').constant_value:self.__get_property_id(p_property=self.source_attribute)
+                }
+            )
+        # если указан источник
+        if self.source:
+            l_json.update(
+                {
+                    const('C_SOURCE').constant_value:self.__get_property_id(p_property=self.source)
+                }
+            )
+        # если указана сущность
+        if self.entity:
+            l_json.update(
+                {
+                    const('C_ENTITY').constant_value:self.__get_property_id(p_property=self.entity)
+                }
+            )
+        # если указаны натуральные ключи
+        if self.type==const('C_IDMAP_TABLE_TYPE_NAME').constant_value:
+            l_json.update(
+                {
+                    const('C_ATTRIBUTE_NK').constant_value:self.__get_property_id(p_property=self.source_attribute_nk)
+                }
+            )
+        # если заполнены атрибуты idmap
+        if self.idmap_attribute:
+            l_json.update(
+                {
+                    const('C_IDMAP_COLUMN').constant_value:self.__get_property_id(p_property=self.idmap_attribute)
+                }
+            )
+
+        if self.idmap:
+            l_json.update(
+                {
+                    const('C_IDMAP_TABLE_TYPE_NAME').constant_value:self.__get_property_id(p_property=self.idmap)
+                }
+            )
+
+        # если заполнены атрибуты anchor
+        if self.anchor_attribute:
+            l_json.update(
+                {
+                    const('C_ANCHOR_COLUMN').constant_value:self.__get_property_id(p_property=self.anchor_attribute)
+                }
+            )
+        # если указан якорь
+        if self.anchor:
+            l_json.update(
+                {
+                    const('C_ANCHOR_TABLE_TYPE_NAME').constant_value:self.__get_property_id(p_property=self.anchor)
+                }
+            )
+        # Если указана таблица атрибут
+        if self.attribute_table:
+            l_json.update(
+                {
+                    const('C_ATTRIBUTE_TABLE_TYPE_NAME').constant_value:self.__get_property_id(p_property=self.attribute_table)
+                }
+            )
+        # Если указаны атрибуты таблицы атрибут
+        if self.attribute_table_attribute:
+            l_json.update(
+                {
+                    const('C_ATTRIBUTE_COLUMN').constant_value:self.__get_property_id(p_property=self.attribute_table_attribute)
+                }
+            )
+        # Если указаны атрибуты сущности
+        if self.entity_attribute:
+            l_json.update(
+                {
+                    const('C_ENTITY_COLUMN').constant_value:self.__get_property_id(p_property=self.entity_attribute)
+                }
+            )
+        # Если указан tie
+        if self.tie:
+            l_json.update(
+                {
+                    const('C_TIE_TABLE_TYPE_NAME').constant_value:self.__get_property_id(p_property=self.tie)
+                }
+            )
+        # Если указаны атрибуты tie
+        if self.tie_attribute:
+            l_json.update(
+                {
+                    const('C_TIE_COLUMN').constant_value:self.__get_property_id(p_property=self.tie_attribute)
+                }
+            )
+        # Если указана связанная сущность
+        if self.link_entity:
+            l_json.update(
+                {
+                    const('C_LINK_ENTITY').constant_value:self.__get_property_id(p_property=self.link_entity)
+                }
+            )
+
+        return l_json
+
+    def create_metadata(self):
+        """
+        Записывает метаданные объекта
+        """
+        meta.create_object(
+            meta.MetaObject(
+                p_type=self.type,
+                p_uuid=str(self.id),
+                p_attrs=self.metadata_json
+
+            )
+        )
+
+    def update_metadata(self):
+        """
+        Обновляет метаданные объекта
+        """
+        meta.update_object(
+            meta.MetaObject(
+                p_type=self.type,
+                p_uuid=str(self.id),
+                p_attrs=self.metadata_json
+            )
+        )
+
+
 
 class Attribute(_DWHObject):
     """
@@ -1143,7 +1390,10 @@ class Attribute(_DWHObject):
         """
         Признак ключа
         """
-        return self._pk or self.object_attrs_meta.get(const('C_PK').constant_value,None)
+        if self._pk is not None:
+            return self._pk
+        else:
+            return self.object_attrs_meta.get(const('C_PK').constant_value,None)
 
     def __source_attribute_exist_checker(self):
         """
@@ -1312,7 +1562,7 @@ class SourceTable(_DWHObject):
         """
         l_attribute_sql=""
         l_attribute_name_list=[]
-        for i_attribute in self.attribute:
+        for i_attribute in self.source_attribute:
             l_attribute_name_list.append(i_attribute.name)
         l_attribute_name_list.sort() # сортируем по наименоваию
         for i_attribute in l_attribute_name_list:
@@ -1633,7 +1883,6 @@ class Tie(_DWHObject):
                  p_entity: object =None,
                  p_link_entity =None,
                  p_entity_attribute =None,
-                 p_link_entity_attribute =None,
                  p_source_table =None
                  ):
         super().__init__(
@@ -1643,9 +1892,7 @@ class Tie(_DWHObject):
             p_link_entity=p_link_entity,
             p_entity_attribute=p_entity_attribute,
             p_source_table=p_source_table,
-            p_link_entity_attribute=p_link_entity_attribute,
             p_entity=p_entity
-
         )
 
         # создаем автоматом атрибуты, если нет в метаданных
