@@ -11,6 +11,8 @@ import Postgresql
 from platform import system
 import MSSQL
 import copy
+import uuid
+
 
 source = DWH.Source(
     p_id='0a884f59-48b6-4afe-838e-57bdbbb9ec7c'
@@ -155,17 +157,65 @@ DWH.add_table(p_object=idmap_client,p_table=src_table_client)
 # print(
 #     DWH.get_tie_etl(p_tie=tie_client, p_etl_id=1)[0]
 # )
-for j in entity_client.entity_attribute:
-    l_json=j.metadata_json
-    l_key=list(l_json.keys())
-    for i in l_key:
-        print(str(i)+":"+str(l_json.get(i)))
-    print("")
-
-    j.create_metadata()
+# for j in entity_client.entity_attribute:
+#     l_json=j.metadata_json
+#     l_key=list(l_json.keys())
+#     for i in l_key:
+#         print(str(i)+":"+str(l_json.get(i)))
+#     print("")
+#
+#     j.create_metadata()
 
 # for i in src_table_client.source_attribute:
 #     print(str(i.id)+" "+i.name)
+
+l_json = """
+{
+    "entity":"CLIENTS",
+    "description":"client entity",
+    "attribute":[
+            {
+            "name":"id",
+            "pk":1,
+            "datatype":"int",
+            "length":null,
+            "scale":null,
+            "link_entity":null,
+            "description":"client id",
+            "source":[
+                    {
+                    "source":"0a884f59-48b6-4afe-838e-57bdbbb9ec7c",
+                    "schema":"crm",
+                    "table":"client",
+                    "column":"client_id"
+                    }
+                ]
+        }
+    ,
+        {
+            "name":"name",
+            "pk":0,
+            "datatype":"varchar",
+            "length":100,
+            "scale":null,
+            "link_entity":null,
+            "description":"client id",
+            "source":[
+                    {
+                    "source":"0a884f59-48b6-4afe-838e-57bdbbb9ec7c",
+                    "schema":"crm",
+                    "table":"client",
+                    "column":"client_id"
+                    }
+                ]
+        }
+        ]
+}
+"""
+
+model=Model.Model(p_json=l_json)
+
+
 
 
 

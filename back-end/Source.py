@@ -172,7 +172,9 @@ class Source:
         self._port=p_port
         self._deleted=0
 
-    @property
+        # проверяем, есть ли указанный id и определяем атрибуты из метаданных
+        self.__source_meta_attrs=self.__source_meta_attrs()
+
     def __source_meta_attrs(self):
         """
         Находит атрибуты существующих в метаданных источинков

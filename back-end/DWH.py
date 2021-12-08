@@ -789,6 +789,9 @@ class _DWHObject:
         self._desc=p_desc
         self._source=p_source
 
+        # проверяем, есть ли указанный id и определяем атрибуты из метаданных
+        self.object_attrs_meta=self.__object_attrs_meta()
+
 
     @property
     def id(self):
@@ -801,8 +804,7 @@ class _DWHObject:
         else:
             return self._id
 
-    @property
-    def object_attrs_meta(self):
+    def __object_attrs_meta(self):
         """
         Атрибуты объекта ХД из метаданных
         """
@@ -1437,7 +1439,8 @@ class Entity(_DWHObject):
             p_idmap=p_idmap,
             p_anchor=p_anchor,
             p_attribute_table=p_attribute_table,
-            p_tie=p_tie
+            p_tie=p_tie,
+            p_desc=p_desc
         )
         self._name=p_name
 

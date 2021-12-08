@@ -13,6 +13,7 @@ C_LINK_ENTITY = "link_entity"
 C_ENTITY_ATTRIBUTE = "entity_attribute" # атрибут сущности
 C_TABLE = "table" # таблица
 C_COLUMN = "column" # колонка
+C_ATTRIBUTE = "attribute"
 C_SCHEMA = "schema" # схема
 C_NAME = "name" # наименование
 C_SOURCE_NAME = "source_name" # наименование на источнике
