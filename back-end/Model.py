@@ -1,4 +1,4 @@
-import Metadata
+from Metadata import *
 import SQLScript
 import Support
 import Source
@@ -12,7 +12,7 @@ import json
 from SystemObjects import Constant as const
 from Source import Source as Source
 import uuid
-from DWH import Entity as Entity
+from DWH import *
 from collections import Counter
 
 class Model:
@@ -47,7 +47,7 @@ class Model:
     # ]
     # !!! если у сущности на разных источниках разные поля бизнес-ключи (id, ИНН  к примеру), их нужно указывать в качестве источинка у pk сущности
     @staticmethod
-    def create_model(model, tran):
+    def _create_model(model, tran):
         # проверки бизнес-модели
         exist_entity_meta=Metadata.Metadata.select_meta("entity",None,0) # уже созданные сущности
         exist_entity_list=[]
@@ -317,7 +317,7 @@ class Model:
             sys.exit("Json пуст")
 
     @property
-    def entity(self) -> object:
+    def entity_param(self) -> object:
         """
         Сущность
         """
@@ -330,9 +330,110 @@ class Model:
         l_entity=_EntityParam(
             p_name=self.json.get(const('C_ENTITY').constant_value),
             p_desc=self.json.get(const('C_DESC').constant_value),
-            p_attribute=self.json.get(const('C_ATTRIBUTE').constant_value)
+            p_attribute_param=self.json.get(const('C_ATTRIBUTE').constant_value)
         )
         return l_entity
+
+    def create_model(self):
+        """
+        Создает модель данных
+        """
+        l_source_table_list=[] # лист с таблицами источниками
+        # создаем сущность
+        l_entity=self.__create_entity()
+        for i_attribute_param in self.entity_param.attribute_param:
+            # создаем атрибуты сущности
+            l_entity_attribute=self.__create_entity_attribute(p_entity=l_entity, p_attribute_param=i_attribute_param)
+            for i_source_param in i_attribute_param.source_param:
+                l_schema=i_source_param.schema
+                l_table=i_source_param.table
+                l_source_id=i_source_param.source_id
+                l_unique_source_table_name=str(l_source_id)+"_"+str(l_schema)+"_"+str(l_table) # формируем уникальное наименование таблицы источника
+                if l_unique_source_table_name not in l_source_table_list: # если таблица источник еще не была добавлена
+                    # создаем таблицы источники
+                    l_source_table=self.__create_source_table(
+                        p_entity=l_entity,
+                        p_attribute=l_entity_attribute,
+                        p_source_param=i_source_param
+                    )
+                    l_source_table_list.append(l_unique_source_table_name)
+        return l_entity
+
+
+    def __create_entity(self):
+        """
+        Создает объект сущность на основе параметров
+        """
+        l_entity=Entity(
+            p_name=self.entity_param.name,
+            p_desc=self.entity_param.desc
+        )
+        return l_entity
+
+    def __create_entity_attribute(self, p_entity: object, p_attribute_param: object):
+        """
+        Создает атрибуты сущности на основе параметров
+
+        :param p_entity: объект класса Entity - сущность
+        :param p_attribute_param: объект класса _AttributeParam - параметры атрибута
+        """
+        link_entity=None
+        if p_attribute_param.link_entity_id:
+            link_entity=Entity(
+                p_id=p_attribute_param.link_entity_id
+            )
+
+        l_entity_attribute=Attribute(
+            p_name=p_attribute_param.name,
+            p_desc=p_attribute_param.desc,
+            p_datatype=p_attribute_param.datatype,
+            p_length=p_attribute_param.length,
+            p_scale=p_attribute_param.scale,
+            p_link_entity=link_entity,
+            p_type=const('C_ENTITY_COLUMN').constant_value,
+            p_pk=p_attribute_param.pk
+        )
+        # добавляем атрибут в сущность
+        add_attribute(p_table=p_entity,p_attribute=l_entity_attribute)
+
+        return l_entity_attribute
+
+    def __create_source_table(self, p_entity: object, p_attribute: object, p_source_param: object):
+        """
+        Создает таблицу источник на основе параметров
+
+        :param p_entity: объект класса Entity - сущность
+        :param p_attribute: объект класса Attribute - атрибут сущности
+        :param p_source_param: объекта класса _SourceParam - параметры источника атрибута сущности
+        """
+        # сперва создаем объект класса, чтобы сформировать наименование
+        l_source_table_param=SourceTable(
+            p_name=p_source_param.table,
+            p_source=Source(p_id=p_source_param.source_id),
+            p_schema=p_source_param.schema
+        )
+        # ищем указанную таблицу в метаданных, если она ранее была добавлена
+        l_source_table_meta_obj=search_object(
+            p_type=const('C_QUEUE_TABLE_TYPE_NAME').constant_value,
+            p_attrs={
+                const('C_NAME').constant_value:l_source_table_param.queue_name
+            }
+        )
+        l_source_table_meta=None
+        # если таблица по наименованию найдена, создаем объект класса
+        if l_source_table_meta_obj.__len__()>0:
+            l_source_table_meta=SourceTable(
+                p_id=l_source_table_meta_obj[0].uuid
+            )
+        l_source_table=l_source_table_meta or l_source_table_param # либо из метаданных, либо новый объект
+        # добавялем таблицу источник в сущность
+        add_table(p_object=p_entity, p_table=l_source_table)
+
+        return l_source_table
+
+
+
+
 
 class _SourceParam:
     """
@@ -435,7 +536,7 @@ class _AttributeParam:
     def __init__(self,
                   p_name: str,
                   p_datatype: str,
-                  p_source: list,
+                  p_source_param: list,
                   p_length: int =None,
                   p_scale: int =None,
                   p_link_entity_id: str =None,
@@ -461,7 +562,7 @@ class _AttributeParam:
          self._link_entity_id=p_link_entity_id
          self._desc=p_desc
          self._pk=p_pk
-         self._source=p_source
+         self._source_param=p_source_param
 
         # проверка параметров во время инициализации
          self.__attribute_param_checker()
@@ -516,7 +617,7 @@ class _AttributeParam:
         return self._pk
 
     @property
-    def source(self) -> list:
+    def source_param(self) -> list:
         """
         Параметры источника атрибута
         """
@@ -562,11 +663,11 @@ class _AttributeParam:
         """
         Проверяет корректность источника атрибута
         """
-        if not self._source:
+        if not self._source_param:
             sys.exit("У атрибута не указан ни один источник")
         else:
             l_source=[]
-            for i_source in self._source:
+            for i_source in self._source_param:
                 l_source.append(
                     _SourceParam(
                         p_source_id=i_source.get(const('C_SOURCE').constant_value),
@@ -592,7 +693,7 @@ class _EntityParam:
     """
     def __init__(self,
                  p_name: str,
-                 p_attribute: list,
+                 p_attribute_param: list,
                  p_desc: str =None
     ):
         """
@@ -604,7 +705,7 @@ class _EntityParam:
         """
 
         self._name=p_name
-        self._attribute=p_attribute
+        self._attribute_param=p_attribute_param
         self._desc=p_desc
 
         # проверка параметров во время инициализации
@@ -618,7 +719,7 @@ class _EntityParam:
         return self._name.lower()
 
     @property
-    def attribute(self) -> list:
+    def attribute_param(self) -> list:
         """
         Атрибуты сущности
         """
@@ -654,11 +755,11 @@ class _EntityParam:
         Проверка параметров атрибутов
         """
         l_attribute=[]
-        if not self._attribute:
+        if not self._attribute_param:
             sys.exit("У сущности нет ни одного атрибута")
         else:
             l_pk_cnt=0
-            for i_attribute in self._attribute:
+            for i_attribute in self._attribute_param:
                 l_attribute.append(
                     _AttributeParam(
                         p_name=i_attribute.get(const('C_NAME').constant_value),
@@ -668,7 +769,7 @@ class _EntityParam:
                         p_length=i_attribute.get(const('C_LENGTH').constant_value),
                         p_scale=i_attribute.get(const('C_SCALE').constant_value),
                         p_link_entity_id=i_attribute.get(const('C_LINK_ENTITY').constant_value),
-                        p_source=i_attribute.get(const('C_SOURCE').constant_value)
+                        p_source_param=i_attribute.get(const('C_SOURCE').constant_value)
                     )
                 )
                 l_pk_cnt=l_pk_cnt+i_attribute.get(const('C_PK').constant_value)
@@ -683,8 +784,8 @@ class _EntityParam:
         """
         l_source_table=[] # список с наименованиями таблиц источников
         l_source_table_pk=[] # список с наименованиями таблиц источников, указанных у pk атрибута
-        for i_attribute in self.attribute:
-            for i_source in i_attribute.source:
+        for i_attribute in self.attribute_param:
+            for i_source in i_attribute.source_param:
                 l_source_table.append(str(i_source.source_id)+"_"+str(i_source.schema)+"_"+str(i_source.table))
                 if i_attribute.pk==1:
                     l_source_table_pk.append(str(i_source.source_id)+"_"+str(i_source.schema)+"_"+str(i_source.table))
@@ -697,7 +798,7 @@ class _EntityParam:
             Проверка на дублирующийся атрибут сущности
             """
             l_attribute_list=[]
-            for i_attribute in self.attribute:
+            for i_attribute in self.attribute_param:
                 l_attribute_list.append(i_attribute.name)
                 l_attribute_cnt=Counter(l_attribute_list).get(i_attribute.name)
                 if l_attribute_cnt>1:
@@ -707,7 +808,7 @@ class _EntityParam:
         """
         Проверяет, что в метаданных нет сущности с таким наименованием
         """
-        l_entity_meta_obj=Metadata.search_object(
+        l_entity_meta_obj=search_object(
             p_type=const('C_ENTITY').constant_value,
             p_attrs={
                 const('C_NAME').constant_value:self.name

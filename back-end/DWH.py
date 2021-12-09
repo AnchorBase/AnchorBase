@@ -212,7 +212,7 @@ def _get_object(p_id, p_class_name: str, p_type: str=None):
         for i_id in p_id:
             if i_id:
                 l_entity.append(
-                    _class_define(p_class_name=p_class_name,p_id=p_id, p_type=p_type)
+                    _class_define(p_class_name=p_class_name,p_id=i_id, p_type=p_type)
                 )
         if l_entity.__len__()==0: # если не найдено ни одной сущности
             return None
@@ -1488,7 +1488,7 @@ class SourceTable(_DWHObject):
         self._increment=p_increment
 
         # добавляем автоматически тенические атрибуты
-        self.__create_source_attribure()
+        self.__create_source_attribute()
 
     @property
     def name(self):
@@ -1584,7 +1584,7 @@ class SourceTable(_DWHObject):
               +l_increment_sql+";"
         return l_sql
 
-    def __create_source_attribure(self):
+    def __create_source_attribute(self):
         """
         Создает технические атрибуты для source таблицы
         """
