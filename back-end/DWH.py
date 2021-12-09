@@ -360,12 +360,13 @@ def add_table(p_object: object, p_table: object):
 
 
 
-def add_attribute(p_table: object, p_attribute: object):
+def add_attribute(p_table: object, p_attribute: object, p_add_table_flg: int =1):
     """
     Добавляет дочерний объект в родительский объект
 
     :param p_table: дочерний объект
     :param p_attribute_list: лист из дочерних объектов уже добавленных в родительский объект
+    :param p_add_table_flg: признак необходимости также добавить таблицу в атрибут (по умолчанию - да)
     """
     # проверка
     _object_class_checker(p_class_name="Attribute", p_object=p_attribute)
@@ -375,8 +376,9 @@ def add_attribute(p_table: object, p_attribute: object):
         p_object=p_attribute,
         p_object_type=_get_attribute_type(p_attribute)
     )
-    # добавляем таблицу в атрибут
-    setattr(p_attribute, _get_table_property(p_table=p_table), p_table)
+    if p_add_table_flg==1:
+        # добавляем таблицу в атрибут
+        setattr(p_attribute, _get_table_property(p_table=p_table), p_table)
 
 
 def remove_attribute(p_table: object, p_attribute: object):
@@ -426,6 +428,17 @@ def _get_table_postfix(p_table_type: str):
     """
     return const('C_TABLE_NAME_POSTFIX').constant_value.get(p_table_type,None)
 
+def drop_table_ddl(p_table: object):
+    """
+    генерирует скрипт удаления таблицы
+
+    :param p_table: таблица
+    """
+    l_schema=const('C_SCHEMA_TABLE_TYPE').constant_value.get(p_table.type,None) # схема таблицы
+    l_sql="DROP TABLE IF EXISTS"+'"'+str(l_schema)+'"'+"."+'"'+str(p_table.id)+'"'+" CASCADE;"
+    return l_sql
+
+
 def create_table_ddl(p_table: object):
     """
     Генерирует DDL таблицы
@@ -435,7 +448,7 @@ def create_table_ddl(p_table: object):
     p_attribute_sql="" # перечисление атрибутов
     p_attribute_partition_sql="" # указание атрибута для партиции
     for i_attribute in _get_table_attribute_property(p_table=p_table): # проходимся по всем атрибутам и формируем ddl
-        p_attribute_sql=p_attribute_sql+"\n"+'"'+str(i_attribute.id)+'"'+" AS "+i_attribute.datatype.data_type_sql+","
+        p_attribute_sql=p_attribute_sql+"\n"+'"'+str(i_attribute.id)+'"'+" "+i_attribute.datatype.data_type_sql+","
         if i_attribute.attribute_type==const('C_FROM_TYPE_NAME').constant_value:
             p_attribute_partition_sql="\nPARTITION BY RANGE ("+'"'+str(i_attribute.id)+'"'+")"
     p_attribute_sql=p_attribute_sql[:-1] # убираем последнюю запятую
@@ -455,7 +468,7 @@ def create_view_ddl(p_table: object):
         p_attribute_sql=p_attribute_sql+"\n"+'"'+str(i_attribute.id)+'"'+" AS "+'"'+i_attribute.name+'"'+","
     p_attribute_sql=p_attribute_sql[:-1] # убираем последнюю запятую
     p_attribute_sql=p_attribute_sql[1:] # убираем первый перенос строк
-    l_sql="CREATE OR REPLACE VIEW "+l_schema+"."+'"'+p_table.name+'"'+" AS \n"+p_attribute_sql\
+    l_sql="CREATE OR REPLACE VIEW "+l_schema+"."+'"'+p_table.name+'"'+" AS \nSELECT\n"+p_attribute_sql\
           +"\nFROM "+l_schema+"."+'"'+str(p_table.id)+'";'
     return l_sql
 
@@ -1671,10 +1684,9 @@ class Idmap(_DWHObject):
                 p_idmap=self
             )
             etl_column=Attribute(
-                p_name=self.entity.name+"_"+const('C_ETL_TYPE_NAME').constant_value,
+                p_name=const('C_ETL_TYPE_NAME').constant_value,
                 p_type=const('C_IDMAP_COLUMN').constant_value,
                 p_datatype=const('C_BIGINT').constant_value,
-                p_length=4000,
                 p_attribute_type=const('C_ETL_TYPE_NAME').constant_value,
                 p_idmap=self
             )

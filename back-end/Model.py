@@ -338,29 +338,146 @@ class Model:
         """
         Создает модель данных
         """
-        l_source_table_list=[] # лист с таблицами источниками
+        # переменные для последующего использования
+        l_source_table_name_list=[] # лист с уникальными наименованиями таблиц источников
+        l_source_attribute_name_list=[] # лист с уникальными наименованиями атрибутов источников
+        l_source_table_list=[] # лист объектов класса SourceTable - таблицы источники
+        l_source_attribute_list=[] # лист объектов класса Attribute - атрибуты таблиц источников
+        l_idmap_source_attribute_list=[] # лист атрибутов таблиц источников - первичные ключи
+        l_attribute_table_list=[] # список таблиц атрибутов сущности
+        l_tie_list=[] # список tie сущности
+        #########
+        # Блок обработки параметров модели и создание объектов
+        ########
         # создаем сущность
         l_entity=self.__create_entity()
+        # создаем якорную таблицу
+        l_anchor=self.__create_anchor(p_entity=l_entity)
+        #########
+        # Блок обработки атрибутов
+        ########
         for i_attribute_param in self.entity_param.attribute_param:
+            l_attribute_source_table_list=[] # лист объектов класса SourceTable - таблицы источники, указанные у атрибута
             # создаем атрибуты сущности
             l_entity_attribute=self.__create_entity_attribute(p_entity=l_entity, p_attribute_param=i_attribute_param)
+            #######
+            # Блок обработки параметров источника
+            #######
             for i_source_param in i_attribute_param.source_param:
                 l_schema=i_source_param.schema
                 l_table=i_source_param.table
                 l_source_id=i_source_param.source_id
-                l_unique_source_table_name=str(l_source_id)+"_"+str(l_schema)+"_"+str(l_table) # формируем уникальное наименование таблицы источника
-                if l_unique_source_table_name not in l_source_table_list: # если таблица источник еще не была добавлена
+                l_column=i_source_param.column
+                l_unique_source_table_name=str(l_source_id)+"_"\
+                                           +str(l_schema)+"_"\
+                                           +str(l_table) # формируем уникальное наименование таблицы источника
+                l_unique_source_column_name=str(l_source_id)+"_"\
+                                            +str(l_schema)+"_"\
+                                            +str(l_table)+"_"\
+                                            +str(l_column) # формируем уникальное наименование атрибута источника
+                l_source_table=None
+                l_source_attribute=None
+                if l_unique_source_table_name not in l_source_table_name_list: # если таблица источник еще не была добавлена
                     # создаем таблицы источники
                     l_source_table=self.__create_source_table(
                         p_entity=l_entity,
-                        p_attribute=l_entity_attribute,
                         p_source_param=i_source_param
                     )
-                    l_source_table_list.append(l_unique_source_table_name)
-        return l_entity
+                    # если таблица только добавляется - атрибут также новый
+                    l_source_column=self.__create_source_attribute(
+                        p_entity_attribute=l_entity_attribute,
+                        p_source_table=l_source_table,
+                        p_source_param=i_source_param
+                    )
+                    # добавление переменных в списки
+                    l_source_table_name_list.append(l_unique_source_table_name)
+                    l_source_attribute_name_list.append(l_unique_source_column_name)
+                    l_source_table_list.append(l_source_table)
+                    l_source_attribute_list.append(l_source_column)
+                elif l_unique_source_column_name not in l_source_attribute_name_list: # если атрибут еще не был добавлен
+                    for i_source_table in l_source_table_list:
+                        # снова формируем уникальное наименование таблицы
+                        l_unique_source_table_name_ent=str(i_source_table.source.id)+"_"\
+                                                       +str(i_source_table.schema)+"_"\
+                                                       +str(i_source_table.name)
+                        if l_unique_source_table_name_ent==l_unique_source_table_name: # находим ранее добавленную таблицу
+                            l_source_table=i_source_table
+                    l_source_column=self.__create_source_attribute(
+                        p_entity_attribute=l_entity_attribute,
+                        p_source_table=l_source_table,
+                        p_source_param=i_source_param
+                    )
+                    l_source_attribute_name_list.append(l_unique_source_column_name)
+                    l_source_attribute_list.append(l_source_column)
+                else: # если и таблица и атрибут уже были добавлены
+                    for i_source_table in l_source_table_list:
+                        # снова формируем уникальное наименование таблицы
+                        l_unique_source_table_name_ent=str(i_source_table.source.id)+"_"\
+                                                       +str(i_source_table.schema)+"_"\
+                                                       +str(i_source_table.name)
+                        if l_unique_source_table_name_ent==l_unique_source_table_name: # находим ранее добавленную таблицу
+                            l_source_table=i_source_table
+                    for i_source_attribute in l_source_attribute_list:
+                        # снова формируем уникальное наименование атрибута
+                        l_unique_source_attribute_name_ent=str(i_source_attribute.source_table.source.id)+"_"\
+                                                       +str(i_source_attribute.source_table.schema)+"_"\
+                                                       +str(i_source_attribute.source_table.name)+"_"\
+                                                       +str(i_source_attribute.name)
+                        if l_unique_source_attribute_name_ent==l_unique_source_column_name:
+                            l_source_attribute=i_source_attribute
+                    # добавляем атрибут таблицы источника в метаданные атрибута сущности
+                    add_attribute(p_table=l_entity_attribute,p_attribute=l_source_attribute,p_add_table_flg=0)
+                l_attribute_source_table_list.append(l_source_table)
+                # если атрибут первичный ключ - добавляем его атрибуты источники в лист
+                if i_attribute_param.pk==1:
+                    l_idmap_source_attribute_list.append(l_source_attribute)
+            ##########
+            # Окончание блока обработки параметров источника
+            #########
+            # создаем таблицу атрибут для каждого атрибута сущности
+            l_attribute=self.__create_attribute_table(p_entity=l_entity,p_entity_attribute=l_entity_attribute)
+            l_attribute_table_list.append(l_attribute)
+            # создаем tie, если на атрибуте сущности указана связанная сущность
+            l_tie=None
+            if i_attribute_param.link_entity_id:
+                l_tie=self.__create_tie(
+                    p_entity=l_entity,
+                    p_entity_attribute=l_entity_attribute,
+                    p_link_entity_id=i_attribute_param.link_entity_id,
+                    p_source_table=l_attribute_source_table_list
+                )
+                l_tie_list.append(l_tie)
+        #########
+        # Окончание блока обработки атрибутов
+        ########
+        # создаем idmap
+        l_idmap=self.__create_idmap(
+            p_entity=l_entity,
+            p_source_attribute=l_idmap_source_attribute_list
+        )
+
+        #########
+        # Окончание блока обработки параметров модели и создание объектов
+        ########
+
+        ########
+        # Блок создания DDL и ETL
+        #######
+        # формируем ddl
+        l_ddl=self.__get_ddl(
+            p_source_table=l_source_table_list,
+            p_idmap=l_idmap,
+            p_anchor=l_anchor,
+            p_attribute_table=l_attribute_table_list,
+            p_tie=l_tie_list
+        )
+        # проверяем ddl
+        self.__ddl_checker(p_ddl=l_ddl)
+
+        return l_ddl
 
 
-    def __create_entity(self):
+    def __create_entity(self) -> object:
         """
         Создает объект сущность на основе параметров
         """
@@ -370,7 +487,7 @@ class Model:
         )
         return l_entity
 
-    def __create_entity_attribute(self, p_entity: object, p_attribute_param: object):
+    def __create_entity_attribute(self, p_entity: object, p_attribute_param: object) -> object:
         """
         Создает атрибуты сущности на основе параметров
 
@@ -398,7 +515,7 @@ class Model:
 
         return l_entity_attribute
 
-    def __create_source_table(self, p_entity: object, p_attribute: object, p_source_param: object):
+    def __create_source_table(self, p_entity: object, p_source_param: object) -> object:
         """
         Создает таблицу источник на основе параметров
 
@@ -430,6 +547,206 @@ class Model:
         add_table(p_object=p_entity, p_table=l_source_table)
 
         return l_source_table
+
+    def __create_source_attribute(self,
+                                  p_entity_attribute: object,
+                                  p_source_table: object,
+                                  p_source_param: object
+    ) -> object:
+        """
+        Создает атрибут таблицы источника
+
+        :param p_entity: объект класса Entity - сущность
+        :param p_entity_attribute: Объект класса Attribute - атрибут сущности
+        :param p_source_table: Объект класса SourceTable - таблица источник
+        :param p_source_param: параметры источника
+        """
+        # ищем указанный атрибут в метаданных, если он ранее был добавлен
+        l_source_attribute_meta_obj=search_object(
+            # ищем по id таблицы источника и наименованию атрибута
+            p_type=const('C_QUEUE_COLUMN').constant_value,
+            p_attrs={
+                const('C_QUEUE_TABLE_TYPE_NAME'):str(p_source_table.id),
+                const('C_NAME').constant_value:p_source_param.column
+            }
+        )
+        l_source_attribute=None
+        # если атрибут найден в метаданных, создаем объект класса
+        if l_source_attribute_meta_obj.__len__()>0:
+            l_source_attribute=Attribute(
+                p_id=l_source_attribute_meta_obj[0].uuid,
+                p_type=const('C_QUEUE_COLUMN').constant_value
+            )
+        else: # иначе создаем новый атрибут
+            l_source_attribute=Attribute(
+                p_name=p_source_param.column,
+                p_type=const('C_QUEUE_COLUMN').constant_value,
+                p_datatype="VARCHAR", # все атрибуты таблицы источника, кроме технических имеют тип данных VARCHAR(4000)
+                p_length=4000
+            )
+        # добавляем атрибут в таблицу источник
+        add_attribute(p_table=p_source_table,p_attribute=l_source_attribute)
+        # добавяем атрибут к метаданным атрибута сущности
+        add_attribute(p_table=p_entity_attribute,p_attribute=l_source_attribute, p_add_table_flg=0)
+
+        return l_source_attribute
+
+    def __create_anchor(self, p_entity: object) -> object:
+        """
+        Создает якорь
+
+        :param p_entity: объект класса Entity - сущность
+        """
+        # при создании новой сущности точно не существует ее якоря, поэтому даже не ищем в метаданных
+        l_anchor=Anchor(
+            p_entity=p_entity
+        )
+        return l_anchor
+
+    def __create_attribute_table(self, p_entity: object, p_entity_attribute: object) -> object:
+        """
+        Создает таблицу атрибут
+
+        :param p_entity: объекта класса Entity - сущность
+        :param p_entity_attribute: объект класса Attribute - атрибут сущности
+        """
+        # при создании новой сущности точно не существует ее атрибутов, поэтому даже не ищем в метаданных
+        l_attribute_table=AttributeTable(
+            p_entity=p_entity,
+            p_entity_attribute=p_entity_attribute
+        )
+        return l_attribute_table
+
+    def __create_tie(self,
+                     p_entity: object,
+                     p_entity_attribute: object,
+                     p_link_entity_id: str,
+                     p_source_table: list
+    ) -> object:
+        """
+        Создает tie
+
+        :param p_entity: сущность
+        :param p_entity_attribute: атрибут сущности (внешний ключ)
+        :param p_link_entity_id: id связанной сущности
+        :param p_source_table: список таблиц источников
+        """
+        # инициализируем объект связанной сущности по ее id
+        l_link_entity=Entity(
+            p_id=p_link_entity_id
+        )
+        # при создании новой сущности нет ее tie, поэтому даже не ищем в метаданных
+        l_tie=Tie(
+            p_entity=p_entity,
+            p_entity_attribute=p_entity_attribute,
+            p_link_entity=l_link_entity,
+            p_source_table=p_source_table
+        )
+        return l_tie
+
+    def __create_idmap(self, p_entity: object, p_source_attribute: list) -> object:
+        """
+        Создает idmap сущности
+
+        :param p_entity: сущность
+        :param p_source_attribute: список атрибутов, участвующих в генерации суррогата (натуральные ключи)
+        """
+        # при создании сущности нет ее idmap, поэтому не ищем в метаданных
+        l_idmap=Idmap(
+            p_entity=p_entity,
+            p_source_attribute_nk=p_source_attribute
+        )
+        return l_idmap
+
+    def __get_ddl(self,
+                  p_source_table: list,
+                  p_idmap: object,
+                  p_anchor: object,
+                  p_attribute_table: list,
+                  p_tie: list
+    ):
+        """
+        Генерирует общий скрипт DDL для всех объектов сущности
+
+        :param p_source_table: таблица источник
+        :param p_idmap: idmap сущности
+        :param p_anchor: якорь cущности
+        :param p_attribute_table: таблица атрибут сущности
+        :param p_tie: связь сущности
+        """
+        l_ddl=[] # список со всеми DDL объектов сущности
+
+        # формируем скрипт для таблиц источников
+        for i_source_table in p_source_table: # таблиц источников у сущности может быть несколько
+            # сперва удаление таблицы источника (если существует)
+            l_ddl.append(
+                drop_table_ddl(p_table=i_source_table)
+            )
+            # создание таблицы источника
+            l_ddl.append(
+                create_table_ddl(p_table=i_source_table)
+            )
+            l_ddl.append(
+                create_view_ddl(p_table=i_source_table)
+            )
+        # формируем скрипт для idmap
+        l_ddl.append(
+            create_table_ddl(p_table=p_idmap)
+        )
+        l_ddl.append(
+            create_view_ddl(p_table=p_idmap)
+        )
+        # формируем скрипт для anchor
+        l_ddl.append(
+            create_table_ddl(p_table=p_anchor)
+        )
+        l_ddl.append(
+            create_view_ddl(p_table=p_anchor)
+        )
+        # формируем скрипт для attribute
+        for i_attribute_table in p_attribute_table: # может быть несколько
+            l_ddl.append(
+                create_table_ddl(p_table=i_attribute_table)
+            )
+            l_ddl.append(
+                create_view_ddl(p_table=i_attribute_table)
+            )
+        # формируем скрипт для tie
+        for i_tie in p_tie:  # может быть несколько
+            l_ddl.append(
+                create_table_ddl(p_table=i_tie)
+            )
+            l_ddl.append(
+                create_view_ddl(p_table=i_tie)
+            )
+        return l_ddl
+
+    def __ddl_checker(self, p_ddl: list):
+        """
+        Проверка DDL сущности
+
+        :param p_ddl: DDL сущности
+        """
+        # запускаем ddl в транзакции, в конце скрипта явная ошибка
+        # если ошибка, которую выдает СУБД, отличается от задуманной ошибки - ошибка в ddl
+        l_incorrect_sql="SELECT 1 FROM 1;" # запрос с явной ошибкой
+        # конкретный текст ошибки
+        l_error_text='syntax error at or near "1"'
+        l_error_sql_example='SELECT 1 FROM 1;'
+        l_ddl="" # строка с ddl
+        for i_ddl in p_ddl:
+            l_ddl=l_ddl+i_ddl+"\n"
+        l_ddl=l_ddl+l_incorrect_sql
+        l_result=Connection().sql_exec(p_sql=l_ddl) # запускаем ddl с явной ошибкой
+        if l_error_text in str(l_result[1]) and l_error_sql_example in str(l_result[1]):
+            pass
+        else:
+            sys.exit("В сформированном DDL ошибка \n"+str(l_result[1]))
+
+
+
+
+
 
 
 
@@ -475,21 +792,21 @@ class _SourceParam:
         """
         Схема источника
         """
-        return self._schema
+        return self._schema.lower()
 
     @property
     def table(self) -> str:
         """
         Таблица источника
         """
-        return self._table
+        return self._table.lower()
 
     @property
     def column(self) -> str:
         """
         Столбец источника
         """
-        return self._column
+        return self._column.lower()
 
     def __source_param_checker(self):
         """
@@ -666,16 +983,28 @@ class _AttributeParam:
         if not self._source_param:
             sys.exit("У атрибута не указан ни один источник")
         else:
+            l_source_table_name_list=[] # список уникальных наименований таблиц источников
             l_source=[]
             for i_source in self._source_param:
+                l_source_id=i_source.get(const('C_SOURCE').constant_value)
+                l_source_table=i_source.get(const('C_TABLE').constant_value)
+                l_source_schema=i_source.get(const('C_SCHEMA').constant_value)
+                l_source_attribute=i_source.get(const('C_COLUMN').constant_value)
+                # формируем уникальное наименование таблицы источника
+                l_unique_source_table_name=str(l_source_id)+"_"\
+                                           +str(l_source_schema)+"_"\
+                                           +str(l_source_table)
+                if l_unique_source_table_name in l_source_table_name_list:
+                    sys.exit("Таблица источник "+str(l_source_table)+" указана два раза у атрибута "+self._name)
                 l_source.append(
                     _SourceParam(
-                        p_source_id=i_source.get(const('C_SOURCE').constant_value),
-                        p_table=i_source.get(const('C_TABLE').constant_value),
-                        p_schema=i_source.get(const('C_SCHEMA').constant_value),
-                        p_column=i_source.get(const('C_COLUMN').constant_value)
+                        p_source_id=l_source_id,
+                        p_table=l_source_table,
+                        p_schema=l_source_schema,
+                        p_column=l_source_attribute
                     )
                 )
+                l_source_table_name_list.append(l_unique_source_table_name)
             return l_source
 
     def __pk_checker(self):
@@ -686,6 +1015,7 @@ class _AttributeParam:
             sys.exit("Некорректное значение признака первичного ключа")
         elif self._pk>1:
             sys.exit("Некорректное значение признака первичного ключа")
+
 
 class _EntityParam:
     """

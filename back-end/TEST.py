@@ -186,7 +186,7 @@ l_json = """
                     {
                     "source":"0a884f59-48b6-4afe-838e-57bdbbb9ec7c",
                     "schema":"crm",
-                    "table":"crm_client",
+                    "table":"client",
                     "column":"client_id"
                     }
                 ]
@@ -204,20 +204,29 @@ l_json = """
                     {
                     "source":"0a884f59-48b6-4afe-838e-57bdbbb9ec7c",
                     "schema":"crm",
-                    "table":"crm_client",
+                    "table":"client",
                     "column":"client_id"
                     }
                 ]
         }
         ]
+    
 }
 """
 
 model=Model.Model(p_json=l_json)
 
-print(
-    model.create_model().source_table
-)
+# print(
+#     model.create_model()
+# )
+
+for i in model.create_model():
+    print(
+        i
+    )
+
+
+
 
 
 
