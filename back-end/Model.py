@@ -384,7 +384,7 @@ class Model:
                         p_source_param=i_source_param
                     )
                     # если таблица только добавляется - атрибут также новый
-                    l_source_column=self.__create_source_attribute(
+                    l_source_attribute=self.__create_source_attribute(
                         p_entity_attribute=l_entity_attribute,
                         p_source_table=l_source_table,
                         p_source_param=i_source_param
@@ -393,7 +393,7 @@ class Model:
                     l_source_table_name_list.append(l_unique_source_table_name)
                     l_source_attribute_name_list.append(l_unique_source_column_name)
                     l_source_table_list.append(l_source_table)
-                    l_source_attribute_list.append(l_source_column)
+                    l_source_attribute_list.append(l_source_attribute)
                 elif l_unique_source_column_name not in l_source_attribute_name_list: # если атрибут еще не был добавлен
                     for i_source_table in l_source_table_list:
                         # снова формируем уникальное наименование таблицы
@@ -402,13 +402,13 @@ class Model:
                                                        +str(i_source_table.name)
                         if l_unique_source_table_name_ent==l_unique_source_table_name: # находим ранее добавленную таблицу
                             l_source_table=i_source_table
-                    l_source_column=self.__create_source_attribute(
+                    l_source_attribute=self.__create_source_attribute(
                         p_entity_attribute=l_entity_attribute,
                         p_source_table=l_source_table,
                         p_source_param=i_source_param
                     )
                     l_source_attribute_name_list.append(l_unique_source_column_name)
-                    l_source_attribute_list.append(l_source_column)
+                    l_source_attribute_list.append(l_source_attribute)
                 else: # если и таблица и атрибут уже были добавлены
                     for i_source_table in l_source_table_list:
                         # снова формируем уникальное наименование таблицы
@@ -473,8 +473,26 @@ class Model:
         )
         # проверяем ddl
         self.__ddl_checker(p_ddl=l_ddl)
-
-        return l_ddl
+        # проверяем метаданные
+        self.__metadata_checker(
+            p_entity=l_entity,
+            p_source_table=l_source_table_list,
+            p_idmap=l_idmap,
+            p_anchor=l_anchor,
+            p_attribute_table=l_attribute_table_list,
+            p_tie=l_tie_list
+        )
+        # вставляем метаданные
+        self.__create_metadata(
+            p_entity=l_entity,
+            p_source_table=l_source_table_list,
+            p_idmap=l_idmap,
+            p_anchor=l_anchor,
+            p_attribute_table=l_attribute_table_list,
+            p_tie=l_tie_list
+        )
+        # создаем таблицы и представления в ХД
+        self.__create_ddl(p_ddl=l_ddl)
 
 
     def __create_entity(self) -> object:
@@ -545,6 +563,8 @@ class Model:
         l_source_table=l_source_table_meta or l_source_table_param # либо из метаданных, либо новый объект
         # добавялем таблицу источник в сущность
         add_table(p_object=p_entity, p_table=l_source_table)
+        # добавляем id источника в сущность
+        add_source_to_object(p_object=p_entity, p_source=l_source_table.source)
 
         return l_source_table
 
@@ -575,12 +595,14 @@ class Model:
         if l_source_attribute_meta_obj.__len__()>0:
             l_source_attribute=Attribute(
                 p_id=l_source_attribute_meta_obj[0].uuid,
-                p_type=const('C_QUEUE_COLUMN').constant_value
+                p_type=const('C_QUEUE_COLUMN').constant_value,
+                p_attribute_type=const('C_QUEUE_ATTR_TYPE_NAME').constant_value
             )
         else: # иначе создаем новый атрибут
             l_source_attribute=Attribute(
                 p_name=p_source_param.column,
                 p_type=const('C_QUEUE_COLUMN').constant_value,
+                p_attribute_type=const('C_QUEUE_ATTR_TYPE_NAME').constant_value,
                 p_datatype="VARCHAR", # все атрибуты таблицы источника, кроме технических имеют тип данных VARCHAR(4000)
                 p_length=4000
             )
@@ -674,74 +696,147 @@ class Model:
         :param p_attribute_table: таблица атрибут сущности
         :param p_tie: связь сущности
         """
-        l_ddl=[] # список со всеми DDL объектов сущности
+        l_ddl="" # список со всеми DDL объектов сущности
 
         # формируем скрипт для таблиц источников
         for i_source_table in p_source_table: # таблиц источников у сущности может быть несколько
             # сперва удаление таблицы источника (если существует)
-            l_ddl.append(
-                drop_table_ddl(p_table=i_source_table)
-            )
+            l_ddl+=drop_table_ddl(p_table=i_source_table)+"\n"
             # создание таблицы источника
-            l_ddl.append(
-                create_table_ddl(p_table=i_source_table)
-            )
-            l_ddl.append(
-                create_view_ddl(p_table=i_source_table)
-            )
+            l_ddl+=create_table_ddl(p_table=i_source_table)+"\n"
+            l_ddl+=create_view_ddl(p_table=i_source_table)+"\n"
         # формируем скрипт для idmap
-        l_ddl.append(
-            create_table_ddl(p_table=p_idmap)
-        )
-        l_ddl.append(
-            create_view_ddl(p_table=p_idmap)
-        )
+        l_ddl+=create_table_ddl(p_table=p_idmap)+"\n"
+        l_ddl+=create_view_ddl(p_table=p_idmap)+"\n"
         # формируем скрипт для anchor
-        l_ddl.append(
-            create_table_ddl(p_table=p_anchor)
-        )
-        l_ddl.append(
-            create_view_ddl(p_table=p_anchor)
-        )
+        l_ddl+=create_table_ddl(p_table=p_anchor)+"\n"
+        l_ddl+=create_view_ddl(p_table=p_anchor)+"\n"
         # формируем скрипт для attribute
         for i_attribute_table in p_attribute_table: # может быть несколько
-            l_ddl.append(
-                create_table_ddl(p_table=i_attribute_table)
-            )
-            l_ddl.append(
-                create_view_ddl(p_table=i_attribute_table)
-            )
+            l_ddl+=create_table_ddl(p_table=i_attribute_table)+"\n"
+            l_ddl+=create_view_ddl(p_table=i_attribute_table)+"\n"
         # формируем скрипт для tie
         for i_tie in p_tie:  # может быть несколько
-            l_ddl.append(
-                create_table_ddl(p_table=i_tie)
-            )
-            l_ddl.append(
-                create_view_ddl(p_table=i_tie)
-            )
+            l_ddl+=create_table_ddl(p_table=i_tie)+"\n"
+            l_ddl+=create_view_ddl(p_table=i_tie)+"\n"
         return l_ddl
 
-    def __ddl_checker(self, p_ddl: list):
+    def __ddl_checker(self, p_ddl: str):
         """
         Проверка DDL сущности
 
         :param p_ddl: DDL сущности
         """
-        # запускаем ddl в транзакции, в конце скрипта явная ошибка
-        # если ошибка, которую выдает СУБД, отличается от задуманной ошибки - ошибка в ddl
-        l_incorrect_sql="SELECT 1 FROM 1;" # запрос с явной ошибкой
         # конкретный текст ошибки
-        l_error_text='syntax error at or near "1"'
-        l_error_sql_example='SELECT 1 FROM 1;'
-        l_ddl="" # строка с ddl
-        for i_ddl in p_ddl:
-            l_ddl=l_ddl+i_ddl+"\n"
-        l_ddl=l_ddl+l_incorrect_sql
-        l_result=Connection().sql_exec(p_sql=l_ddl) # запускаем ddl с явной ошибкой
-        if l_error_text in str(l_result[1]) and l_error_sql_example in str(l_result[1]):
-            pass
-        else:
+        l_result=Connection().sql_exec(p_sql=p_ddl, p_rollback=1, p_result=0) # запускаем ddl с обязательным откатом
+        if l_result[1]:
             sys.exit("В сформированном DDL ошибка \n"+str(l_result[1]))
+
+
+    def __metadata_checker(self,
+                           p_entity: object,
+                           p_source_table: list,
+                           p_idmap: object,
+                           p_anchor: object,
+                           p_attribute_table: list,
+                           p_tie: list):
+        """
+        Проверяет корректнось метаданных
+
+        :param p_entity: сущность
+        :param p_source_table: таблицы источники
+        :param p_idmap: idmap таблица
+        :param p_anchor: якорь сущности
+        :param p_attribute_table: таблицы атрибуты
+        :param p_tie: таблицы связи
+        """
+        # метаданные сущности и ее атрибутов
+        p_entity.metadata_object.attrs_checker()
+        for i_entity_attribute in p_entity.entity_attribute:
+            i_entity_attribute.metadata_object.attrs_checker()
+        # таблицы источники и их атрибуты
+        for i_source_table in p_source_table:
+            i_source_table.metadata_object.attrs_checker()
+            for i_source_attribute in i_source_table.source_attribute:
+                i_source_attribute.metadata_object.attrs_checker()
+        # idmap и его атрибуты
+        p_idmap.metadata_object.attrs_checker()
+        for i_idmap_attribute in p_idmap.idmap_attribute:
+            i_idmap_attribute.metadata_object.attrs_checker()
+        # якорь и его атрибуты
+        p_anchor.metadata_object.attrs_checker()
+        for i_anchor_attribute in p_anchor.anchor_attribute:
+            i_anchor_attribute.metadata_object.attrs_checker()
+        # таблицы атрибуты и их атрибуты
+        for i_attribute_table in p_attribute_table:
+            i_attribute_table.metadata_object.attrs_checker()
+            for i_attribute_table_attribute in i_attribute_table.attribute_table_attribute:
+                i_attribute_table_attribute.metadata_object.attrs_checker()
+        # таблицы связи и их атрибуты
+        for i_tie in p_tie:
+            i_tie.metadata_object.attrs_checker()
+            for i_tie_attribute in i_tie.tie_attribute:
+                i_tie_attribute.metadata_object.attrs_checker()
+
+    def __create_metadata(self,
+                          p_entity: object,
+                          p_source_table: list,
+                          p_idmap: object,
+                          p_anchor: object,
+                          p_attribute_table: list,
+                          p_tie: list):
+        """
+        Записывает метаданные
+
+        :param p_entity: сущность
+        :param p_source_table: таблицы источники
+        :param p_idmap: idmap таблица
+        :param p_anchor: якорь сущности
+        :param p_attribute_table: таблицы атрибуты
+        :param p_tie: таблицы связи
+        """
+        # метаданные сущности и ее атрибутов
+        p_entity.create_metadata()
+        for i_entity_attribute in p_entity.entity_attribute:
+            i_entity_attribute.create_metadata()
+        # таблицы источники и их атрибуты
+        for i_source_table in p_source_table:
+            # сперва удаляем таблицу источник из метеданных (так как она могла существовать ранее)
+            i_source_table.delete_metadata()
+            i_source_table.create_metadata()
+            for i_source_attribute in i_source_table.source_attribute:
+                # сперва удаляем атрибуты таблицы источника
+                i_source_attribute.delete_metadata()
+                i_source_attribute.create_metadata()
+        # idmap и его атрибуты
+        p_idmap.create_metadata()
+        for i_idmap_attribute in p_idmap.idmap_attribute:
+            i_idmap_attribute.create_metadata()
+        # якорь и его атрибуты
+        p_anchor.create_metadata()
+        for i_anchor_attribute in p_anchor.anchor_attribute:
+            i_anchor_attribute.create_metadata()
+        # таблицы атрибуты и их атрибуты
+        for i_attribute_table in p_attribute_table:
+            i_attribute_table.create_metadata()
+            for i_attribute_table_attribute in i_attribute_table.attribute_table_attribute:
+                i_attribute_table_attribute.create_metadata()
+        # таблицы связи и их атрибуты
+        for i_tie in p_tie:
+            i_tie.create_metadata()
+            for i_tie_attribute in i_tie.tie_attribute:
+                i_tie_attribute.create_metadata()
+
+    def __create_ddl(self, p_ddl: str):
+        """
+        Создает объекты в ХД
+
+        :param p_ddl: строка в DDL объектов
+        """
+        Connection().sql_exec(p_sql=p_ddl,p_result=0)
+
+
+
 
 
 

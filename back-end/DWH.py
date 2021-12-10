@@ -101,12 +101,13 @@ class Connection:
             return pgsql
 
 
-    def sql_exec(self, p_sql: str, p_result: int =1):
+    def sql_exec(self, p_sql: str, p_result: int =1, p_rollback: int =0):
         """
         Выполнение запроса на стороне ХД
 
         :param p_sql: SQL-выражение
         :param p_result: Признак наличия результата запроса (по умолчанию 1)
+        :param p_rollback: Признак необходимости отката транзакции в любом случае (по умолчанию 0)
         """
         l_sql_result=self.dbms.sql_exec(
             p_server=self.server,
@@ -115,7 +116,8 @@ class Connection:
             p_password=self.password,
             p_port=self.port,
             p_sql=p_sql,
-            p_result=p_result
+            p_result=p_result,
+            p_rollback=p_rollback
         )
         return l_sql_result
 
@@ -379,6 +381,19 @@ def add_attribute(p_table: object, p_attribute: object, p_add_table_flg: int =1)
     if p_add_table_flg==1:
         # добавляем таблицу в атрибут
         setattr(p_attribute, _get_table_property(p_table=p_table), p_table)
+
+def add_source_to_object(p_object: object, p_source: object):
+    """
+    Добавляет источник
+    :param p_object: объект, в который добавляется источник
+    :param p_source: источник (объект класса Source)
+    """
+    _add_object(
+        p_parent_object=p_object,
+        p_object=p_source,
+        p_object_type=const('C_SOURCE').constant_value
+    )
+
 
 
 def remove_attribute(p_table: object, p_attribute: object):
@@ -1286,17 +1301,24 @@ class _DWHObject:
 
         return l_json
 
+    @property
+    def metadata_object(self) -> object:
+        """
+        Объект метаданных
+        """
+        return meta.MetaObject(
+            p_type=self.type,
+            p_uuid=str(self.id),
+            p_attrs=self.metadata_json
+
+        )
+
     def create_metadata(self):
         """
         Записывает метаданные объекта
         """
         meta.create_object(
-            meta.MetaObject(
-                p_type=self.type,
-                p_uuid=str(self.id),
-                p_attrs=self.metadata_json
-
-            )
+            p_object=self.metadata_object
         )
 
     def update_metadata(self):
@@ -1304,11 +1326,15 @@ class _DWHObject:
         Обновляет метаданные объекта
         """
         meta.update_object(
-            meta.MetaObject(
-                p_type=self.type,
-                p_uuid=str(self.id),
-                p_attrs=self.metadata_json
-            )
+            p_object=self.metadata_object
+        )
+
+    def delete_metadata(self):
+        """
+        Удаляет метаданные объекта
+        """
+        meta.delete_object(
+            p_object=self.metadata_object
         )
 
 

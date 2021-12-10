@@ -401,7 +401,8 @@ def sql_exec(
         p_password: str,
         p_port: int,
         p_sql: str,
-        p_result: int =1
+        p_result: int =1,
+        p_rollback: int =0
 ):
     """
     Выполняет запросы в PostgreSQL
@@ -412,6 +413,7 @@ def sql_exec(
     :param p_port: порт
     :param p_sql: SQL-запрос
     :param p_result: Признак наличия результата запроса (по умолчанию 1)
+    :param p_rollback: Признак необходимости отката транзакции в любом случае (по умолчанию 0)
     """
     l_query_output=None
     l_error=None
@@ -434,7 +436,10 @@ def sql_exec(
             l_query_output = crsr.fetchall()
         else:
             l_query_output = 1
-        cnct.commit() # комит транзакции
+        if p_rollback==1:
+            cnct.rollback() # откат транзакции, если признак - 1
+        else:
+            cnct.commit() # в остальных случаях - комит транзакции
     except psycopg2.Error as e:
         cnct.rollback() # при возникновении ошибки - откат транзакции
         # sys.exit(e) #TODO: реализовать вывод ошибок, как сделал Рустем

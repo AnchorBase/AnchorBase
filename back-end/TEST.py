@@ -216,14 +216,15 @@ l_json = """
 
 model=Model.Model(p_json=l_json)
 
-# print(
-#     model.create_model()
-# )
+model.create_model()
 
-for i in model.create_model():
-    print(
-        i
-    )
+# for i in model.create_model():
+#     # for j in i.source_attribute:
+#     print(
+#         i.metadata_json
+#     )
+
+
 
 
 

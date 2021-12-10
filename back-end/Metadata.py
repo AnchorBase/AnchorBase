@@ -362,6 +362,16 @@ def __update_object_sql(p_type: str, p_uuid: str, p_attrs: dict):
     l_sql='UPDATE "'+p_type+'"'+"\nSET value='"+l_attrs+"'\nWHERE id='"+str(p_uuid)+"';"
     return l_sql
 
+def __delete_object_sql(p_type: str, p_uuid: str):
+    """
+    Формирует запрос удаления из метаданных
+
+    :param p_type: тип объекта метаданных
+    :param p_uuid: uuid объекта
+    """
+    l_sql='DELETE FROM "'+p_type+'"'+" WHERE ID='"+str(p_uuid)+"';"
+    return l_sql
+
 
 
 def search_object(p_type: str, p_uuid: list =None, p_attrs: dict =None) -> list:
@@ -439,6 +449,26 @@ def update_object(p_object: object):
         p_result=0
     )
 
+def delete_object(p_object: object):
+    """
+    Удаляет метаданные объекта
+
+    :param p_object: объект метаданных
+    """
+    if type(p_object).__name__!="MetaObject":
+        sys.exit("Объект не является объектом класса MetaObject")
+    # формируем SQL-запрос
+    l_sql=__delete_object_sql(
+        p_type=p_object.type,
+        p_uuid=p_object.uuid
+    )
+    # выполняем запрос
+    sql_exec(
+        p_sql=l_sql,
+        p_result=0
+    )
+
+
 
 
 class MetaObject:
@@ -488,11 +518,11 @@ class MetaObject:
         Атрибуты объекта метаданных
         """
         # проверяем на корректность
-        self.__attrs_checker()
+        self.attrs_checker()
         return self._attrs
 
 
-    def __attrs_checker(self):
+    def attrs_checker(self):
         """
         Проверка атрибутов объекта метаданных
         """
