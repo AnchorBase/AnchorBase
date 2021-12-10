@@ -346,6 +346,7 @@ class Model:
         l_idmap_source_attribute_list=[] # лист атрибутов таблиц источников - первичные ключи
         l_attribute_table_list=[] # список таблиц атрибутов сущности
         l_tie_list=[] # список tie сущности
+        l_tie_params_dict={} # словарь с параметрами для создания tie
         #########
         # Блок обработки параметров модели и создание объектов
         ########
@@ -439,14 +440,26 @@ class Model:
             l_attribute_table_list.append(l_attribute)
             # создаем tie, если на атрибуте сущности указана связанная сущность
             l_tie=None
+            l_tie_entity_attribute_list=[]
+            l_tie_source_table_list=[]
             if i_attribute_param.link_entity_id:
-                l_tie=self.__create_tie(
-                    p_entity=l_entity,
-                    p_entity_attribute=l_entity_attribute,
-                    p_link_entity_id=i_attribute_param.link_entity_id,
-                    p_source_table=l_attribute_source_table_list
+                l_tie_entity_list=l_tie_params_dict.get(i_attribute_param.link_entity_id)
+                if l_tie_entity_list:
+                    # получаем список уже добавленных атрибутов в качетсве ссылок на связанную сущность
+                    l_tie_entity_attribute_list=l_tie_entity_list.get("entity_attribute")
+                    # получаем список уже добавленных таблиц источников
+                    l_tie_source_table_list=l_tie_entity_list.get("source_table")
+                l_tie_entity_attribute_list.append(l_entity_attribute)
+                l_tie_source_table_list.extend(l_attribute_source_table_list)
+                l_tie_params_dict.update(
+                    {
+                        i_attribute_param.link_entity_id: # в качестве ключа id связанной сущности
+                            {
+                                "entity_attribute":l_tie_entity_attribute_list,
+                                "source_table":l_tie_source_table_list
+                            }
+                    }
                 )
-                l_tie_list.append(l_tie)
         #########
         # Окончание блока обработки атрибутов
         ########
@@ -455,6 +468,18 @@ class Model:
             p_entity=l_entity,
             p_source_attribute=l_idmap_source_attribute_list
         )
+        # создаем tie на каждую связанную сущность
+        l_link_entity_list=list(l_tie_params_dict.keys()) # получаем id всех связанных сущностей
+        for i_link_entity in l_link_entity_list:
+            l_source_table_unique=list(set(l_tie_params_dict.get(i_link_entity).get("source_table"))) # избавляемся от возможных дублей таблиц источников
+            # создаем tie
+            l_tie=self.__create_tie(
+                p_entity=l_entity,
+                p_link_entity_id=i_link_entity,
+                p_entity_attribute=l_tie_params_dict.get(i_link_entity).get("entity_attribute"),
+                p_source_table=l_source_table_unique
+            )
+            l_tie_list.append(l_tie)
 
         #########
         # Окончание блока обработки параметров модели и создание объектов
@@ -641,7 +666,7 @@ class Model:
 
     def __create_tie(self,
                      p_entity: object,
-                     p_entity_attribute: object,
+                     p_entity_attribute: list,
                      p_link_entity_id: str,
                      p_source_table: list
     ) -> object:
