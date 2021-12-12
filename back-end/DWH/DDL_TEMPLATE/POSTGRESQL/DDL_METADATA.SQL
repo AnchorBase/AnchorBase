@@ -62,3 +62,13 @@ CREATE TABLE "queue_increment"
 	id uuid PRIMARY KEY,
 	value json NOT NULL
 );
+CREATE TABLE "etl"
+(
+	id uuid PRIMARY KEY,
+	value json NOT NULL
+);
+CREATE TABLE "queue_etl"
+(
+	id uuid PRIMARY KEY,
+	value json NOT NULL
+);

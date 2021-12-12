@@ -465,7 +465,7 @@ def get_source_table_etl(
     """
     l_etl="INSERT INTO "+'"'+const('C_STG_SCHEMA').constant_value+'"'+"."+'"'+str(p_source_table_id)+'"'+"\n\t"\
           "("+p_source_attribute+")\n\t"\
-          "VALUES\n\t"+p_source_attribute_value+";\n"
+          "VALUES\n"+p_source_attribute_value+";\n"
     return l_etl
 
 

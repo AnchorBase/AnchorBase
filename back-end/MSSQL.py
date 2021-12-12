@@ -155,6 +155,8 @@ def sql_exec(
     :param p_port: порт
     :param p_result: признак наличия результата запроса (по умолчанию 1)
     """
+    l_error=None
+    query_output=None
     try:
         if system() == "Darwin": # если macos нужно прописать путь до драйвера
             mssql_cnct = pyodbc.connect(
@@ -177,7 +179,7 @@ def sql_exec(
                 timeout=10
             )
     except pyodbc.Error as e:
-        sys.exit(e) #TODO: переделать
+        l_error=e
     crsr =mssql_cnct.cursor()
     try:
         crsr.execute(p_sql)
@@ -186,12 +188,12 @@ def sql_exec(
         else:
             query_output=1
     except pyodbc.Error as e:
-        sys.exit(e) #TODO: переделать
+        l_error=e
     finally:
         crsr.close()
         mssql_cnct.close()
 
-    return query_output
+    return query_output, l_error
 
 def get_objects(
         p_server: str,

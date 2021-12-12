@@ -265,15 +265,15 @@ class Source:
         """
         # вычисляем максимальный source_id из метаданных
         l_sources=Metadata.search_object(
-            p_type=const('C_SOURCE_META').constant_value,
-            p_attrs={
-                const('C_DELETED').constant_value:0
-            }
+            p_type=const('C_SOURCE_META').constant_value
         )
         l_source_id_list=[] # список source_id
         for i_source in l_sources:
             l_source_id_list.append(i_source.attrs.get(const('C_SOURCE_ID').constant_value))
-        return self.__source_meta_attrs.get(const('C_SOURCE_ID').constant_value,None) or max(l_source_id_list)+1
+        l_first_source_id=None
+        if l_source_id_list.__len__()==0:
+            l_first_etl_id=1
+        return self.__source_meta_attrs.get(const('C_SOURCE_ID').constant_value,None) or l_first_etl_id or max(l_source_id_list)+1
 
     @property
     def type(self):
@@ -334,8 +334,6 @@ class Source:
 
         :param p_sql: SQL-запрос
         """
-        if self.deleted==1:
-            sys.exit("Невозможно выполнить запрос. Источник "+self.id+" удален") #TODO: переделать
         l_result=self.__cnct.sql_exec(
             p_server=self.server,
             p_database=self.database,

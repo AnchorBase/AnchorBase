@@ -8,6 +8,8 @@ import SQLScript
 import pyodbc
 import datetime
 import copy
+from Model import *
+from SystemObjects import *
 
 # Dummy transaction uuid 
 C_DUMMY_TRAN = {"id": "67b2aba4-c34f-4999-a3eb-62ebb77a3776"}
@@ -361,3 +363,5 @@ def load_all(p_tran: str=C_DUMMY_TRAN):
     print("attribute tables loaded")
     load_all_tie_tables(p_tran=p_tran)
     print("tie tables loaded")
+
+

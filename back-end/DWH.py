@@ -11,6 +11,7 @@ import copy
 import uuid
 import Metadata as meta
 from Source import Source as Source
+import datetime
 
 class Connection:
     """
@@ -198,6 +199,10 @@ def _class_define(p_class_name: str, p_id: str, p_type: str =None):
         return Tie(p_id=p_id)
     if p_class_name.lower()=="source":
         return Source(p_id=p_id)
+    if p_class_name.lower()=="package":
+        return Package(p_id=p_id, p_type=p_type)
+    if p_class_name.lower()=="job":
+        return Package(p_id=p_id)
 
 def _get_object(p_id, p_class_name: str, p_type: str=None):
     """
@@ -207,7 +212,7 @@ def _get_object(p_id, p_class_name: str, p_type: str=None):
     """
     if not p_id: # возвращаем пусто, если ничего не пришло
         return None
-    if type(p_id).__name__.lower()=="uuid": # если пришле один id
+    if type(p_id).__name__.lower() in ["uuid","str"]: # если пришел один id
         return _class_define(p_class_name=p_class_name,p_id=p_id, p_type=p_type)
     if type(p_id).__name__.lower()=="list": # если пришел лист из id
         l_entity=[]
@@ -221,25 +226,29 @@ def _get_object(p_id, p_class_name: str, p_type: str=None):
         return l_entity
 
 
-def get_values_sql(p_data_frame: list, p_cast_list: dict):
+def get_values_sql(p_data_frame: list, p_cast_dict: dict, p_etl_id: int):
     """
     Возвращает преобразованный data frame в конструкцию values (...,...),
 
     :param p_data_frame: data frame
     :param p_cast_list: словарь с порядковыми номерами атрибутов и конструкцией cast для каждого атрибута
+    :param p_etl_id: id etl процесса
     """
     l_sql=""
     for i_row in p_data_frame:
         i=0
-        l_sql=l_sql+"("
+        l_sql=l_sql+"(\n\t"
         for i_column in i_row:
-            if p_cast_list.get(i,None) is None:
+            if p_cast_dict.get(i,None) is None:
                 sys.exit("Нет указания cast для атрибута "+str(i)) #TODO: реализовать вывод ошибок, как сделал Рустем
-            i_column="'"+str(i_column).replace("'","''")+"'" # экранируем одинарную кавычку ' в строке
-            l_sql=l_sql+p_cast_list.get(i,None).replace(str(i),i_column,1)+","
+            if not i_column: # преобразуем none в null, если значение пустое
+                i_column="NULL "
+            else:
+                i_column="'"+str(i_column).replace("'","''")+"' " # экранируем одинарную кавычку ' в строке
+            l_sql=l_sql+p_cast_dict.get(i,None).replace(str(i),i_column,1)+",\n\t"
             i=i+1
-        l_sql=l_sql[:-1]+"),"
-    return l_sql[:-1]
+        l_sql=l_sql+"CAST("+str(p_etl_id)+" AS BIGINT)\n),\n" # добавляем etl_id
+    return l_sql[:-2]
 
 def _object_class_checker(p_object: object, p_class_name: str):
     """
@@ -493,7 +502,7 @@ def get_source_table_etl(p_source_table: object, p_attribute_value: list, p_etl_
 
     :param p_source_table: объект класса SourceTable
     :param p_etl: id etl процесса
-    :param p_attribute_value: значения атрибутов, полученные с источника
+    :param p_attribute_value: значения атрибутов, полученные с источника и преобразованные для вставки
     """
     l_attribute_name_list=[]
     l_update_attribute_sql=""
@@ -519,20 +528,10 @@ def get_source_table_etl(p_source_table: object, p_attribute_value: list, p_etl_
                 l_attribute_sql=l_attribute_sql+'"'+str(i_attribute.id)+'"'+",\n\t\t"
     l_attribute_sql=l_attribute_sql+l_update_attribute_sql+",\n\t\t"+l_etl_update_sql+"\n\t"
 
-    l_attribute_value_sql=""
-    for i_row in p_attribute_value: # проходимся по строкам
-        l_attribute_value_sql=l_attribute_value_sql+"(\n\t\t"
-        for i_column in i_row: # проходимся по столбцам
-            # экранируем одинарные кавычки
-            l_attribute_value_sql=l_attribute_value_sql+"CAST('"+str(i_column).replace("'","''")+"' AS "\
-                                  +const('C_VARCHAR').constant_value+"(10000)),\n\t\t"
-        l_attribute_value_sql=l_attribute_value_sql+"CAST("+str(p_etl_id)+" AS BIGINT)\n\t"
-        l_attribute_value_sql=l_attribute_value_sql+"),\n\t"
-    l_attribute_value_sql=l_attribute_value_sql[:-3] # убираем последнюю запятую, перенос строки и таб
     l_etl=Connection().dbms.get_source_table_etl(
         p_source_table_id=p_source_table.id,
         p_source_attribute=l_attribute_sql,
-        p_source_attribute_value=l_attribute_value_sql
+        p_source_attribute_value=p_attribute_value
     )
     return l_etl
 
@@ -831,6 +830,13 @@ class _DWHObject:
             return self.l_id
         else:
             return self._id
+
+    @property
+    def name(self):
+        """
+        Наименование объекта
+        """
+        return None # переопределяется в дочерних классах
 
     def __object_attrs_meta(self):
         """
@@ -1155,16 +1161,14 @@ class _DWHObject:
         Метаданные объекта в формате json
         """
         l_json={}
-        l_all_attribute_list=dir(self) # лист с атрибутами и переменными объекта
-        l_constant_name="C_"+str(self.type).upper()+"_META_ATTRIBUTES" # имя константы, содержащей атрибуты метаданных объекта
-        l_metadata_attributes=list(const(l_constant_name).constant_value.keys())
 
         # основные атрибуты
-        l_json.update(
-            {
-                const('C_NAME').constant_value:self.name,
-            }
-        )
+        if self.name:
+            l_json.update(
+                {
+                    const('C_NAME').constant_value:self.name,
+                }
+            )
         # атрибуты объекта Attribute
         if type(self).__name__=="Attribute":
             l_json.update(
@@ -1298,7 +1302,38 @@ class _DWHObject:
                     const('C_LINK_ENTITY').constant_value:self.__get_property_id(p_property=self.link_entity)
                 }
             )
+        # Если указана ошибка
+        if self.error:
+            l_json.update(
+                {
+                    const('C_ERROR').constant_value:self.error.replace("'","''") # экранирование одинарной кавычки
+                }
+            )
+        if self.status:
+            l_json.update(
+                {
+                    const('C_STATUS').constant_value:self.status
+                }
+            )
 
+        if self.start_datetime:
+            l_json.update(
+                {
+                    const('C_START_DATETIME').constant_value:str(self.start_datetime)
+                }
+            )
+        if self.end_datetime:
+            l_json.update(
+                {
+                    const('C_END_DATETIME').constant_value:str(self.end_datetime)
+                }
+            )
+        if self.job:
+            l_json.update(
+                {
+                    const('C_ETL').constant_value:self.__get_property_id(p_property=self.job)
+                }
+            )
         return l_json
 
     @property
@@ -1605,12 +1640,12 @@ class SourceTable(_DWHObject):
         l_attribute_sql=""
         l_attribute_name_list=[]
         for i_attribute in self.source_attribute:
-            l_attribute_name_list.append(i_attribute.name)
+            if i_attribute.attribute_type==const('C_QUEUE_ATTR_TYPE_NAME').constant_value: # не берем технические атрибуты
+                l_attribute_name_list.append(i_attribute.name)
         l_attribute_name_list.sort() # сортируем по наименоваию
         for i_attribute in l_attribute_name_list:
             l_attribute_sql=l_attribute_sql+"\n"+'"'+i_attribute+'"'+","
         l_attribute_sql=l_attribute_sql[1:] # убираем первый перенос строки
-        l_attribute_sql=l_attribute_sql[:-1] # убираем последнюю запятую
         l_increment_sql=""
         l_timestamp_type=const('C_TIMESTAMP_DBMS').constant_value.get(self.source.type)
         if self.increment:
@@ -2016,50 +2051,239 @@ class Tie(_DWHObject):
         self.link_entity.tie=l_link_entity_tie
 
 
-class Job:
+class Job(_DWHObject):
     """
-    Загружает данные
+    Job по загрузке данных
     """
-    def __init__(self, p_entity_id: list =None):
+    def __init__(self,
+                 p_id: str =None,
+                 p_entity: list =None,
+                 p_entity_attribute: list =None,
+                 p_package: list =None,
+                 p_type: str =None,
+                 p_source_table: object =None,
+                 p_anchor: object =None,
+                 p_attribute_table: object =None,
+                 p_tie: object =None,
+                 p_idmap: object =None
+    ):
         """
         Конструктор
-        :param p_entity_id: id сущности, таблицы которой требуется обновить
+        :param p_id: id job-a
+        :param p_entity: список сущностей, в которые требуется загрузить данные
+        :param p_entity_attribute: список атрибутов сущностей, в которые требуется загрузить данные
+        :param p_status: статус джоба
+        :param p_package: пакеты джоба
+        :param p_type: тип объекта (заполняется при иницилизации объекта класса Package (дочерний класс), для Job - пусто)
         """
-        self._entity_id=p_entity_id
+        super().__init__(
+            p_id=p_id,
+            p_entity=p_entity,
+            p_type=p_type or const('C_ETL').constant_value,
+            p_entity_attribute=p_entity_attribute,
+            p_source_table=p_source_table,
+            p_idmap=p_idmap,
+            p_anchor=p_anchor,
+            p_attribute_table=p_attribute_table,
+            p_tie=p_tie
+        )
 
-        self.l_job_id=copy.copy(uuid.uuid4()) # для того, чтобы uuid не изменялся каждый раз при вызове
+        self._status=const('C_STATUS_START').constant_value
+        self._start_datetime=copy.copy(datetime.datetime.now()) # чтобы время не изменялось при каждом вызове
+        self._end_datetime=None
+        self._package=p_package
+        self._error=None
+
 
     @property
-    def id(self):
+    def status(self) -> str:
         """
-        Id job-а
+        Статус job-а
         """
-        return self.l_job_id
+        return self.object_attrs_meta.get(const('C_STATUS').constant_value) or self._status
 
-    def get_table_uuid(self, p_table_type: str):
-        """
-        Получает все uuid таблиц определенного типа
+    @status.setter
+    def status(self, p_new_status: str):
+        self._status=p_new_status
 
-        :param p_table_type: тип таблицы
+    @property
+    def etl_id(self) -> int:
         """
-        # проверка заданного типа таблицы
-        if p_table_type not in const('C_TABLE_TYPE_LIST').constant_value:
-            sys.exit("Некорректный тип таблицы "+p_table_type)
-        # выбираем uuid из метаданных
-        l_table_uuid_list=meta.search_object(
-            p_type=p_table_type,
-            p_attrs={
-                const('C_DELETED_META_ATTR').constant_value:0 # выбираем только неудаленные объекты
+        Целочисленный id для хранения в ХД
+        """
+        # вычисляем максимальный source_id из метаданных
+        l_etls=meta.search_object(
+            p_type=const('C_ETL').constant_value
+        )
+        l_etl_id_list=[] # список source_id
+        for i_etl in l_etls:
+            l_etl_id_list.append(i_etl.attrs.get(const('C_ETL_ATTRIBUTE_NAME').constant_value))
+        l_first_etl_id=None
+        if l_etl_id_list.__len__()==0:
+            l_first_etl_id=1
+        return self.object_attrs_meta.get(const('C_ETL_ATTRIBUTE_NAME').constant_value,None) or l_first_etl_id or max(l_etl_id_list)+1
+
+    @property
+    def start_datetime(self) -> str:
+        """
+        Дата и время начала job-а
+        """
+        return self.object_attrs_meta.get(const('C_START_DATETIME').constant_value,None) or self._start_datetime
+
+    @property
+    def end_datetime(self) -> str:
+        """
+        Дата и время окончания джоба
+        """
+        return self.object_attrs_meta.get(const('C_END_DATETIME').constant_value,None) or self._end_datetime
+
+    @end_datetime.setter
+    def end_datetime(self, p_new_end_datetime: str):
+        self._end_datetime=p_new_end_datetime
+
+    @property
+    def error(self):
+        """
+        Текст ошибки
+        """
+        return self.object_attrs_meta.get(const('C_ERROR').constant_value,None) or self._error
+
+    @error.setter
+    def error(self, p_new_error: str):
+        self._error=p_new_error
+
+    @property
+    def source_table_package(self):
+        """
+        ETL-пакеты джоба
+        """
+        # проверка объекта
+        _class_checker(p_class_name="Package",p_object=self._package)
+        # собираем метаданные, если указаны
+        l_meta_obj=self.object_attrs_meta.get(const('C_PACKAGE').constant_value,None)
+        # выбираем из метаданных
+        l_object=_get_object(p_id=l_meta_obj, p_class_name="Package", p_type=const('C_QUEUE_ETL').constant_value)
+
+        return self._package or l_object
+
+
+class Package(Job):
+    """
+    ETL-пакет
+    """
+
+    def __init__(self,
+                 p_type: str,
+                 p_id: str =None,
+                 p_source_table: object =None,
+                 p_anchor: object =None,
+                 p_attribute_table: object =None,
+                 p_tie: object =None,
+                 p_idmap: object =None,
+                 p_job: object =None
+    ):
+        """
+        Конструктор
+
+        :param p_id: id etl-пакета
+        :param p_type: тип etl-пакета
+        :param p_source_table: таблица источник
+        :param p_anchor_table: якорь
+        :param p_attribute_table: таблица атрибут
+        :param p_tie: таблица связи
+        :param p_idmap: idmap
+        :param p_job: job, в рамках которого запустился пакет
+        """
+        super().__init__(
+            p_type=p_type,
+            p_id=p_id,
+            p_source_table=p_source_table,
+            p_idmap=p_idmap,
+            p_anchor=p_anchor,
+            p_attribute_table=p_attribute_table,
+            p_tie=p_tie
+        )
+
+        self._job=p_job
+
+
+    @property
+    def job(self):
+        """
+        Job
+        """
+        # проверка объекта
+        _class_checker(p_class_name="Job",p_object=self._job)
+        # собираем метаданные, если указаны
+        l_meta_obj=self.object_attrs_meta.get(const('C_ETL').constant_value,None)
+        # выбираем из метаданных
+        l_object=_get_object(p_id=l_meta_obj, p_class_name="Job")
+
+        return self._job or l_object
+
+    def start_etl(self, p_attribute_value: list =None):
+        """
+        Запускает etl таблицы
+
+        :param p_attribute_value: значения для вставки (при загрузке таблиц источников)
+        """
+        # получаем etl в зависимости от типа объекта
+        l_etl=None
+        l_result=None
+        # загрудаем данные
+        if self.type==const('C_QUEUE_ETL').constant_value:
+            l_attribute_value=self.get_source_data() # получаем данные с источника, преобразованные для вставки в таблицу
+            if l_attribute_value[1]: # если захват данных с источника завершился ошибкой
+                l_result=None, l_attribute_value[1]
+            else:
+                # формируем sql-запрос
+                l_etl=get_source_table_etl(p_source_table=self.source_table, p_etl_id=self.etl_id, p_attribute_value=l_attribute_value[0])
+                # выполняем запрос в ХД
+                l_result=Connection().sql_exec(p_sql=l_etl, p_result=0)
+        # логируем
+        self.end_datetime=datetime.datetime.now() # проставляем дату окончания процесса
+        if l_result[1]: # если завершилось с ошибкой
+            self.status=const('C_STATUS_FAIL').constant_value
+            self.error=l_result[1].args[1]
+        else:
+            self.status=const('C_STATUS_SUCCESS').constant_value
+        return l_result
+
+    def get_source_data(self):
+        """
+        Получает данные с источника и преобразует их для вставки в queue
+        """
+        # захват данных с источника
+        l_data_frame=self.source_table.source.sql_exec(
+            p_sql=self.source_table.source_table_sql
+        )
+        # формирование словаря с cast() выражением для каждого атрибута
+        l_cast_dict={}
+        l_attribute_name_list=[] # список с наименованиями атрибутов для последующей сортировки
+        for i_attribute in self.source_table.source_attribute:
+            if i_attribute.attribute_type!=const('C_ETL_TYPE_NAME').constant_value:
+                l_attribute_name_list.append(i_attribute.name)
+        l_attribute_name_list.sort()
+        i=0
+        for i_attribute_name in l_attribute_name_list:
+            for i_attribute in self.source_table.source_attribute:
+                if i_attribute.name==i_attribute_name:
+                    l_cast_dict.update(
+                        {i:"CAST("+str(i)+"AS "+i_attribute.datatype.data_type_sql+")"}
+                    )
+                    i+=1
+        l_cast_dict.update(
+            {
+                i:"CAST("+str(i)+"AS "+const('C_TIMESTAMP_DBMS').constant_value.get(Connection().dbms_type)+")"
             }
         )
-        return l_table_uuid_list
+        if l_data_frame[1]: # если возникла ошибка
+            return None, l_data_frame[1]
+        else:
+            l_insert_data_frame=get_values_sql(p_data_frame=l_data_frame[0], p_cast_dict=l_cast_dict, p_etl_id=self.etl_id) # data frame для вставки в таблицу
 
+        return l_insert_data_frame, None
 
-    def __get_table_etl(self):
-        """
-        Получает скрипт ETL загрузки данных таблицы
-        """
-        pass
 
 
 

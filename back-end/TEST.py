@@ -205,7 +205,7 @@ l_json = """
                     "source":"0a884f59-48b6-4afe-838e-57bdbbb9ec7c",
                     "schema":"crm",
                     "table":"client",
-                    "column":"client_id"
+                    "column":"client_name"
                     }
                 ]
         }
@@ -213,56 +213,69 @@ l_json = """
 
 }
 """
+#
+# l_json="""
+# {
+#     "entity":"orders",
+#     "description":"order entity",
+#     "attribute":[
+#             {
+#             "name":"id",
+#             "pk":1,
+#             "datatype":"int",
+#             "length":null,
+#             "scale":null,
+#             "link_entity":null,
+#             "description":"client id",
+#             "source":[
+#                     {
+#                     "source":"0a884f59-48b6-4afe-838e-57bdbbb9ec7c",
+#                     "schema":"crm",
+#                     "table":"order",
+#                     "column":"order_id"
+#                     }
+#                 ]
+#         }
+#     ,
+#         {
+#             "name":"name",
+#             "pk":0,
+#             "datatype":"int",
+#             "length":null,
+#             "scale":null,
+#             "link_entity":"b5f4bc71-10ef-40ee-8f00-3e552158a23e",
+#             "description":"client id",
+#             "source":[
+#                     {
+#                     "source":"0a884f59-48b6-4afe-838e-57bdbbb9ec7c",
+#                     "schema":"crm",
+#                     "table":"order",
+#                     "column":"client_id"
+#                     }
+#                 ]
+#         }
+#         ]
+#
+# }
+# """
 
-l_json="""
-{
-    "entity":"orders",
-    "description":"order entity",
-    "attribute":[
-            {
-            "name":"id",
-            "pk":1,
-            "datatype":"int",
-            "length":null,
-            "scale":null,
-            "link_entity":null,
-            "description":"client id",
-            "source":[
-                    {
-                    "source":"0a884f59-48b6-4afe-838e-57bdbbb9ec7c",
-                    "schema":"crm",
-                    "table":"order",
-                    "column":"order_id"
-                    }
-                ]
-        }
-    ,
-        {
-            "name":"name",
-            "pk":0,
-            "datatype":"int",
-            "length":null,
-            "scale":null,
-            "link_entity":"b5f4bc71-10ef-40ee-8f00-3e552158a23e",
-            "description":"client id",
-            "source":[
-                    {
-                    "source":"0a884f59-48b6-4afe-838e-57bdbbb9ec7c",
-                    "schema":"crm",
-                    "table":"order",
-                    "column":"client_id"
-                    }
-                ]
-        }
-        ]
+# model=Model.Model(p_json=l_json)
+#
+# model.create_model()
 
-}
-"""
+l_job=DWH.Job(
+)
 
-model=Model.Model(p_json=l_json)
+l_source_table=DWH.SourceTable(p_id="bf5ae7be-cb1a-4c07-99fe-9be50bfb856b")
+
+l_source_package=DWH.Package(p_job=l_job, p_source_table=l_source_table, p_type="queue_etl")
+
+l_job.status="x"
+
+l_source_package.start_etl()
 
 print(
-    model.create_model().tie[1].entity_attribute
+    l_source_package.create_metadata()
 )
 
 # for i in model.create_model():

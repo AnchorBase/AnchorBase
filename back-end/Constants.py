@@ -33,7 +33,16 @@ C_PORT = "port"
 C_TEMPLATE_FOLDER = "template_folder" # папка, в которой лежат шаблоны DDL/ETL
 C_TEMP_TABLE = "temp_table" # временная таблица
 C_CAST = "CAST" # операция CAST
-C_CONCAT_SYMBOL = "@@" #символ для конкатенации
+C_CONCAT_SYMBOL = "@@" #символ для конкатенаци
+C_STATUS="status"
+C_STATUS_IN_PROGRESS="in progress"
+C_STATUS_FAIL="fail"
+C_STATUS_SUCCESS="success"
+C_STATUS_START="start"
+C_START_DATETIME="start_datetime"
+C_END_DATETIME="end_datetime"
+C_PACKAGE="package"
+C_ERROR="error"
 
 # Наименование типов таблиц
 #!!! При создании нового типа таблицы добавить константу в список C_TABLE_TYPE_LIST
@@ -91,6 +100,7 @@ C_LINK_ENTITY_COLUMN = C_LINK_ENTITY+"_"+C_COLUMN
 C_ENTITY_LINK_COLUMN = C_ENTITY+"_link"+C_COLUMN
 C_INCREMENT = "increment"
 C_QUEUE_INCREMENT=C_QUEUE_TABLE_TYPE_NAME+"_"+C_INCREMENT
+C_QUEUE_ETL="queue_etl"
 
 C_META_TABLES = [
     C_SOURCE_META,
@@ -107,7 +117,9 @@ C_META_TABLES = [
     C_TIE_TABLE_TYPE_NAME,
     C_TIE_COLUMN,
     C_QUEUE_COLUMN,
-    C_QUEUE_INCREMENT
+    C_QUEUE_INCREMENT,
+    C_ETL,
+    C_QUEUE_ETL
 ]
 
 C_STG_SCHEMA="stg"
@@ -266,6 +278,15 @@ C_QUEUE_INCREMENT_META_ATTRIBUTES = {
     C_INCREMENT:{C_NOT_NULL:0,C_TYPE_VALUE:"str",C_PK:0}
 }
 
+C_QUEUE_ETL_META_ATTRIBUTES={
+    C_QUEUE_TABLE_TYPE_NAME:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:0},
+    C_STATUS:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:0},
+    C_START_DATETIME:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:0},
+    C_END_DATETIME:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:0},
+    C_ERROR:{C_NOT_NULL:0,C_TYPE_VALUE:"str",C_PK:0},
+    C_ETL:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:0}
+}
+
 C_META_ATTRIBUTES = { # таблица метаданных и необходимые атрибуты
     C_SOURCE_META:C_SOURCE_META_ATTRIBUTES,
     C_ENTITY:C_ENTITY_META_ATTRIBUTES,
@@ -280,8 +301,11 @@ C_META_ATTRIBUTES = { # таблица метаданных и необходи�
     C_ATTRIBUTE_TABLE_TYPE_NAME:C_ATTRIBUTE_META_ATTRIBUTES,
     C_ATTRIBUTE_COLUMN:C_ATTRIBUTE_COLUMN_META_ATTRIBUTES,
     C_TIE_TABLE_TYPE_NAME:C_TIE_META_ATTRIBUTES,
-    C_TIE_COLUMN:C_TIE_COLUMN_META_ATTRIBUTES
+    C_TIE_COLUMN:C_TIE_COLUMN_META_ATTRIBUTES,
+    C_QUEUE_ETL:C_QUEUE_ETL_META_ATTRIBUTES
 }
+
+
 
 
 # СУБД
