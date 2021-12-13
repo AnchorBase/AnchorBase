@@ -13,6 +13,8 @@ import MSSQL
 import copy
 import uuid
 from SystemObjects import Constant as const
+import sys
+import time
 
 
 # source = DWH.Source(
@@ -268,14 +270,21 @@ l_job=DWH.Job(
 )
 
 l_source_table=DWH.SourceTable(p_id="55a95639-8088-4f97-855b-95db5cda01ac")
+l_source_table_client=DWH.SourceTable(p_id="bf5ae7be-cb1a-4c07-99fe-9be50bfb856b")
 
 l_idmap=DWH.Idmap(
     p_id="13e95814-e731-4002-b154-e999fbf39be3"
 )
 
+l_idmap_order=DWH.Idmap(
+    p_id="19eeeb8e-f1a9-45c3-86a7-6d818a61855a"
+)
+
 l_order_idmap=DWH.Idmap(p_id="19eeeb8e-f1a9-45c3-86a7-6d818a61855a")
 
 l_anchor=DWH.Anchor(p_id="e0fa0d1b-9d54-4874-8d15-8581760d9dfc")
+
+l_anchor_order=DWH.Anchor(p_id="971d334b-9a51-440c-8ceb-b294f0eb639d")
 
 l_attribute_id=DWH.AttributeTable(p_id="caf6f9b8-30a4-428e-9e76-1f49253017ce")
 
@@ -288,9 +297,7 @@ l_package=DWH.Package(p_job=l_job, p_type=const('C_TIE_ETL').constant_value, p_t
 
 # l_package=DWH.Package(p_job=l_job, p_type='idmap_etl',p_idmap=l_order_idmap, p_source_table=l_source_table)
 
-print(
-    DWH.create_view_ddl(l_source_table)
-)
+l_job.anchor_load([l_anchor_order, l_anchor])
 
 
 

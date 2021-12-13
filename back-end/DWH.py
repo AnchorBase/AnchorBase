@@ -12,6 +12,7 @@ import uuid
 import Metadata as meta
 from Source import Source as Source
 import datetime
+import Color
 
 class Connection:
     """
@@ -297,6 +298,16 @@ def _get_attribute_type(p_attribute: object):
         return "attribute_table_attribute"
     if p_attribute.type==const('C_TIE_COLUMN').constant_value:
         return "tie_attribute"
+    if p_attribute.type==const('C_QUEUE_ETL').constant_value:
+        return "source_table_package"
+    if p_attribute.type==const('C_IDMAP_ETL').constant_value:
+        return "idmap_package"
+    if p_attribute.type==const('C_ANCHOR_ETL').constant_value:
+        return "anchor_package"
+    if p_attribute.type==const('C_ATTRIBUTE_ETL').constant_value:
+        return "attribute_table_package"
+    if p_attribute.type==const('C_TIE_ETL').constant_value:
+        return "tie_package"
 
 def _get_table_attribute_property(p_table: object):
     """
@@ -379,8 +390,6 @@ def add_attribute(p_table: object, p_attribute: object, p_add_table_flg: int =1)
     :param p_attribute_list: лист из дочерних объектов уже добавленных в родительский объект
     :param p_add_table_flg: признак необходимости также добавить таблицу в атрибут (по умолчанию - да)
     """
-    # проверка
-    _object_class_checker(p_class_name="Attribute", p_object=p_attribute)
     # добавляем атрибут в таблицу
     _add_object(
         p_parent_object=p_table,
@@ -2103,7 +2112,6 @@ class Job(_DWHObject):
                  p_id: str =None,
                  p_entity: list =None,
                  p_entity_attribute: list =None,
-                 p_package: list =None,
                  p_type: str =None,
                  p_source_table: object =None,
                  p_anchor: object =None,
@@ -2135,7 +2143,11 @@ class Job(_DWHObject):
         self._status=const('C_STATUS_START').constant_value
         self._start_datetime=copy.copy(datetime.datetime.now()) # чтобы время не изменялось при каждом вызове
         self._end_datetime=None
-        self._package=p_package
+        self._source_table_package=None
+        self._idmap_package=None
+        self._anchor_package=None
+        self._attribute_table_package=None
+        self._tie_package=None
         self._error=None
 
 
@@ -2199,16 +2211,176 @@ class Job(_DWHObject):
     @property
     def source_table_package(self):
         """
-        ETL-пакеты джоба
+        ETL-пакет таблиц источника
         """
         # проверка объекта
-        _class_checker(p_class_name="Package",p_object=self._package)
+        _class_checker(p_class_name="Package",p_object=self._source_table_package)
         # собираем метаданные, если указаны
         l_meta_obj=self.object_attrs_meta.get(const('C_PACKAGE').constant_value,None)
         # выбираем из метаданных
         l_object=_get_object(p_id=l_meta_obj, p_class_name="Package", p_type=const('C_QUEUE_ETL').constant_value)
 
-        return self._package or l_object
+        return self._source_table_package or l_object
+
+    @property
+    def idmap_package(self):
+        """
+        ETL-пакеты idmap
+        """
+        # проверка объекта
+        _class_checker(p_class_name="Package",p_object=self._idmap_package)
+        # собираем метаданные, если указаны
+        l_meta_obj=self.object_attrs_meta.get(const('C_PACKAGE').constant_value,None)
+        # выбираем из метаданных
+        l_object=_get_object(p_id=l_meta_obj, p_class_name="Package", p_type=const('C_IDMAP_ETL').constant_value)
+
+        return self._idmap_package or l_object
+
+    @property
+    def anchor_package(self):
+        """
+        ETL-пакеты idmap
+        """
+        # проверка объекта
+        _class_checker(p_class_name="Package",p_object=self._anchor_package)
+        # собираем метаданные, если указаны
+        l_meta_obj=self.object_attrs_meta.get(const('C_PACKAGE').constant_value,None)
+        # выбираем из метаданных
+        l_object=_get_object(p_id=l_meta_obj, p_class_name="Package", p_type=const('C_IDMAP_ETL').constant_value)
+
+        return self._anchor_package or l_object
+
+    @property
+    def attribute_table_package(self):
+        """
+        ETL-пакеты idmap
+        """
+        # проверка объекта
+        _class_checker(p_class_name="Package",p_object=self._attribute_table_package)
+        # собираем метаданные, если указаны
+        l_meta_obj=self.object_attrs_meta.get(const('C_PACKAGE').constant_value,None)
+        # выбираем из метаданных
+        l_object=_get_object(p_id=l_meta_obj, p_class_name="Package", p_type=const('C_IDMAP_ETL').constant_value)
+
+        return self._attribute_table_package or l_object
+
+    @property
+    def tie_package(self):
+        """
+        ETL-пакеты idmap
+        """
+        # проверка объекта
+        _class_checker(p_class_name="Package",p_object=self._tie_package)
+        # собираем метаданные, если указаны
+        l_meta_obj=self.object_attrs_meta.get(const('C_PACKAGE').constant_value,None)
+        # выбираем из метаданных
+        l_object=_get_object(p_id=l_meta_obj, p_class_name="Package", p_type=const('C_IDMAP_ETL').constant_value)
+
+        return self._tie_package or l_object
+
+    @source_table_package.setter
+    def source_table_package(self, p_new):
+        self._source_table_package=p_new
+
+    @idmap_package.setter
+    def idmap_package(self, p_new):
+        self._idmap_package=p_new
+
+    @anchor_package.setter
+    def anchor_package(self, p_new):
+        self._anchor_package=p_new
+
+    @attribute_table_package.setter
+    def attribute_table_package(self, p_new):
+        self._attribute_table_package=p_new
+
+    @tie_package.setter
+    def tie_package(self, p_new):
+        self._tie_package=p_new
+
+    def start_job(self):
+        """
+        Загружает данные в ХД
+        """
+        # грузим данные в таблицы источники
+
+    def __status_color(self, p_status: str):
+        """
+        Определяет цвет статуса в терминале
+        """
+        if p_status==const('C_STATUS_SUCCESS').constant_value:
+            return Color.OKGREEN+p_status+Color.ENDC
+        if p_status==const('C_STATUS_PARTLY_SUCCESS').constant_value:
+            return Color.WARNING+p_status+Color.ENDC
+        if p_status==const('C_STATUS_FAIL').constant_value:
+            return Color.FAIL+p_status+Color.ENDC
+        if p_status==const('C_STATUS_IN_PROGRESS').constant_value:
+            return Color.OKBLUE+p_status+Color.ENDC
+
+
+    def __source_table_load(self, p_source_table: list):
+        """
+        Загружает данные в таблицы источники
+
+        :param p_source_table: список таблиц источников, которые требуется прогрузить
+        """
+        for i_source_table in p_source_table:
+            print("("+i_source_table.source.name+") "+i_source_table.name+": "+self.__status_color(const('C_STATUS_IN_PROGRESS').constant_value), end="")
+            l_package=Package(
+                p_source_table=i_source_table,
+                p_type=const('C_QUEUE_ETL').constant_value,
+                p_job=self
+            )
+            l_package.start_etl()
+            print("\r"+"("+i_source_table.source.name+") "+i_source_table.name+" : "+self.__status_color(l_package.status))
+
+    def idmap_load(self, p_idmap: list):
+        """
+        Загружает данные в idmap таблицы
+
+        :param p_idmap: список idmap, которые требуется прогрузить
+        """
+        for i_idmap in p_idmap:
+            print(i_idmap.name+": "+self.__status_color(const('C_STATUS_IN_PROGRESS').constant_value), end="")
+            l_error_cnt=0
+            l_source_table_cnt=0
+            l_status=None
+            for i_source_table in i_idmap.entity.source_table:
+                l_package=Package(
+                    p_idmap=i_idmap,
+                    p_type=const('C_IDMAP_ETL').constant_value,
+                    p_job=self,
+                    p_source_table=i_source_table
+                )
+                l_package.start_etl()
+                if l_package.error:
+                    l_error_cnt+=1
+                l_source_table_cnt+=1
+            if l_error_cnt==l_source_table_cnt:
+                l_status=const('C_STATUS_FAIL').constant_value
+            elif l_error_cnt==0:
+                l_status=const('C_STATUS_SUCCESS').constant_value
+            else:
+                l_status=const('C_STATUS_PARTLY_SUCCESS').constant_value
+            print("\r"+i_idmap.name+" : "+self.__status_color(l_status))
+
+    def anchor_load(self, p_anchor: list):
+        """
+        Загружает данные в якоря
+
+        :param p_anchor: список якорей, которые требуется прогрузить
+        """
+        for i_anchor in p_anchor:
+            print(i_anchor.name+": "+self.__status_color(const('C_STATUS_IN_PROGRESS').constant_value), end="")
+            l_package=Package(
+                p_anchor=i_anchor,
+                p_type=const('C_ANCHOR_ETL').constant_value,
+                p_job=self
+            )
+            l_package.start_etl()
+            print("\r"+i_anchor.name+" : "+self.__status_color(l_package.status))
+
+
 
 
 class Package(Job):
@@ -2249,6 +2421,9 @@ class Package(Job):
         )
 
         self._job=p_job
+
+        # добавляем пакет к джобу при инициализации объекта
+        self.__add_package_to_job()
 
 
     @property
@@ -2346,6 +2521,14 @@ class Package(Job):
             l_insert_data_frame=get_values_sql(p_data_frame=l_data_frame[0], p_cast_dict=l_cast_dict, p_etl_id=self.etl_id) # data frame для вставки в таблицу
 
         return l_insert_data_frame, None
+
+    def __add_package_to_job(self):
+        """
+        Добавляет пакет к джобу
+        """
+        add_attribute(p_table=self.job, p_attribute=self, p_add_table_flg=0)
+
+
 
 
 
