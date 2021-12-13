@@ -502,7 +502,7 @@ def get_idmap_etl(
           "CREATE TABLE "+'"'+const('C_WRK_SCHEMA').constant_value+'"'+"."+'"'+str(p_idmap_id)+"_2"+'"'+" AS (\n\t"\
           "SELECT\n\t"\
           "nk.idmap_nk\n\t"\
-          ",mx_rk.max_rk + ROW_NUMBER() OVER (ORDER BY 1) AS idmap_rk\n\t"\
+          ",COALESCE(mx_rk.max_rk,0) + ROW_NUMBER() OVER (ORDER BY 1) AS idmap_rk\n\t"\
           "FROM "+'"'+const('C_WRK_SCHEMA').constant_value+'"'+"."+'"'+str(p_idmap_id)+"_1"+'"'+" as nk\n\t"\
           "LEFT JOIN "+'"'+const('C_IDMAP_SCHEMA').constant_value+'"'+"."+'"'+str(p_idmap_id)+'"'+" as idmp\n\t\t"\
           "ON 1=1\n\t\t"\
@@ -554,7 +554,7 @@ def get_anchor_etl(
          "SELECT MAX("+'"'+str(p_anchor_rk_id)+'"'+") AS max_rk \n\t\t"\
          "FROM "+'"'+const('C_AM_SCHEMA').constant_value+'"'+"."+'"'+str(p_anchor_id)+'"'+"\n\t) AS mx_rk\n\t"\
          "WHERE 1=1\n\t\t"\
-         "AND " +'"'+str(p_idmap_rk_id)+'"'+">mx_rk.max_rk;"
+         "AND " +'"'+str(p_idmap_rk_id)+'"'+">COALESCE(mx_rk.max_rk,0);"
     return l_etl
 
 def get_attribute_etl(
@@ -597,7 +597,7 @@ def get_attribute_etl(
     """
     l_partition_etl=get_table_partition_etl(
         p_table_id=p_attribute_id,
-        p_temp_table_id='"'+str(p_attribute_id)+"_3"+'"'
+        p_temp_table_id=str(p_attribute_id)+"_3"
     )
     l_etl="DROP TABLE IF EXISTS "+'"'+const('C_WRK_SCHEMA').constant_value+'"'+"."+'"'+str(p_attribute_id)+"_1"+'"'+";\n"\
           "CREATE TABLE "+'"'+const('C_WRK_SCHEMA').constant_value+'"'+"."+'"'+str(p_attribute_id)+"_1"+'"'+" AS (\n\t"\
@@ -617,16 +617,16 @@ def get_attribute_etl(
           ",crow.attribute_name\n\t"\
           ",crow.from_dttm\n\t"\
           ",crow.rnum\n\t"\
-          "FROM wrk."+'"'+const('C_WRK_SCHEMA').constant_value+'"'+"."+'"'+str(p_attribute_id)+"_1"+'"'+" AS crow\n\t"\
-          "LEFT JOIN wrk."+'"'+const('C_WRK_SCHEMA').constant_value+'"'+"."+'"'+str(p_attribute_id)+"_1"+'"'+" AS prow\n\t\t"\
+          "FROM "+'"'+const('C_WRK_SCHEMA').constant_value+'"'+"."+'"'+str(p_attribute_id)+"_1"+'"'+" AS crow\n\t"\
+          "LEFT JOIN "+'"'+const('C_WRK_SCHEMA').constant_value+'"'+"."+'"'+str(p_attribute_id)+"_1"+'"'+" AS prow\n\t\t"\
           "ON 1=1\n\t\t"\
           "AND crow.idmap_rk=prow.idmap_rk\n\t\t"\
           "AND crow.rnum=prow.rnum+1\n\t\t"\
           "AND crow.attribute_name=prow.attribute_name\n\t"\
           "WHERE 1=1\n\t\t"\
           "AND prow.idmap_rk IS NULL\n);\n"\
-          "DROP TABLE IF EXISTS wrk."+'"'+const('C_WRK_SCHEMA').constant_value+'"'+"."+'"'+str(p_attribute_id)+"_3"+'"'+";\n"\
-          "CREATE TABLE wrk."+'"'+const('C_WRK_SCHEMA').constant_value+'"'+"."+'"'+str(p_attribute_id)+"_3"+'"'+" AS (\n\t"\
+          "DROP TABLE IF EXISTS "+'"'+const('C_WRK_SCHEMA').constant_value+'"'+"."+'"'+str(p_attribute_id)+"_3"+'"'+";\n"\
+          "CREATE TABLE "+'"'+const('C_WRK_SCHEMA').constant_value+'"'+"."+'"'+str(p_attribute_id)+"_3"+'"'+" AS (\n\t"\
           "SELECT\n\t"\
           "vers.idmap_rk\n\t"\
           ",vers.attribute_name\n\t"\
@@ -637,7 +637,7 @@ def get_attribute_etl(
           ",lv."+'"'+str(p_from_dttm_id)+'"'+" AS prev_from_dttm\n\t"\
           ",vers."+'"'+const('C_FROM_ATTRIBUTE_NAME').constant_value+'"'+"- INTERVAL'1'SECOND AS new_to_dttm\n\t"\
           ",lv."+'"'+str(p_etl_id)+'"'+" as prev_etl_id\n\t"\
-          "FROM wrk."+'"'+const('C_WRK_SCHEMA').constant_value+'"'+"."+'"'+str(p_attribute_id)+"_2"+'"'+" AS vers\n\t"\
+          "FROM "+'"'+const('C_WRK_SCHEMA').constant_value+'"'+"."+'"'+str(p_attribute_id)+"_2"+'"'+" AS vers\n\t"\
           "LEFT JOIN "+'"'+const('C_AM_SCHEMA').constant_value+'"'+"."+'"'+str(p_attribute_id)+'"'+" AS lv\n\t\t"\
           "ON 1=1\n\t\t"\
           "AND vers.idmap_rk=lv."+'"'+str(p_anchor_rk_id)+'"'+"\n\t\t"\
@@ -648,7 +648,7 @@ def get_attribute_etl(
           "COALESCE(CAST(lv."+'"'+str(p_attribute_column_id)+'"'+" AS VARCHAR(1000)),CAST('###' AS CHAR(3)))\n);\n"\
           "DELETE\n\t"\
           "FROM "+'"'+const('C_AM_SCHEMA').constant_value+'"'+"."+'"'+str(p_attribute_id)+'"'+" AS attr\n\t"\
-          "USING wrk."+'"'+const('C_WRK_SCHEMA').constant_value+'"'+"."+'"'+str(p_attribute_id)+"_3"+'"'+" AS tmp\n"\
+          "USING "+'"'+const('C_WRK_SCHEMA').constant_value+'"'+"."+'"'+str(p_attribute_id)+"_3"+'"'+" AS tmp\n"\
           "WHERE 1=1\n\t"\
           "AND attr."+'"'+str(p_anchor_rk_id)+'"'+"=tmp.idmap_rk\n\t"\
           "AND attr."+'"'+str(p_to_dttm_id)+'"'+"=CAST('5999-12-31 00:00:00' AS TIMESTAMP)\n;\n"\
@@ -722,7 +722,7 @@ def get_tie_etl(
     """
     l_partition_etl=get_table_partition_etl(
         p_table_id=p_tie_id,
-        p_temp_table_id='"'+str(p_tie_id)+"_3"+'"'
+        p_temp_table_id=str(p_tie_id)+"_3"
     )
     l_etl="DROP TABLE IF EXISTS "+'"'+const('C_WRK_SCHEMA').constant_value+'"'+"."+'"'+str(p_tie_id)+"_1"+'"'+";\n"\
           "CREATE TABLE "+'"'+const('C_WRK_SCHEMA').constant_value+'"'+"."+'"'+str(p_tie_id)+"_1"+'"'+" AS (\n\t"\
@@ -734,10 +734,12 @@ def get_tie_etl(
           "FROM "+'"'+const('C_STG_SCHEMA').constant_value+'"'+"."+'"'+str(p_stg_table_id)+'"'+" AS qe\n\t"\
           "INNER JOIN "+'"'+const('C_IDMAP_SCHEMA').constant_value+'"'+"."+'"'+str(p_idmap_id)+'"'+" AS idmap\n\t\t"\
           "ON 1=1\n\t\t"\
-          "AND CAST(\n\t\t\t"+p_idmap_concat+"\n\t\t\t||'@@'||\n\t\t\tCAST('"+str(p_source_id)+"' as VARCHAR(1000))\n\t\t as VARCHAR(1000))=idmap."+'"'+str(p_idmap_nk_id)+'"'+"\n\t"\
-          "INNER JOIN idmap."+'"'+const('C_IDMAP_SCHEMA').constant_value+'"'+"."+'"'+str(p_link_idmap_id)+'"'+" AS l_idmap\n\t\t"\
+          "AND CAST(\n\t\t\t"+p_idmap_concat+"\n\t\t\t||'@@'||\n\t\t\tCAST('"+str(p_source_id)+"' as VARCHAR(1000))\n\t\t as VARCHAR(1000))=idmap."\
+          +'"'+str(p_idmap_nk_id)+'"'+"\n\t"\
+          "INNER JOIN "+'"'+const('C_IDMAP_SCHEMA').constant_value+'"'+"."+'"'+str(p_link_idmap_id)+'"'+" AS l_idmap\n\t\t"\
           "ON 1=1\n\t\t" \
-          "AND CAST(\n\t\t\t"+p_link_idmap_concat+"\n\t\t\t||'@@'||\n\t\t\tCAST('"+str(p_source_id)+"' as VARCHAR(1000))\n\t\t as VARCHAR(1000))=idmap."+'"'+str(p_link_idmap_nk_id)+'"'+"\n);\n" \
+          "AND CAST(\n\t\t\t"+p_link_idmap_concat+"\n\t\t\t||'@@'||\n\t\t\tCAST('"+str(p_source_id)+"' as VARCHAR(1000))\n\t\t as VARCHAR(1000))=l_idmap."\
+          +'"'+str(p_link_idmap_nk_id)+'"'+"\n);\n" \
           "DROP TABLE IF EXISTS "+'"'+const('C_WRK_SCHEMA').constant_value+'"'+"."+'"'+str(p_tie_id)+"_2"+'"'+";\n"\
           "CREATE TABLE "+'"'+const('C_WRK_SCHEMA').constant_value+'"'+"."+'"'+str(p_tie_id)+"_2"+'"'+" AS (\n\t"\
           "SELECT\n\t"\
@@ -791,9 +793,9 @@ def get_tie_etl(
           ",prev_from_dttm\n\t"\
           ",new_to_dttm\n\t"\
           ",prev_etl_id\n\t"\
-          "FROM wrk."+'"'+const('C_WRK_SCHEMA').constant_value+'"'+"."+'"'+str(p_tie_id)+"_3"+'"'+"\n\t"\
+          "FROM "+'"'+const('C_WRK_SCHEMA').constant_value+'"'+"."+'"'+str(p_tie_id)+"_3"+'"'+"\n\t"\
           "WHERE 1=1\n\t\t"\
-          "AND prev_from_dttm IS NOT NULL\n;\n"+l_partition_etl+\
+          "AND prev_from_dttm IS NOT NULL\n;\n"+l_partition_etl+"\n"\
           "INSERT INTO "+'"'+const('C_AM_SCHEMA').constant_value+'"'+"."+'"'+str(p_tie_id)+'"'+"\n(\n\t" \
           +'"'+str(p_anchor_rk)+'"'+",\n\t"+'"'+str(p_link_anchor_rk)+'"'+",\n\t" \
           +'"'+str(p_from_dttm_id)+'"'+",\n\t"+'"'+str(p_to_dttm_id)+'"'+",\n\t" \
@@ -803,8 +805,8 @@ def get_tie_etl(
           ",link_anchor_rk\n\t" \
           ",from_dttm\n\t" \
           ",to_dttm\n\t" \
-          ",CAST('"+str(p_etl_value)+"'\n\t" \
-          "FROM wrk."+'"'+const('C_WRK_SCHEMA').constant_value+'"'+"."+'"'+str(p_tie_id)+"_3"+'"'+"\n;\n" \
+          ",CAST('"+str(p_etl_value)+"' AS BIGINT)\n\t" \
+          "FROM "+'"'+const('C_WRK_SCHEMA').constant_value+'"'+"."+'"'+str(p_tie_id)+"_3"+'"'+"\n;\n" \
           "DROP TABLE IF EXISTS "+'"'+const('C_WRK_SCHEMA').constant_value+'"'+"."+'"'+str(p_tie_id)+"_1"+'"'+";\n" \
           "DROP TABLE IF EXISTS "+'"'+const('C_WRK_SCHEMA').constant_value+'"'+"."+'"'+str(p_tie_id)+"_2"+'"'+";\n" \
           "DROP TABLE IF EXISTS "+'"'+const('C_WRK_SCHEMA').constant_value+'"'+"."+'"'+str(p_tie_id)+"_3"+'"'+";"
@@ -829,7 +831,7 @@ def get_table_partition_etl(
           "DISTINCT\n\t\t"\
           "CAST(DATE_TRUNC('month', tmp."+'"'+const('C_FROM_ATTRIBUTE_NAME').constant_value+'"'+") + "\
           "INTERVAL '1 month - 1 day' AS DATE) AS new_partition_date\n\t\t"\
-          "FROM wrk."+'"'+str(p_temp_table_id)+'"'+" tmp\n\t\t"\
+          "FROM "+'"'+const('C_WRK_SCHEMA').constant_value+'"'+"."+'"'+str(p_temp_table_id)+'"'+" tmp\n\t\t"\
           "LEFT JOIN\n\t\t(\n\t\t\t"\
           "SELECT\n\t\t\t"\
           "TO_DATE(SUBSTR(chld.relname,POSITION('_date' IN chld.relname)+5,10),'YYYY-MM-DD') AS partition_date\n\t\t\t"\

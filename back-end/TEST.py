@@ -12,6 +12,7 @@ from platform import system
 import MSSQL
 import copy
 import uuid
+from SystemObjects import Constant as const
 
 
 # source = DWH.Source(
@@ -213,51 +214,51 @@ l_json = """
 
 }
 """
-#
-# l_json="""
-# {
-#     "entity":"orders",
-#     "description":"order entity",
-#     "attribute":[
-#             {
-#             "name":"id",
-#             "pk":1,
-#             "datatype":"int",
-#             "length":null,
-#             "scale":null,
-#             "link_entity":null,
-#             "description":"client id",
-#             "source":[
-#                     {
-#                     "source":"0a884f59-48b6-4afe-838e-57bdbbb9ec7c",
-#                     "schema":"crm",
-#                     "table":"order",
-#                     "column":"order_id"
-#                     }
-#                 ]
-#         }
-#     ,
-#         {
-#             "name":"name",
-#             "pk":0,
-#             "datatype":"int",
-#             "length":null,
-#             "scale":null,
-#             "link_entity":"b5f4bc71-10ef-40ee-8f00-3e552158a23e",
-#             "description":"client id",
-#             "source":[
-#                     {
-#                     "source":"0a884f59-48b6-4afe-838e-57bdbbb9ec7c",
-#                     "schema":"crm",
-#                     "table":"order",
-#                     "column":"client_id"
-#                     }
-#                 ]
-#         }
-#         ]
-#
-# }
-# """
+
+l_json="""
+{
+    "entity":"orders",
+    "description":"order entity",
+    "attribute":[
+            {
+            "name":"order_id",
+            "pk":1,
+            "datatype":"int",
+            "length":null,
+            "scale":null,
+            "link_entity":null,
+            "description":"client id",
+            "source":[
+                    {
+                    "source":"0a884f59-48b6-4afe-838e-57bdbbb9ec7c",
+                    "schema":"crm",
+                    "table":"orders",
+                    "column":"order_id"
+                    }
+                ]
+        }
+    ,
+        {
+            "name":"client_id",
+            "pk":0,
+            "datatype":"int",
+            "length":null,
+            "scale":null,
+            "link_entity":"1b1e8486-c75b-4603-a960-280411dd15d8",
+            "description":"client id",
+            "source":[
+                    {
+                    "source":"0a884f59-48b6-4afe-838e-57bdbbb9ec7c",
+                    "schema":"crm",
+                    "table":"orders",
+                    "column":"client_id"
+                    }
+                ]
+        }
+        ]
+
+}
+"""
 
 # model=Model.Model(p_json=l_json)
 #
@@ -266,17 +267,32 @@ l_json = """
 l_job=DWH.Job(
 )
 
-l_source_table=DWH.SourceTable(p_id="bf5ae7be-cb1a-4c07-99fe-9be50bfb856b")
+l_source_table=DWH.SourceTable(p_id="55a95639-8088-4f97-855b-95db5cda01ac")
 
-l_source_package=DWH.Package(p_job=l_job, p_source_table=l_source_table, p_type="queue_etl")
+l_idmap=DWH.Idmap(
+    p_id="13e95814-e731-4002-b154-e999fbf39be3"
+)
 
-l_job.status="x"
+l_order_idmap=DWH.Idmap(p_id="19eeeb8e-f1a9-45c3-86a7-6d818a61855a")
 
-l_source_package.start_etl()
+l_anchor=DWH.Anchor(p_id="e0fa0d1b-9d54-4874-8d15-8581760d9dfc")
+
+l_attribute_id=DWH.AttributeTable(p_id="caf6f9b8-30a4-428e-9e76-1f49253017ce")
+
+l_attribute_name=DWH.AttributeTable(p_id="3f53d815-af86-4cd2-9615-d36d2dc0f517")
+
+l_tie=DWH.Tie(p_id="d6da6e8b-4928-4d9b-b12e-230b96430606")
+
+
+l_package=DWH.Package(p_job=l_job, p_type=const('C_TIE_ETL').constant_value, p_tie=l_tie, p_source_table=l_source_table)
+
+# l_package=DWH.Package(p_job=l_job, p_type='idmap_etl',p_idmap=l_order_idmap, p_source_table=l_source_table)
 
 print(
-    l_source_package.create_metadata()
+    DWH.create_view_ddl(l_source_table)
 )
+
+
 
 # for i in model.create_model():
 #     # for j in i.source_attribute:

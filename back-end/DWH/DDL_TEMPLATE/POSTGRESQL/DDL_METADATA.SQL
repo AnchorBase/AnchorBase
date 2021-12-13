@@ -72,3 +72,25 @@ CREATE TABLE "queue_etl"
 	id uuid PRIMARY KEY,
 	value json NOT NULL
 );
+CREATE TABLE "idmap_etl"
+(
+	id uuid PRIMARY KEY,
+	value json NOT NULL
+);
+CREATE TABLE "anchor_etl"
+(
+	id uuid PRIMARY KEY,
+	value json NOT NULL
+);
+CREATE TABLE "attribute_etl"
+(
+	id uuid PRIMARY KEY,
+	value json NOT NULL
+);
+CREATE TABLE "tie_etl"
+(
+	id uuid PRIMARY KEY,
+	value json NOT NULL
+);
+
+
