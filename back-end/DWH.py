@@ -2298,11 +2298,110 @@ class Job(_DWHObject):
     def tie_package(self, p_new):
         self._tie_package=p_new
 
-    def start_job(self):
+    def start_job(self, p_step_name: str =const('C_STG_SCHEMA').constant_value):
         """
         Загружает данные в ХД
+
+        :param p_step_name: наименование схемы данных, с которой начинается прогрузка данных (по умолчанию stg)
         """
+        # получаем все таблицы, которые требуется прогрузить
+        l_source_table_list=[]
+        l_idmap_list=[]
+        l_anchor_list=[]
+        l_attribute_list=[]
+        l_tie_list=[]
+        if self.entity or self.entity_attribute:
+            if self.entity_attribute: # если указан атрибут грузим только его (даже если указана и таблица)
+                # таблицы источники
+                for i_source_attribute in self.entity_attribute.source_attribute:
+                    l_source_table_list.append(i_source_attribute.source_table)
+                # idmap
+                l_idmap_list.append(self.entity_attribute.entity.idmap)
+                # anchor
+                l_anchor_list.append(self.entity_attribute.entity.anchor)
+                # attribute
+                l_attribute_meta=meta.search_object( # поиск таблицы атрибута в метаданных
+                    p_type=const("C_ATTRIBUTE_TABLE_TYPE_NAME").constant_value,
+                    p_attrs={const('C_ENTITY_COLUMN').constant_value:self.entity_attribute.id}
+                )[0]
+                l_attribute=AttributeTable(p_id=l_attribute_meta.uuid)
+                l_attribute_list.append(l_attribute)
+                # tie - не обновляем, если указан атрибут сущности!
+            else:
+                # таблицы источники
+                for i_source_table in self.entity.source_table:
+                    l_source_table_list.append(i_source_table)
+                # idmap
+                l_idmap_list.append(self.entity.idmap)
+                # anchor
+                l_anchor_list.append(self.entity.anchor)
+                # attribute
+                l_attribute_list.extend(self.entity.attribute_table)
+                # tie
+                l_tie_list.append(self.entity.tie)
+        else:
+            # таблицы источники
+            l_source_table_meta=meta.search_object(p_type=const('C_QUEUE_TABLE_TYPE_NAME').constant_value)
+            for i_source_table_meta in l_source_table_meta:
+                 l_source_table=SourceTable(p_id=i_source_table_meta.uuid)
+                 l_source_table_list.append(l_source_table)
+            # idmap
+            l_idmap_table_meta=meta.search_object(p_type=const('C_IDMAP_TABLE_TYPE_NAME').constant_value)
+            for i_idmap_meta in l_idmap_table_meta:
+                l_idmap=Idmap(p_id=i_idmap_meta.uuid)
+                l_idmap_list.append(l_idmap)
+            # anchor
+            l_anchor_meta=meta.search_object(p_type=const('C_ANCHOR_TABLE_TYPE_NAME').constant_value)
+            for i_anchor_meta in l_anchor_meta:
+                l_anchor=Anchor(p_id=i_anchor_meta.uuid)
+                l_anchor_list.append(l_anchor)
+            # attribute
+            l_attribute_meta=meta.search_object(p_type=const('C_ATTRIBUTE_TABLE_TYPE_NAME').constant_value)
+            for i_attribute_meta in l_attribute_meta:
+                l_attribute=AttributeTable(p_id=i_attribute_meta.uuid)
+                l_attribute_list.append(l_attribute)
+            # tie
+            l_tie_meta=meta.search_object(p_type=const('C_TIE_TABLE_TYPE_NAME').constant_value)
+            for i_tie_meta in l_tie_meta:
+                l_tie=Tie(p_id=i_tie_meta.uuid)
+                l_tie_list.append(l_tie)
+
+
         # грузим данные в таблицы источники
+        if p_step_name==const('C_STG_SCHEMA').constant_value:
+            print(Color.BOLD+"==============================")
+            print("Source tables loading")
+            print("=============================="+Color.ENDC)
+            self.source_table_load(p_source_table=l_source_table_list)
+        # грузим данные в idmap
+        if p_step_name in [
+            const('C_STG_SCHEMA').constant_value,
+            const('C_IDMAP_SCHEMA').constant_value
+        ]:
+            print(Color.BOLD+"==============================")
+            print("Idmap tables loading")
+            print("=============================="+Color.ENDC)
+            self.idmap_load(p_idmap=l_idmap_list)
+        if p_step_name in [
+            const('C_STG_SCHEMA').constant_value,
+            const('C_IDMAP_SCHEMA').constant_value,
+            const('C_AM_SCHEMA').constant_value
+        ]:
+            print(Color.BOLD+"==============================")
+            print("Anchor tables loading")
+            print("=============================="+Color.ENDC)
+            self.anchor_load(p_anchor=l_anchor_list)
+            print(Color.BOLD+"==============================")
+            print("Attribute tables loading")
+            print("=============================="+Color.ENDC)
+            self.attribute_table_load(p_attribute_table=l_attribute_list)
+            if l_tie_list.__len__()>0: # не всегда ест tie у сущности
+                print(Color.BOLD+"==============================")
+                print("Tie tables loading")
+                print("=============================="+Color.ENDC)
+                self.tie_load(p_tie=l_tie_list)
+
+
 
     def __status_color(self, p_status: str):
         """
@@ -2318,14 +2417,14 @@ class Job(_DWHObject):
             return Color.OKBLUE+p_status+Color.ENDC
 
 
-    def __source_table_load(self, p_source_table: list):
+    def source_table_load(self, p_source_table: list):
         """
         Загружает данные в таблицы источники
 
         :param p_source_table: список таблиц источников, которые требуется прогрузить
         """
         for i_source_table in p_source_table:
-            print("("+i_source_table.source.name+") "+i_source_table.name+": "+self.__status_color(const('C_STATUS_IN_PROGRESS').constant_value), end="")
+            print("("+i_source_table.source.name+") "+i_source_table.name+" : "+self.__status_color(const('C_STATUS_IN_PROGRESS').constant_value), end="")
             l_package=Package(
                 p_source_table=i_source_table,
                 p_type=const('C_QUEUE_ETL').constant_value,
@@ -2341,10 +2440,9 @@ class Job(_DWHObject):
         :param p_idmap: список idmap, которые требуется прогрузить
         """
         for i_idmap in p_idmap:
-            print(i_idmap.name+": "+self.__status_color(const('C_STATUS_IN_PROGRESS').constant_value), end="")
+            print(i_idmap.name+" : "+self.__status_color(const('C_STATUS_IN_PROGRESS').constant_value), end="")
             l_error_cnt=0
             l_source_table_cnt=0
-            l_status=None
             for i_source_table in i_idmap.entity.source_table:
                 l_package=Package(
                     p_idmap=i_idmap,
@@ -2371,7 +2469,7 @@ class Job(_DWHObject):
         :param p_anchor: список якорей, которые требуется прогрузить
         """
         for i_anchor in p_anchor:
-            print(i_anchor.name+": "+self.__status_color(const('C_STATUS_IN_PROGRESS').constant_value), end="")
+            print(i_anchor.name+" : "+self.__status_color(const('C_STATUS_IN_PROGRESS').constant_value), end="")
             l_package=Package(
                 p_anchor=i_anchor,
                 p_type=const('C_ANCHOR_ETL').constant_value,
@@ -2379,6 +2477,65 @@ class Job(_DWHObject):
             )
             l_package.start_etl()
             print("\r"+i_anchor.name+" : "+self.__status_color(l_package.status))
+
+    def attribute_table_load(self, p_attribute_table: list):
+        """
+        Загружает данные в таблицы атрибуты
+
+        :param p_attribute_table: список таблиц атрибутов, которые требуется прогрузить
+        """
+        for i_attribute_table in p_attribute_table:
+            print(i_attribute_table.name+" : "+self.__status_color(const('C_STATUS_IN_PROGRESS').constant_value), end="")
+            l_error_cnt=0
+            l_source_table_cnt=0
+            for i_source_attribute in i_attribute_table.entity_attribute.source_attribute:
+                l_package=Package(
+                    p_attribute_table=i_attribute_table,
+                    p_source_table=i_source_attribute.source_table,
+                    p_job=self,
+                    p_type=const('C_ATTRIBUTE_ETL').constant_value
+                )
+                l_package.start_etl()
+                if l_package.error:
+                    l_error_cnt+=1
+                l_source_table_cnt+=1
+            if l_error_cnt==l_source_table_cnt:
+                l_status=const('C_STATUS_FAIL').constant_value
+            elif l_error_cnt==0:
+                l_status=const('C_STATUS_SUCCESS').constant_value
+            else:
+                l_status=const('C_STATUS_PARTLY_SUCCESS').constant_value
+            print("\r"+i_attribute_table.name+" : "+self.__status_color(l_status))
+
+    def tie_load(self, p_tie: list):
+        """
+        Загружает данные в tie
+
+        :param p_tie: список таблиц tie, которые требуется прогрузить
+        """
+        for i_tie in p_tie:
+            print(i_tie.name+" : "+self.__status_color(const('C_STATUS_IN_PROGRESS').constant_value), end="")
+            l_error_cnt=0
+            l_source_table_cnt=0
+            for i_source_table in i_tie.source_table:
+                l_package=Package(
+                    p_tie=i_tie,
+                    p_source_table=i_source_table,
+                    p_job=self,
+                    p_type=const('C_TIE_ETL').constant_value
+                )
+                l_package.start_etl()
+                if l_package.error:
+                    l_error_cnt+=1
+                l_source_table_cnt+=1
+            if l_error_cnt==l_source_table_cnt:
+                l_status=const('C_STATUS_FAIL').constant_value
+            elif l_error_cnt==0:
+                l_status=const('C_STATUS_SUCCESS').constant_value
+            else:
+                l_status=const('C_STATUS_PARTLY_SUCCESS').constant_value
+            print("\r"+i_tie.name+" : "+self.__status_color(l_status))
+
 
 
 
@@ -2475,12 +2632,13 @@ class Package(Job):
             #sql-запрос
             l_etl=get_tie_etl(p_tie=self.tie, p_source_table=self.source_table, p_etl_id=str(self.etl_id))[0]
         # выполняем запрос в ХД
-        l_result=Connection().sql_exec(p_sql=l_etl, p_result=0)
+        if not l_result:
+            l_result=Connection().sql_exec(p_sql=l_etl, p_result=0)
         # логируем
         self.end_datetime=datetime.datetime.now() # проставляем дату окончания процесса
         if l_result[1]: # если завершилось с ошибкой
             self.status=const('C_STATUS_FAIL').constant_value
-            self.error=l_result[1].pgerror
+            self.error=getattr(l_result[1], "pgerror",None) or l_result[1].args[1] # бывают случаи, когда pgerror не указан
         else:
             self.status=const('C_STATUS_SUCCESS').constant_value
         # записываем в метаданные
