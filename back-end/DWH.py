@@ -1347,13 +1347,6 @@ class _DWHObject:
                         const('C_ERROR').constant_value:self.error.replace("'","''") # экранирование одинарной кавычки
                     }
                 )
-            if self.status:
-                l_json.update(
-                    {
-                        const('C_STATUS').constant_value:self.status
-                    }
-                )
-
             if self.start_datetime:
                 l_json.update(
                     {
@@ -1371,6 +1364,49 @@ class _DWHObject:
                 l_json.update(
                     {
                         const('C_ETL').constant_value:self.__get_property_id(p_property=self.job)
+                    }
+                )
+            if self.status:
+                l_json.update(
+                    {
+                        const('C_STATUS').constant_value:self.status
+                    }
+                )
+        if type(self).__name__=="Job":
+            if self.etl_id:
+                l_json.update(
+                    {
+                        const('C_ETL_ATTRIBUTE_NAME').constant_value:self.etl_id
+                    }
+                )
+            if self.source_table_package:
+                l_json.update(
+                    {
+                        const('C_QUEUE_ETL').constant_value:self.__get_property_id(p_property=self.source_table_package)
+                    }
+                )
+            if self.idmap_package:
+                l_json.update(
+                    {
+                        const('C_IDMAP_ETL').constant_value:self.__get_property_id(p_property=self.idmap_package)
+                    }
+                )
+            if self.anchor_package:
+                l_json.update(
+                    {
+                        const('C_ANCHOR_ETL').constant_value:self.__get_property_id(p_property=self.anchor_package)
+                    }
+                )
+            if self.attribute_table_package:
+                l_json.update(
+                    {
+                        const('C_ATTRIBUTE_ETL').constant_value:self.__get_property_id(p_property=self.attribute_table_package)
+                    }
+                )
+            if self.tie_package:
+                l_json.update(
+                    {
+                        const('C_TIE_ETL').constant_value:self.__get_property_id(p_property=self.tie_package)
                     }
                 )
         return l_json
@@ -2110,8 +2146,8 @@ class Job(_DWHObject):
     """
     def __init__(self,
                  p_id: str =None,
-                 p_entity: list =None,
-                 p_entity_attribute: list =None,
+                 p_entity: object =None,
+                 p_entity_attribute: object =None,
                  p_type: str =None,
                  p_source_table: object =None,
                  p_anchor: object =None,
@@ -2140,7 +2176,6 @@ class Job(_DWHObject):
             p_tie=p_tie
         )
 
-        self._status=const('C_STATUS_START').constant_value
         self._start_datetime=copy.copy(datetime.datetime.now()) # чтобы время не изменялось при каждом вызове
         self._end_datetime=None
         self._source_table_package=None
@@ -2150,28 +2185,16 @@ class Job(_DWHObject):
         self._tie_package=None
         self._error=None
 
-
-    @property
-    def status(self) -> str:
-        """
-        Статус job-а
-        """
-        return self.object_attrs_meta.get(const('C_STATUS').constant_value) or self._status
-
-    @status.setter
-    def status(self, p_new_status: str):
-        self._status=p_new_status
-
     @property
     def etl_id(self) -> int:
         """
         Целочисленный id для хранения в ХД
         """
-        # вычисляем максимальный source_id из метаданных
+        # вычисляем максимальный etl_id из метаданных
         l_etls=meta.search_object(
             p_type=const('C_ETL').constant_value
         )
-        l_etl_id_list=[] # список source_id
+        l_etl_id_list=[] # список etl_id
         for i_etl in l_etls:
             l_etl_id_list.append(i_etl.attrs.get(const('C_ETL_ATTRIBUTE_NAME').constant_value))
         l_first_etl_id=None
@@ -2338,7 +2361,8 @@ class Job(_DWHObject):
                 # attribute
                 l_attribute_list.extend(self.entity.attribute_table)
                 # tie
-                l_tie_list.append(self.entity.tie)
+                if self.entity.tie:
+                    l_tie_list.extend(self.entity.tie)
         else:
             # таблицы источники
             l_source_table_meta=meta.search_object(p_type=const('C_QUEUE_TABLE_TYPE_NAME').constant_value)
@@ -2375,16 +2399,16 @@ class Job(_DWHObject):
             self.source_table_load(p_source_table=l_source_table_list)
         # грузим данные в idmap
         if p_step_name in [
-            const('C_STG_SCHEMA').constant_value,
-            const('C_IDMAP_SCHEMA').constant_value
+            const('C_IDMAP_SCHEMA').constant_value,
+            const('C_STG_SCHEMA').constant_value
         ]:
             print(Color.BOLD+"==============================")
             print("Idmap tables loading")
             print("=============================="+Color.ENDC)
             self.idmap_load(p_idmap=l_idmap_list)
         if p_step_name in [
-            const('C_STG_SCHEMA').constant_value,
             const('C_IDMAP_SCHEMA').constant_value,
+            const('C_STG_SCHEMA').constant_value,
             const('C_AM_SCHEMA').constant_value
         ]:
             print(Color.BOLD+"==============================")
@@ -2400,6 +2424,10 @@ class Job(_DWHObject):
                 print("Tie tables loading")
                 print("=============================="+Color.ENDC)
                 self.tie_load(p_tie=l_tie_list)
+        # записываем метаданные
+        self.end_datetime=datetime.datetime.now() # проставляем дату окончания процесса
+        # записываем в метаданные
+        self.create_metadata()
 
 
 
@@ -2578,10 +2606,21 @@ class Package(Job):
         )
 
         self._job=p_job
+        self._status=None
 
         # добавляем пакет к джобу при инициализации объекта
         self.__add_package_to_job()
 
+    @property
+    def status(self) -> str:
+        """
+        Статус etl-процесса
+        """
+        return self.object_attrs_meta.get(const('C_STATUS').constant_value) or self._status
+
+    @status.setter
+    def status(self, p_new_status: str):
+        self._status=p_new_status
 
     @property
     def job(self):

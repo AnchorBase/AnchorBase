@@ -863,15 +863,6 @@ class Model:
 
 
 
-
-
-
-
-
-
-
-
-
 class _SourceParam:
     """
     Параметры источника атрибута

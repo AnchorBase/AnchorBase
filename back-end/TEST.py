@@ -217,7 +217,7 @@ l_json = """
 }
 """
 
-l_json="""
+l_json2="""
 {
     "entity":"orders",
     "description":"order entity",
@@ -295,10 +295,15 @@ l_json="""
 # l_tie=DWH.Tie(p_id="9fd90d40-31ad-4e7d-aa50-4263d588d6af")
 
 
-l_job=DWH.Job(
+l_entity_column=DWH.Attribute(p_id="2788efbe-419a-484c-b77c-e5b275901896", p_type="entity_column")
 
+l_job=DWH.Job(
+    p_entity_attribute=l_entity_column
 )
+
+
 l_job.start_job()
+
 
 # print(
 #

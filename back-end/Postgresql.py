@@ -463,7 +463,8 @@ def get_source_table_etl(
     :param p_source_attribute: атрибуты таблицы (список должен быть отсортирован в соответствии с наименованием атрибута)
     :param p_source_attribute_value: значения атрибутов
     """
-    l_etl="INSERT INTO "+'"'+const('C_STG_SCHEMA').constant_value+'"'+"."+'"'+str(p_source_table_id)+'"'+"\n\t"\
+    l_etl="DELETE FROM "+'"'+const('C_STG_SCHEMA').constant_value+'"'+"."+'"'+str(p_source_table_id)+'";'+"\n\t" \
+           "INSERT INTO "+'"'+const('C_STG_SCHEMA').constant_value+'"'+"."+'"'+str(p_source_table_id)+'"'+"\n\t"\
           "("+p_source_attribute+")\n\t"\
           "VALUES\n"+p_source_attribute_value+";\n"
     return l_etl
