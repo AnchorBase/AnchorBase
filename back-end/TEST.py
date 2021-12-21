@@ -247,9 +247,9 @@ l_json2="""
 }
 """
 
-model=Model.Model(p_json=l_json)
-
-model.create_model()
+# model=Model.Model(p_json=l_json)
+#
+# model.create_model()
 
 
 
@@ -282,12 +282,11 @@ model.create_model()
 
 # l_entity_column=DWH.Attribute(p_id="2788efbe-419a-484c-b77c-e5b275901896", p_type="entity_column")
 #
-# l_job=DWH.Job(
-#     p_entity_attribute=l_entity_column
-# )
-#
-#
-# l_job.start_job()
+l_job=DWH.Job(
+)
+
+
+l_job.start_job()
 
 
 # print(

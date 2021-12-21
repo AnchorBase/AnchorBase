@@ -488,7 +488,7 @@ def create_view_ddl(p_table: object):
           +"\nFROM "+l_schema+"."+'"'+str(p_table.id)+'";'
     return l_sql
 
-def get_source_table_etl(p_source_table: object, p_attribute_value: list, p_etl_id: int):
+def get_source_table_etl(p_source_table: object, p_attribute_value: str):
     """
     ETL таблицы источника
 
@@ -2631,7 +2631,7 @@ class Package(Job):
                 l_result=None, l_attribute_value[1]
             else:
                 # формируем sql-запрос
-                l_etl=get_source_table_etl(p_source_table=self.source_table, p_etl_id=self.etl_id, p_attribute_value=l_attribute_value[0])
+                l_etl=get_source_table_etl(p_source_table=self.source_table, p_attribute_value=l_attribute_value[0])
         # idmap
         elif self.type==C_IDMAP_ETL:
             # sql-запрос
