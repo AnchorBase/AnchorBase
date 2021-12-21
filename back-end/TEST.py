@@ -1,21 +1,5 @@
 # coding=utf-8
-import Source
-import Metadata
-import Model
-import DataLoad
-import Driver
-import ETL
-import DDL
 import DWH
-import Postgresql
-from platform import system
-import MSSQL
-import copy
-import uuid
-from SystemObjects import Constant as const
-import sys
-import time
-
 
 # source = DWH.Source(
 #     p_id='0a884f59-48b6-4afe-838e-57bdbbb9ec7c'
