@@ -1,5 +1,6 @@
 # coding=utf-8
 import DWH
+import Model
 
 # source = DWH.Source(
 #     p_id='0a884f59-48b6-4afe-838e-57bdbbb9ec7c'
@@ -246,9 +247,9 @@ l_json2="""
 }
 """
 
-# model=Model.Model(p_json=l_json)
-#
-# model.create_model()
+model=Model.Model(p_json=l_json)
+
+model.create_model()
 
 
 
@@ -279,14 +280,14 @@ l_json2="""
 # l_tie=DWH.Tie(p_id="9fd90d40-31ad-4e7d-aa50-4263d588d6af")
 
 
-l_entity_column=DWH.Attribute(p_id="2788efbe-419a-484c-b77c-e5b275901896", p_type="entity_column")
-
-l_job=DWH.Job(
-    p_entity_attribute=l_entity_column
-)
-
-
-l_job.start_job()
+# l_entity_column=DWH.Attribute(p_id="2788efbe-419a-484c-b77c-e5b275901896", p_type="entity_column")
+#
+# l_job=DWH.Job(
+#     p_entity_attribute=l_entity_column
+# )
+#
+#
+# l_job.start_job()
 
 
 # print(

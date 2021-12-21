@@ -1,12 +1,6 @@
-import MSSQL
-import Postgresql
 import dwh_config
-import Metadata
-from pathlib import Path
-import FileWorker
-from SystemObjects import Constant as const
 import sys
-
+from Constants import *
 
 C_DWH_TYPE=dwh_config.dbms_type
 
@@ -16,7 +10,7 @@ class DBMS:
     Класс по работе СУБД
     """
 
-    def __init__(self, p_dbms_purpose: str =const('C_DWH').constant_value, p_dbms_type: str = C_DWH_TYPE, p_dbms_cnct_attr: dict =None):
+    def __init__(self, p_dbms_purpose: str =C_DWH, p_dbms_type: str = C_DWH_TYPE, p_dbms_cnct_attr: dict =None):
         """
         Конструктор
 
@@ -33,7 +27,7 @@ class DBMS:
         """
         Назначение СУБД. Приводит к нижнему регистру и проверяет на корректность значения
         """
-        if self._dbms_purpose not in const('C_DBMS_PURPOSE_LIST').constant_value:
+        if self._dbms_purpose not in C_DBMS_PURPOSE_LIST:
             sys.exit("Некорректное назначение СУБД") #TODO: реализовать вывод ошибок, как сделал Рустем
         else:
             return self._dbms_purpose.lower()
@@ -43,11 +37,11 @@ class DBMS:
         """
         Тип СУБД. Проверяет, умеет ли AnchorBase работать с таким СУБД. Приводит к нижнему регистру
         """
-        if self.dbms_purpose==const('C_SOURCE').constant_value:
-            if self._dbms_type not in const('C_AVAILABLE_SOURCE_LIST').constant_value:
+        if self.dbms_purpose==C_SOURCE:
+            if self._dbms_type not in C_AVAILABLE_SOURCE_LIST:
                 sys.exit("AnchorBase не умеет работать с указанным СУБД") #TODO: реализовать вывод ошибок, как сделал Рустем
-        if self.dbms_purpose==const('C_DWH').constant_value:
-            if self._dbms_type not in const('C_AVAILABLE_DWH_LIST').constant_value:
+        if self.dbms_purpose==C_DWH:
+            if self._dbms_type not in C_AVAILABLE_DWH_LIST:
                 sys.exit("AnchorBase не умеет работать с указанным СУБД") #TODO: реализовать вывод ошибок, как сделал Рустем
 
         return self._dbms_type.lower()
@@ -61,7 +55,7 @@ class DBMS:
         if self._dbms_cnct_attr is None:
             return self._dbms_cnct_attr
 
-        l_cnct_params = const('C_CNCT_PARARMS').constant_value # фиксированный список параметров подключения
+        l_cnct_params = C_CNCT_PARAMS # фиксированный список параметров подключения
         l_cnct_attr_keys_list = list(self._dbms_cnct_attr.keys()) # определяем ключи словаря с параметрами подключения
         # проверяем, что все ключи указаны корректно
         for i_cnct_attr_keys_list in l_cnct_attr_keys_list:
@@ -82,7 +76,7 @@ class DataType(DBMS):
                  p_data_type_name: str,
                  p_data_type_length: int =None,
                  p_data_type_scale: int =None,
-                 p_dbms_purpose: str =const('C_DWH').constant_value,
+                 p_dbms_purpose: str =C_DWH,
                  p_dbms_type: str =C_DWH_TYPE
     ):
         """
@@ -107,7 +101,7 @@ class DataType(DBMS):
         Приводит к верхнему регистру
         """
         self._data_type_name=self._data_type_name.lower()
-        l_datatype_list=const('C_DBMS_COMPONENTS').constant_value.get(self.dbms_type,None).get(const('C_DATATYPE').constant_value,None)
+        l_datatype_list=C_DBMS_COMPONENTS.get(self.dbms_type,None).get(C_DATATYPE,None)
         if self._data_type_name not in l_datatype_list:
             sys.exit("Некорректно указан тип данных") #TODO: реализовать вывод ошибок, как сделал Рустем
         return self._data_type_name.upper()

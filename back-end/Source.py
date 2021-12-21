@@ -1,10 +1,9 @@
 # coding=utf-8
-from SystemObjects import Constant as const
 import Metadata
 import MSSQL as mssql
 import Postgresql as pgsql
 import sys
-import Driver
+from Constants import *
 
 class Source:
     """
@@ -56,7 +55,7 @@ class Source:
         l_attr_dict={} # словарь для атрибутов источника
         if self._id is not None:
             l_source_meta_objs=Metadata.search_object(
-                p_type=const('C_SOURCE_META').constant_value,
+                p_type=C_SOURCE_META,
                 p_uuid=[self._id]
             ) # достаем метаданные источника
             # проверяет на наличие источника в метаданных
@@ -88,49 +87,49 @@ class Source:
         """
         Наименование источника
         """
-        return self._name or self.__source_meta_attrs.get(const('C_NAME').constant_value,None)
+        return self._name or self.__source_meta_attrs.get(C_NAME,None)
 
     @property
     def description(self):
         """
         Описание источника
         """
-        return self._desc or self.__source_meta_attrs.get(const('C_DESC').constant_value,None)
+        return self._desc or self.__source_meta_attrs.get(C_DESC,None)
 
     @property
     def server(self):
         """
         Сервер
         """
-        return self._server or self.__source_meta_attrs.get(const('C_SERVER').constant_value,None)
+        return self._server or self.__source_meta_attrs.get(C_SERVER,None)
 
     @property
     def database(self):
         """
         База данных
         """
-        return self._database or self.__source_meta_attrs.get(const('C_DATABASE').constant_value,None)
+        return self._database or self.__source_meta_attrs.get(C_DATABASE,None)
 
     @property
     def user(self):
         """
         Логин
         """
-        return self._user or self.__source_meta_attrs.get(const('C_USER').constant_value,None)
+        return self._user or self.__source_meta_attrs.get(C_USER,None)
 
     @property
     def password(self):
         """
         Пароль
         """
-        return self._password or self.__source_meta_attrs.get(const('C_PASSWORD').constant_value,None)
+        return self._password or self.__source_meta_attrs.get(C_PASSWORD,None)
 
     @property
     def port(self):
         """
         Порт
         """
-        return self._port or self.__source_meta_attrs.get(const('C_PORT').constant_value,None)
+        return self._port or self.__source_meta_attrs.get(C_PORT,None)
 
     @property
     def source_id(self):
@@ -139,24 +138,24 @@ class Source:
         """
         # вычисляем максимальный source_id из метаданных
         l_sources=Metadata.search_object(
-            p_type=const('C_SOURCE_META').constant_value
+            p_type=C_SOURCE_META
         )
         l_source_id_list=[] # список source_id
         for i_source in l_sources:
-            l_source_id_list.append(i_source.attrs.get(const('C_SOURCE_ID').constant_value))
-        l_first_source_id=None
+            l_source_id_list.append(i_source.attrs.get(C_SOURCE_ID))
+        l_first_etl_id=None
         if l_source_id_list.__len__()==0:
             l_first_etl_id=1
-        return self.__source_meta_attrs.get(const('C_SOURCE_ID').constant_value,None) or l_first_etl_id or max(l_source_id_list)+1
+        return self.__source_meta_attrs.get(C_SOURCE_ID,None) or l_first_etl_id or max(l_source_id_list)+1
 
     @property
     def type(self):
         """
         Тип источника
         """
-        if self._type is not None and self._type not in const('C_AVAILABLE_SOURCE_LIST').constant_value:
+        if self._type is not None and self._type not in C_AVAILABLE_SOURCE_LIST:
             sys.exit("Некорректный источник "+self._type)
-        return self._type or self.__source_meta_attrs.get(const('C_TYPE_VALUE').constant_value,None)
+        return self._type or self.__source_meta_attrs.get(C_TYPE_VALUE,None)
 
     @property
     def __source_objects(self):
@@ -197,9 +196,9 @@ class Source:
         """
         Подключение к источнику
         """
-        if self.type==const('C_MSSQL').constant_value:
+        if self.type==C_MSSQL:
             return mssql
-        if self.type==const('C_POSTGRESQL').constant_value:
+        if self.type==C_POSTGRESQL:
             return pgsql
 
     def sql_exec(self, p_sql: str):
@@ -234,17 +233,17 @@ class Source:
         Объект метаданных
         """
         l_source_meta_obj=Metadata.MetaObject(
-            p_type=const('C_SOURCE_META').constant_value,
+            p_type=C_SOURCE_META,
             p_attrs={
-                const('C_SERVER').constant_value:self.server,
-                const('C_DATABASE').constant_value:self.database,
-                const('C_USER').constant_value:self.user,
-                const('C_PASSWORD').constant_value:self.password,
-                const('C_PORT').constant_value:self.port,
-                const('C_TYPE_VALUE').constant_value:self.type,
-                const('C_NAME').constant_value:self.name,
-                const('C_DESC').constant_value:self.description,
-                const('C_SOURCE_ID').constant_value:self.source_id
+                C_SERVER:self.server,
+                C_DATABASE:self.database,
+                C_USER:self.user,
+                C_PASSWORD:self.password,
+                C_PORT:self.port,
+                C_TYPE_VALUE:self.type,
+                C_NAME:self.name,
+                C_DESC:self.description,
+                C_SOURCE_ID:self.source_id
             },
             p_uuid=self._id
         )

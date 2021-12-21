@@ -2,7 +2,7 @@
 import Postgresql as pgsql
 import sys
 import json
-from SystemObjects import Constant as const
+from Constants import *
 import metadata_config
 import uuid
 import copy
@@ -94,7 +94,7 @@ def search_object(p_type: str, p_uuid: list =None, p_attrs: dict =None) -> list:
     """
     # проверка заданного типа объекта метаданных
     l_type=p_type.lower()
-    if l_type not in const('C_META_TABLES').constant_value:
+    if l_type not in C_META_TABLES:
         sys.exit("Нет объекта метаданных "+l_type) #TODO: переделать
     # фомируем SELECT
     l_sql='SELECT * FROM "'+l_type+'"'+" WHERE 1=1"
@@ -210,12 +210,12 @@ class MetaObject:
         Тип объекта метаданных
         """
         l_meta_object=self._type.lower()
-        if l_meta_object not in const('C_META_TABLES').constant_value:
+        if l_meta_object not in C_META_TABLES:
             sys.exit("Нет объекта метаданных "+l_meta_object) #TODO: переделать
         return l_meta_object
 
     @property
-    def uuid(self) -> str:
+    def uuid(self) -> uuid:
         """
         Id объекта метаданных
         """
@@ -237,13 +237,13 @@ class MetaObject:
         """
         Проверка атрибутов объекта метаданных
         """
-        l_all_attrs_dict=const('C_META_ATTRIBUTES').constant_value.get(self.type,None) # достаем атрибуты объекта и их свойства
+        l_all_attrs_dict=C_META_ATTRIBUTES.get(self.type,None) # достаем атрибуты объекта и их свойства
         l_all_attrs_list=list(l_all_attrs_dict.keys()) # список всех атрибутов объекта
         l_attr_list = list(self._attrs.keys()) # список указанных атрибутов объекта
         l_necessary_attrs_list=[]# необходимые атрибуты объекта
         # проверка, что все необходимые атрибуты указаны
         for i_attr in l_all_attrs_list: # собираем список необходимых атрибутов объекта
-            if l_all_attrs_dict.get(i_attr,None).get(const('C_NOT_NULL').constant_value,None)==1:
+            if l_all_attrs_dict.get(i_attr,None).get(C_NOT_NULL,None)==1:
                 l_necessary_attrs_list.append(i_attr)
         for i_attr in l_necessary_attrs_list:
             if i_attr not in l_attr_list or self._attrs.get(i_attr,None) is None:
@@ -253,10 +253,10 @@ class MetaObject:
             if i_attr not in l_all_attrs_list:
                 sys.exit("Некорректный атрибут "+str(i_attr))
             # проверка, что тип данных у атрибутов указан верно
-            if type(self._attrs.get(i_attr,None)).__name__!=l_all_attrs_dict.get(i_attr,None).get(const('C_TYPE_VALUE').constant_value) and self._attrs.get(i_attr,None) is not None:
+            if type(self._attrs.get(i_attr,None)).__name__!=l_all_attrs_dict.get(i_attr,None).get(C_TYPE_VALUE) and self._attrs.get(i_attr,None) is not None:
                 sys.exit("Значение атрибута "+str(i_attr)+" некорректное")
             # проверка на дубль значения атрибута (только у ключевых атрибутов метаданных)
-            if l_all_attrs_dict.get(i_attr, None).get(const('C_PK').constant_value)==1: # если атрибут ключевой
+            if l_all_attrs_dict.get(i_attr, None).get(C_PK)==1: # если атрибут ключевой
                 # достаем в объекты метаданных с таким же значением атрибута
                 l_meta_attr_objs=search_object(
                     p_type=self.type,
@@ -270,18 +270,3 @@ class MetaObject:
                 # если уже есть объекты метаданных с таким значением ключевого атрибута и их uuid отличаются от self.uuid (объект не он сам)
                 if l_meta_attr_objs.__len__()>0 and self.uuid not in l_meta_attr_objs_uuid_list:
                     sys.exit("Уже присутствует объект "+self.type+" с "+i_attr+"="+str(self._attrs.get(i_attr,None))) #TODO: переделать
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

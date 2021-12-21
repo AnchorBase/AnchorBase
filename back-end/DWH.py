@@ -3,7 +3,6 @@
 """
 import sys
 import dwh_config
-from SystemObjects import Constant as const
 import Driver
 import Postgresql as pgsql
 import FileWorker as fw
@@ -12,7 +11,7 @@ import uuid
 import Metadata as meta
 from Source import Source as Source
 import datetime
-import Color
+from Constants import *
 
 class Connection:
     """
@@ -90,7 +89,7 @@ class Connection:
         Тип СУБД
         """
         l_dbms_type=self._dbms_type.lower()
-        if l_dbms_type not in const('C_AVAILABLE_DWH_LIST').constant_value:
+        if l_dbms_type not in C_AVAILABLE_DWH_LIST:
             sys.exit("AnchorBase не умеет работать с СУБД "+l_dbms_type) #TODO: реализовать вывод ошибок, как сделал Рустем
         return l_dbms_type
 
@@ -99,7 +98,7 @@ class Connection:
         """
         Модуль СУБД
         """
-        if self.dbms_type==const('C_POSTGRESQL').constant_value:
+        if self.dbms_type==C_POSTGRESQL:
             return pgsql
 
 
@@ -152,30 +151,9 @@ class Connection:
                  'port = "'+str(self.port)+'"\n' \
                  'dbms_type = "'+self.dbms_type+'"'
         fw.File(
-            p_file_path=const('C_CONFIG_FILE_PATH').constant_value,
+            p_file_path=C_CONFIG_FILE_PATH,
             p_file_body=l_config
         ).write_file()
-
-
-
-def _obj_meta_attrs(p_id: str, p_type: str):
-    """
-    Находит атрибуты существующих в метаданных объектов
-
-    :param p_id: Id объекта метаданных
-    """
-    l_attr_dict={} # словарь для атрибутов источника
-
-    l_meta_objs=meta.search_object(
-        p_type=const(p_type).constant_value,
-        p_uuid=[p_id]
-    ) # достаем метаданные источника
-    # проверяет на наличие источника в метаданных
-    if l_meta_objs.__len__()==0:
-        sys.exit("Нет "+p_type+" с указанным id "+p_id)
-    else:
-        l_attr_dict=l_meta_objs[0].attrs
-    return l_attr_dict
 
 def _class_define(p_class_name: str, p_id: str, p_type: str =None):
     """
@@ -286,27 +264,27 @@ def _get_attribute_type(p_attribute: object):
     """
     if not p_attribute:
         sys.exit("Передан пустой атрибут")
-    if p_attribute.type==const('C_ENTITY_COLUMN').constant_value:
+    if p_attribute.type==C_ENTITY_COLUMN:
         return "entity_attribute"
-    if p_attribute.type==const('C_QUEUE_COLUMN').constant_value:
+    if p_attribute.type==C_QUEUE_COLUMN:
         return "source_attribute"
-    if p_attribute.type==const('C_IDMAP_COLUMN').constant_value:
+    if p_attribute.type==C_IDMAP_COLUMN:
         return "idmap_attribute"
-    if p_attribute.type==const('C_ANCHOR_COLUMN').constant_value:
+    if p_attribute.type==C_ANCHOR_COLUMN:
         return "anchor_attribute"
-    if p_attribute.type==const('C_ATTRIBUTE_COLUMN').constant_value:
+    if p_attribute.type==C_ATTRIBUTE_COLUMN:
         return "attribute_table_attribute"
-    if p_attribute.type==const('C_TIE_COLUMN').constant_value:
+    if p_attribute.type==C_TIE_COLUMN:
         return "tie_attribute"
-    if p_attribute.type==const('C_QUEUE_ETL').constant_value:
+    if p_attribute.type==C_QUEUE_ETL:
         return "source_table_package"
-    if p_attribute.type==const('C_IDMAP_ETL').constant_value:
+    if p_attribute.type==C_IDMAP_ETL:
         return "idmap_package"
-    if p_attribute.type==const('C_ANCHOR_ETL').constant_value:
+    if p_attribute.type==C_ANCHOR_ETL:
         return "anchor_package"
-    if p_attribute.type==const('C_ATTRIBUTE_ETL').constant_value:
+    if p_attribute.type==C_ATTRIBUTE_ETL:
         return "attribute_table_package"
-    if p_attribute.type==const('C_TIE_ETL').constant_value:
+    if p_attribute.type==C_TIE_ETL:
         return "tie_package"
 
 def _get_table_attribute_property(p_table: object):
@@ -315,17 +293,17 @@ def _get_table_attribute_property(p_table: object):
 
     :param p_table: таблица
     """
-    if p_table.type==const('C_QUEUE_TABLE_TYPE_NAME').constant_value:
+    if p_table.type==C_QUEUE:
         return getattr(p_table, "source_attribute")
-    if p_table.type==const('C_IDMAP_TABLE_TYPE_NAME').constant_value:
+    if p_table.type==C_IDMAP:
         return getattr(p_table, "idmap_attribute")
-    if p_table.type==const('C_ANCHOR_TABLE_TYPE_NAME').constant_value:
+    if p_table.type==C_ANCHOR:
         return getattr(p_table, "anchor_attribute")
-    if p_table.type==const('C_ATTRIBUTE_TABLE_TYPE_NAME').constant_value:
+    if p_table.type==C_ATTRIBUTE_TABLE:
         return getattr(p_table, "attribute_table_attribute")
-    if p_table.type==const('C_TIE_TABLE_TYPE_NAME').constant_value:
+    if p_table.type==C_TIE:
         return getattr(p_table, "tie_attribute")
-    if p_table.type==const('C_ENTITY').constant_value:
+    if p_table.type==C_ENTITY:
         return getattr(p_table, "entity_attribute")
 
 def _get_table_property(p_table: object):
@@ -334,17 +312,17 @@ def _get_table_property(p_table: object):
 
     :param p_table: таблица
     """
-    if p_table.type==const('C_QUEUE_TABLE_TYPE_NAME').constant_value:
+    if p_table.type==C_QUEUE:
         return "source_table"
-    if p_table.type==const('C_IDMAP_TABLE_TYPE_NAME').constant_value:
+    if p_table.type==C_IDMAP:
         return "idmap"
-    if p_table.type==const('C_ANCHOR_TABLE_TYPE_NAME').constant_value:
+    if p_table.type==C_ANCHOR:
         return "anchor"
-    if p_table.type==const('C_ATTRIBUTE_TABLE_TYPE_NAME').constant_value:
+    if p_table.type==C_ATTRIBUTE_TABLE:
         return "attribute_table"
-    if p_table.type==const('C_TIE_TABLE_TYPE_NAME').constant_value:
+    if p_table.type==C_TIE:
         return "tie_table"
-    if p_table.type==const('C_ENTITY').constant_value:
+    if p_table.type==C_ENTITY:
         return "entity"
 
 def _add_object(p_parent_object: object, p_object: object, p_object_type: str):
@@ -409,7 +387,7 @@ def add_source_to_object(p_object: object, p_source: object):
     _add_object(
         p_parent_object=p_object,
         p_object=p_source,
-        p_object_type=const('C_SOURCE').constant_value
+        p_object_type=C_SOURCE
     )
 
 
@@ -459,7 +437,7 @@ def _get_table_postfix(p_table_type: str):
 
     :param p_table_type: тип таблицы
     """
-    return const('C_TABLE_NAME_POSTFIX').constant_value.get(p_table_type,None)
+    return C_TABLE_NAME_POSTFIX.get(p_table_type,None)
 
 def drop_table_ddl(p_table: object):
     """
@@ -467,7 +445,7 @@ def drop_table_ddl(p_table: object):
 
     :param p_table: таблица
     """
-    l_schema=const('C_SCHEMA_TABLE_TYPE').constant_value.get(p_table.type,None) # схема таблицы
+    l_schema=C_SCHEMA_TABLE_TYPE.get(p_table.type,None) # схема таблицы
     l_sql="DROP TABLE IF EXISTS"+'"'+str(l_schema)+'"'+"."+'"'+str(p_table.id)+'"'+" CASCADE;"
     return l_sql
 
@@ -477,12 +455,12 @@ def create_table_ddl(p_table: object):
     Генерирует DDL таблицы
     :param p_table: таблица
     """
-    l_schema=const('C_SCHEMA_TABLE_TYPE').constant_value.get(p_table.type,None) # схема таблицы
+    l_schema=C_SCHEMA_TABLE_TYPE.get(p_table.type,None) # схема таблицы
     p_attribute_sql="" # перечисление атрибутов
     p_attribute_partition_sql="" # указание атрибута для партиции
     for i_attribute in _get_table_attribute_property(p_table=p_table): # проходимся по всем атрибутам и формируем ddl
         p_attribute_sql=p_attribute_sql+"\n"+'"'+str(i_attribute.id)+'"'+" "+i_attribute.datatype.data_type_sql+","
-        if i_attribute.attribute_type==const('C_FROM_TYPE_NAME').constant_value:
+        if i_attribute.attribute_type==C_FROM:
             p_attribute_partition_sql="\nPARTITION BY RANGE ("+'"'+str(i_attribute.id)+'"'+")"
     p_attribute_sql=p_attribute_sql[:-1] # убираем последнюю запятую
     p_attribute_sql=p_attribute_sql[1:] # убираем первый перенос строк
@@ -496,11 +474,11 @@ def create_view_ddl(p_table: object):
     :param p_table: таблица
     """
     l_table_name=None
-    if p_table.type==const('C_QUEUE_TABLE_TYPE_NAME').constant_value: # для таблицы queue другой атрибут объекта в качестве имени
+    if p_table.type==C_QUEUE: # для таблицы queue другой атрибут объекта в качестве имени
         l_table_name=p_table.queue_name
     else:
         l_table_name=p_table.name
-    l_schema=const('C_SCHEMA_TABLE_TYPE').constant_value.get(p_table.type,None) # схема таблицы
+    l_schema=C_SCHEMA_TABLE_TYPE.get(p_table.type,None) # схема таблицы
     p_attribute_sql="" # перечисление атрибутов
     for i_attribute in _get_table_attribute_property(p_table=p_table):
         p_attribute_sql=p_attribute_sql+"\n"+'"'+str(i_attribute.id)+'"'+" AS "+'"'+i_attribute.name+'"'+","
@@ -524,14 +502,14 @@ def get_source_table_etl(p_source_table: object, p_attribute_value: list, p_etl_
     for i_attribute in _get_table_attribute_property(p_table=p_source_table):
         if i_attribute.attribute_type not in ( # атрибуты etl и update добавляются в конец
                 [
-                    const('C_ETL_TYPE_NAME').constant_value,
-                    const('C_UPDATE_TYPE_NAME').constant_value
+                    C_ETL_ATTR,
+                    C_UPDATE
                 ]
         ):
             l_attribute_name_list.append(i_attribute.name)
-        elif i_attribute.attribute_type==const('C_UPDATE_TYPE_NAME').constant_value:
+        elif i_attribute.attribute_type==C_UPDATE:
             l_update_attribute_sql='"'+str(i_attribute.id)+'"'
-        elif i_attribute.attribute_type==const('C_ETL_TYPE_NAME').constant_value:
+        elif i_attribute.attribute_type==C_ETL_ATTR:
             l_etl_update_sql='"'+str(i_attribute.id)+'"'
     l_attribute_name_list.sort() # сортируем по наименованию
     # сортируем id в соответствии с наименованием атрибутов
@@ -570,11 +548,11 @@ def get_idmap_etl(
     l_idmap_rk_column=None
     l_etl_column=None
     for i_attribute in _get_table_attribute_property(p_table=p_idmap):
-        if i_attribute.attribute_type==const('C_RK_TYPE_NAME').constant_value:
+        if i_attribute.attribute_type==C_RK:
             l_idmap_rk_column=i_attribute.id
-        if i_attribute.attribute_type==const('C_NK_TYPE_NAME').constant_value:
+        if i_attribute.attribute_type==C_NK:
             l_idmap_nk_column=i_attribute.id
-        if i_attribute.attribute_type==const('C_ETL_TYPE_NAME').constant_value:
+        if i_attribute.attribute_type==C_ETL_ATTR:
             l_etl_column=i_attribute.id
     for i_source_table in p_idmap.entity.source_table:
         if l_source_table_id and l_source_table_id!=i_source_table.id: # пропускаем таблицу источник, если не она указана
@@ -616,16 +594,16 @@ def get_anchor_etl(
     l_idmap_rk_id=None
     l_idmap_nk_id=None
     for i_attribute in _get_table_attribute_property(p_table=p_anchor):
-        if i_attribute.attribute_type==const('C_RK_TYPE_NAME').constant_value:
+        if i_attribute.attribute_type==C_RK:
             l_anchor_rk_id=i_attribute.id
-        if i_attribute.attribute_type==const('C_SOURCE_TYPE_NAME').constant_value:
+        if i_attribute.attribute_type==C_SOURCE_ATTR:
             l_anchor_source_id=i_attribute.id
-        if i_attribute.attribute_type==const('C_ETL_TYPE_NAME').constant_value:
+        if i_attribute.attribute_type==C_ETL_ATTR:
             l_anchor_etl_id=i_attribute.id
     for i_attribute in p_anchor.entity.idmap.idmap_attribute:
-        if i_attribute.attribute_type==const('C_RK_TYPE_NAME').constant_value:
+        if i_attribute.attribute_type==C_RK:
             l_idmap_rk_id=i_attribute.id
-        if i_attribute.attribute_type==const('C_NK_TYPE_NAME').constant_value:
+        if i_attribute.attribute_type==C_NK:
             l_idmap_nk_id=i_attribute.id
 
     return Connection().dbms.get_anchor_etl(
@@ -661,21 +639,21 @@ def get_attribute_etl(p_attribute_table: object, p_etl_id: str, p_source_table: 
     l_idmap_nk_id=None
     l_column_value_datatype=None
     for i_attribute in _get_table_attribute_property(p_table=p_attribute_table):
-        if i_attribute.attribute_type==const('C_RK_TYPE_NAME').constant_value:
+        if i_attribute.attribute_type==C_RK:
             l_attribute_rk_id=i_attribute.id
-        if i_attribute.attribute_type==const('C_VALUE_TYPE_NAME').constant_value:
+        if i_attribute.attribute_type==C_VALUE:
             l_attribute_column_id=i_attribute.id
             l_column_value_datatype=i_attribute.datatype.data_type_sql
-        if i_attribute.attribute_type==const('C_FROM_TYPE_NAME').constant_value:
+        if i_attribute.attribute_type==C_FROM:
             l_from_dttm_id=i_attribute.id
-        if i_attribute.attribute_type==const('C_TO_TYPE_NAME').constant_value:
+        if i_attribute.attribute_type==C_TO:
             l_to_dttm_id=i_attribute.id
-        if i_attribute.attribute_type==const('C_ETL_TYPE_NAME').constant_value:
+        if i_attribute.attribute_type==C_ETL_ATTR:
             l_etl_id=i_attribute.id
     for i_attribute in p_attribute_table.entity.idmap.idmap_attribute:
-        if i_attribute.attribute_type==const('C_RK_TYPE_NAME').constant_value:
+        if i_attribute.attribute_type==C_RK:
             l_idmap_rk_id=i_attribute.id
-        if i_attribute.attribute_type==const('C_NK_TYPE_NAME').constant_value:
+        if i_attribute.attribute_type==C_NK:
             l_idmap_nk_id=i_attribute.id
     for i_source_attribute in p_attribute_table.entity_attribute.source_attribute:
         if l_source_table_id and l_source_table_id!=i_source_attribute.source_table.id: # пропускаем таблицу источник, если не она указана
@@ -687,7 +665,7 @@ def get_attribute_etl(p_attribute_table: object, p_etl_id: str, p_source_table: 
         l_column_value_id=i_source_attribute.id
         l_update_timestamp_id=None
         for i_source_attribute_all in i_source_attribute.source_table.source_attribute:
-            if i_source_attribute_all.attribute_type==const('C_UPDATE_TYPE_NAME').constant_value:
+            if i_source_attribute_all.attribute_type==C_UPDATE:
                 l_update_timestamp_id=i_source_attribute_all.id
         l_column_nk_sql=l_column_nk_sql[:-14]
         l_source_id=i_source_attribute.source_table.source.source_id
@@ -741,25 +719,25 @@ def get_tie_etl(
     l_link_idmap_rk_id=None
     l_link_idmap_nk_id=None
     for i_attribute in _get_table_attribute_property(p_table=p_tie):
-        if i_attribute.attribute_type==const('C_RK_TYPE_NAME').constant_value:
+        if i_attribute.attribute_type==C_RK:
             l_anchor_rk_id=i_attribute.id
-        if i_attribute.attribute_type==const('C_LINK_RK_TYPE_NAME').constant_value:
+        if i_attribute.attribute_type==C_LINK_RK:
             l_link_anchor_rk_id=i_attribute.id
-        if i_attribute.attribute_type==const('C_FROM_TYPE_NAME').constant_value:
+        if i_attribute.attribute_type==C_FROM:
             l_from_dttm_id=i_attribute.id
-        if i_attribute.attribute_type==const('C_TO_TYPE_NAME').constant_value:
+        if i_attribute.attribute_type==C_TO:
             l_to_dttm_id=i_attribute.id
-        if i_attribute.attribute_type==const('C_ETL_TYPE_NAME').constant_value:
+        if i_attribute.attribute_type==C_ETL_ATTR:
             l_etl_id=i_attribute.id
     for i_attribute in p_tie.entity.idmap.idmap_attribute:
-        if i_attribute.attribute_type==const('C_RK_TYPE_NAME').constant_value:
+        if i_attribute.attribute_type==C_RK:
             l_idmap_rk_id=i_attribute.id
-        if i_attribute.attribute_type==const('C_NK_TYPE_NAME').constant_value:
+        if i_attribute.attribute_type==C_NK:
             l_idmap_nk_id=i_attribute.id
     for i_attribute in p_tie.link_entity.idmap.idmap_attribute:
-        if i_attribute.attribute_type==const('C_RK_TYPE_NAME').constant_value:
+        if i_attribute.attribute_type==C_RK:
             l_link_idmap_rk_id=i_attribute.id
-        if i_attribute.attribute_type==const('C_NK_TYPE_NAME').constant_value:
+        if i_attribute.attribute_type==C_NK:
             l_link_idmap_nk_id=i_attribute.id
     for i_source_table in p_tie.source_table:
         if l_source_table_id and l_source_table_id!=i_source_table.id:
@@ -775,7 +753,7 @@ def get_tie_etl(
                     l_link_column_nk_sql=l_link_column_nk_sql+"CAST("+'"'+str(i_column_nk.id)+'"'+" AS VARCHAR(4000))\n\t\t||'@@'||\n\t\t"
         l_update_timestamp_id=None
         for i_source_attribute in i_source_table.source_attribute:
-            if i_source_attribute.attribute_type==const('C_UPDATE_TYPE_NAME').constant_value:
+            if i_source_attribute.attribute_type==C_UPDATE:
                 l_update_timestamp_id=i_source_attribute.id
         l_column_nk_sql=l_column_nk_sql[:-14]
         l_link_column_nk_sql=l_link_column_nk_sql[:-14]
@@ -907,7 +885,7 @@ class _DWHObject:
         # проверка объекта
         _class_checker(p_class_name="Source",p_object=self._source)
         # собираем метаданные, если указаны
-        l_meta_obj=self.object_attrs_meta.get(const('C_SOURCE').constant_value,None)
+        l_meta_obj=self.object_attrs_meta.get(C_SOURCE,None)
         # выбираем из метаданных
         l_object=_get_object(p_id=l_meta_obj, p_class_name="Source")
 
@@ -926,7 +904,7 @@ class _DWHObject:
         # проверка объекта
         _class_checker(p_class_name="SourceTable",p_object=self._source_table)
         # собираем метаданные, если указаны
-        l_meta_obj=self.object_attrs_meta.get(const('C_QUEUE_TABLE_TYPE_NAME').constant_value,None)
+        l_meta_obj=self.object_attrs_meta.get(C_QUEUE, None)
         # выбираем из метаданных
         l_object=_get_object(p_id=l_meta_obj, p_class_name="SourceTable")
 
@@ -945,9 +923,9 @@ class _DWHObject:
         # проверка объекта
         _class_checker(p_class_name="Attribute",p_object=self._source_attribute)
         # собираем метаданные, если указаны
-        l_meta_obj=self.object_attrs_meta.get(const('C_QUEUE_COLUMN').constant_value,None)
+        l_meta_obj=self.object_attrs_meta.get(C_QUEUE_COLUMN,None)
         # выбираем из метаданных
-        l_object=_get_object(p_id=l_meta_obj, p_class_name="Attribute", p_type=const('C_QUEUE_COLUMN').constant_value)
+        l_object=_get_object(p_id=l_meta_obj, p_class_name="Attribute", p_type=C_QUEUE_COLUMN)
 
         return self._source_attribute or l_object
 
@@ -964,7 +942,7 @@ class _DWHObject:
         # проверка объекта
         _class_checker(p_class_name="Entity",p_object=self._entity)
         # собираем метаданные, если указаны
-        l_meta_obj=self.object_attrs_meta.get(const('C_ENTITY').constant_value,None)
+        l_meta_obj=self.object_attrs_meta.get(C_ENTITY,None)
         # выбираем из метаданных
         l_object=_get_object(p_id=l_meta_obj, p_class_name="Entity")
 
@@ -983,7 +961,7 @@ class _DWHObject:
         # проверка объекта
         _class_checker(p_class_name="Entity",p_object=self._link_entity)
         # собираем метаданные, если указаны
-        l_meta_obj=self.object_attrs_meta.get(const('C_LINK_ENTITY').constant_value,None)
+        l_meta_obj=self.object_attrs_meta.get(C_LINK_ENTITY,None)
         # выбираем из метаданных
         l_object=_get_object(p_id=l_meta_obj, p_class_name="Entity")
 
@@ -1002,9 +980,9 @@ class _DWHObject:
         # проверка объекта
         _class_checker(p_class_name="Attribute",p_object=self._entity_attribute)
         # собираем метаданные, если указаны
-        l_meta_obj=self.object_attrs_meta.get(const('C_ENTITY_COLUMN').constant_value,None)
+        l_meta_obj=self.object_attrs_meta.get(C_ENTITY_COLUMN,None)
         # выбираем из метаданных
-        l_object=_get_object(p_id=l_meta_obj, p_class_name="Attribute",p_type=const('C_ENTITY_COLUMN').constant_value)
+        l_object=_get_object(p_id=l_meta_obj, p_class_name="Attribute",p_type=C_ENTITY_COLUMN)
 
         return self._entity_attribute or l_object
 
@@ -1021,7 +999,7 @@ class _DWHObject:
         # проверка объекта
         _class_checker(p_class_name="Idmap",p_object=self._idmap)
         # собираем метаданные, если указаны
-        l_meta_obj=self.object_attrs_meta.get(const('C_IDMAP_TABLE_TYPE_NAME').constant_value,None)
+        l_meta_obj=self.object_attrs_meta.get(C_IDMAP, None)
         # выбираем из метаданных
         l_object=_get_object(p_id=l_meta_obj, p_class_name="Idmap")
 
@@ -1040,9 +1018,9 @@ class _DWHObject:
         # проверка объекта
         _class_checker(p_class_name="Attribute",p_object=self._idmap_attribute)
         # собираем метаданные, если указаны
-        l_meta_obj=self.object_attrs_meta.get(const('C_IDMAP_COLUMN').constant_value,None)
+        l_meta_obj=self.object_attrs_meta.get(C_IDMAP_COLUMN,None)
         # выбираем из метаданных
-        l_object=_get_object(p_id=l_meta_obj, p_class_name="Attribute",p_type=const('C_IDMAP_COLUMN').constant_value)
+        l_object=_get_object(p_id=l_meta_obj, p_class_name="Attribute",p_type=C_IDMAP_COLUMN)
 
         return self._idmap_attribute or l_object
 
@@ -1059,7 +1037,7 @@ class _DWHObject:
         # проверка объекта
         _class_checker(p_class_name="Anchor",p_object=self._anchor)
         # собираем метаданные, если указаны
-        l_meta_obj=self.object_attrs_meta.get(const('C_ANCHOR_TABLE_TYPE_NAME').constant_value,None)
+        l_meta_obj=self.object_attrs_meta.get(C_ANCHOR, None)
         # выбираем из метаданных
         l_object=_get_object(p_id=l_meta_obj, p_class_name="Anchor")
 
@@ -1078,9 +1056,9 @@ class _DWHObject:
         # проверка объекта
         _class_checker(p_class_name="Attribute",p_object=self._anchor_attribute)
         # собираем метаданные, если указаны
-        l_meta_obj=self.object_attrs_meta.get(const('C_ANCHOR_COLUMN').constant_value,None)
+        l_meta_obj=self.object_attrs_meta.get(C_ANCHOR_COLUMN,None)
         # выбираем из метаданных
-        l_object=_get_object(p_id=l_meta_obj, p_class_name="Attribute",p_type=const('C_ANCHOR_COLUMN').constant_value)
+        l_object=_get_object(p_id=l_meta_obj, p_class_name="Attribute",p_type=C_ANCHOR_COLUMN)
 
         return self._anchor_attribute or l_object
 
@@ -1097,7 +1075,7 @@ class _DWHObject:
         # проверка объекта
         _class_checker(p_class_name="AttributeTable",p_object=self._attribute_table)
         # собираем метаданные, если указаны
-        l_meta_obj=self.object_attrs_meta.get(const('C_ATTRIBUTE_TABLE_TYPE_NAME').constant_value,None)
+        l_meta_obj=self.object_attrs_meta.get(C_ATTRIBUTE_TABLE, None)
         # выбираем из метаданных
         l_object=_get_object(p_id=l_meta_obj, p_class_name="AttributeTable")
 
@@ -1116,9 +1094,9 @@ class _DWHObject:
         # проверка объекта
         _class_checker(p_class_name="Attribute",p_object=self._attribute_table_attribute)
         # собираем метаданные, если указаны
-        l_meta_obj=self.object_attrs_meta.get(const('C_ATTRIBUTE_COLUMN').constant_value,None)
+        l_meta_obj=self.object_attrs_meta.get(C_ATTRIBUTE_COLUMN,None)
         # выбираем из метаданных
-        l_object=_get_object(p_id=l_meta_obj, p_class_name="Attribute",p_type=const('C_ATTRIBUTE_COLUMN').constant_value)
+        l_object=_get_object(p_id=l_meta_obj, p_class_name="Attribute",p_type=C_ATTRIBUTE_COLUMN)
 
         return self._attribute_table_attribute or l_object
 
@@ -1135,7 +1113,7 @@ class _DWHObject:
         # проверка объекта
         _class_checker(p_class_name="Tie",p_object=self._tie)
         # собираем метаданные, если указаны
-        l_meta_obj=self.object_attrs_meta.get(const('C_TIE_TABLE_TYPE_NAME').constant_value,None)
+        l_meta_obj=self.object_attrs_meta.get(C_TIE, None)
         # выбираем из метаданных
         l_object=_get_object(p_id=l_meta_obj, p_class_name="Tie")
 
@@ -1154,9 +1132,9 @@ class _DWHObject:
         # проверка объекта
         _class_checker(p_class_name="Attribute",p_object=self._tie_attribute)
         # собираем метаданные, если указаны
-        l_meta_obj=self.object_attrs_meta.get(const('C_TIE_COLUMN').constant_value,None)
+        l_meta_obj=self.object_attrs_meta.get(C_TIE_COLUMN,None)
         # выбираем из метаданных
-        l_object=_get_object(p_id=l_meta_obj, p_class_name="Attribute",p_type=const('C_TIE_COLUMN').constant_value)
+        l_object=_get_object(p_id=l_meta_obj, p_class_name="Attribute",p_type=C_TIE_COLUMN)
 
         return self._tie_attribute or l_object
 
@@ -1170,7 +1148,7 @@ class _DWHObject:
         """
         Описание атрибута
         """
-        return self._desc or self.object_attrs_meta.get(const('C_DESC').constant_value,None)
+        return self._desc or self.object_attrs_meta.get(C_DESC,None)
 
     @desc.setter
     def desc(self, p_new_desc):
@@ -1203,83 +1181,83 @@ class _DWHObject:
         if self.name:
             l_json.update(
                 {
-                    const('C_NAME').constant_value:self.name,
+                    C_NAME:self.name,
                 }
             )
         # атрибуты объекта Attribute
         if type(self).__name__=="Attribute":
             l_json.update(
                 {
-                    const('C_TYPE_VALUE').constant_value:self.attribute_type,
-                    const('C_DATATYPE').constant_value:self.datatype.data_type_name,
-                    const('C_LENGTH').constant_value:self.datatype.data_type_length,
-                    const('C_SCALE').constant_value:self.datatype.data_type_scale
+                    C_TYPE_VALUE:self.attribute_type,
+                    C_DATATYPE:self.datatype.data_type_name,
+                    C_LENGTH:self.datatype.data_type_length,
+                    C_SCALE:self.datatype.data_type_scale
                 }
             )
-            if self.type==const('C_ENTITY_COLUMN').constant_value: # если атрибут сущности
+            if self.type==C_ENTITY_COLUMN: # если атрибут сущности
                 l_json.update(
                     {
-                        const('C_PK').constant_value:self.pk,
+                        C_PK:self.pk,
                     }
                 )
-                l_json.pop(const('C_TYPE_VALUE').constant_value) # убираем атрибут type
+                l_json.pop(C_TYPE_VALUE) # убираем атрибут type
 
         # атрибуты queue таблицы
-        if self.type==const('C_QUEUE_TABLE_TYPE_NAME').constant_value:
+        if self.type==C_QUEUE:
             l_json.update(
                 {
-                    const('C_SCHEMA').constant_value:self.schema,
-                    const('C_SOURCE_NAME').constant_value:self.name,
-                    const('C_NAME').constant_value:self.queue_name # переопределяем наименование
+                    C_SCHEMA:self.schema,
+                    C_SOURCE_NAME:self.name,
+                    C_NAME:self.queue_name # переопределяем наименование
                 }
             )
         # если указана связанная queue таблица
         if self.source_table:
             l_json.update(
                 {
-                    const('C_QUEUE_TABLE_TYPE_NAME').constant_value:self.__get_property_id(p_property=self.source_table)
+                    C_QUEUE:self.__get_property_id(p_property=self.source_table)
                 }
             )
         # если указан атрибут источника
         if self.source_attribute:
             l_json.update(
                 {
-                    const('C_QUEUE_COLUMN').constant_value:self.__get_property_id(p_property=self.source_attribute)
+                    C_QUEUE_COLUMN:self.__get_property_id(p_property=self.source_attribute)
                 }
             )
         # если указан источник
         if self.source:
             l_json.update(
                 {
-                    const('C_SOURCE').constant_value:self.__get_property_id(p_property=self.source)
+                    C_SOURCE:self.__get_property_id(p_property=self.source)
                 }
             )
         # если указана сущность
         if self.entity:
             l_json.update(
                 {
-                    const('C_ENTITY').constant_value:self.__get_property_id(p_property=self.entity)
+                    C_ENTITY:self.__get_property_id(p_property=self.entity)
                 }
             )
         # если указаны натуральные ключи
-        if self.type==const('C_IDMAP_TABLE_TYPE_NAME').constant_value:
+        if self.type==C_IDMAP:
             l_json.update(
                 {
-                    const('C_ATTRIBUTE_NK').constant_value:self.__get_property_id(p_property=self.source_attribute_nk)
+                    C_ATTRIBUTE_NK:self.__get_property_id(p_property=self.source_attribute_nk)
                 }
             )
         # если заполнены атрибуты idmap
         if self.idmap_attribute:
             l_json.update(
                 {
-                    const('C_IDMAP_COLUMN').constant_value:self.__get_property_id(p_property=self.idmap_attribute)
+                    C_IDMAP_COLUMN:self.__get_property_id(p_property=self.idmap_attribute)
                 }
             )
 
         if self.idmap:
             l_json.update(
                 {
-                    const('C_IDMAP_TABLE_TYPE_NAME').constant_value:self.__get_property_id(p_property=self.idmap)
+                    C_IDMAP:self.__get_property_id(p_property=self.idmap)
                 }
             )
 
@@ -1287,56 +1265,56 @@ class _DWHObject:
         if self.anchor_attribute:
             l_json.update(
                 {
-                    const('C_ANCHOR_COLUMN').constant_value:self.__get_property_id(p_property=self.anchor_attribute)
+                    C_ANCHOR_COLUMN:self.__get_property_id(p_property=self.anchor_attribute)
                 }
             )
         # если указан якорь
         if self.anchor:
             l_json.update(
                 {
-                    const('C_ANCHOR_TABLE_TYPE_NAME').constant_value:self.__get_property_id(p_property=self.anchor)
+                    C_ANCHOR:self.__get_property_id(p_property=self.anchor)
                 }
             )
         # Если указана таблица атрибут
         if self.attribute_table:
             l_json.update(
                 {
-                    const('C_ATTRIBUTE_TABLE_TYPE_NAME').constant_value:self.__get_property_id(p_property=self.attribute_table)
+                    C_ATTRIBUTE_TABLE:self.__get_property_id(p_property=self.attribute_table)
                 }
             )
         # Если указаны атрибуты таблицы атрибут
         if self.attribute_table_attribute:
             l_json.update(
                 {
-                    const('C_ATTRIBUTE_COLUMN').constant_value:self.__get_property_id(p_property=self.attribute_table_attribute)
+                    C_ATTRIBUTE_COLUMN:self.__get_property_id(p_property=self.attribute_table_attribute)
                 }
             )
         # Если указаны атрибуты сущности
         if self.entity_attribute:
             l_json.update(
                 {
-                    const('C_ENTITY_COLUMN').constant_value:self.__get_property_id(p_property=self.entity_attribute)
+                    C_ENTITY_COLUMN:self.__get_property_id(p_property=self.entity_attribute)
                 }
             )
         # Если указан tie
         if self.tie:
             l_json.update(
                 {
-                    const('C_TIE_TABLE_TYPE_NAME').constant_value:self.__get_property_id(p_property=self.tie)
+                    C_TIE:self.__get_property_id(p_property=self.tie)
                 }
             )
         # Если указаны атрибуты tie
         if self.tie_attribute:
             l_json.update(
                 {
-                    const('C_TIE_COLUMN').constant_value:self.__get_property_id(p_property=self.tie_attribute)
+                    C_TIE_COLUMN:self.__get_property_id(p_property=self.tie_attribute)
                 }
             )
         # Если указана связанная сущность
         if self.link_entity:
             l_json.update(
                 {
-                    const('C_LINK_ENTITY').constant_value:self.__get_property_id(p_property=self.link_entity)
+                    C_LINK_ENTITY:self.__get_property_id(p_property=self.link_entity)
                 }
             )
         # Если указана ошибка
@@ -1344,69 +1322,69 @@ class _DWHObject:
             if self.error:
                 l_json.update(
                     {
-                        const('C_ERROR').constant_value:self.error.replace("'","''") # экранирование одинарной кавычки
+                        C_ERROR:self.error.replace("'","''") # экранирование одинарной кавычки
                     }
                 )
             if self.start_datetime:
                 l_json.update(
                     {
-                        const('C_START_DATETIME').constant_value:str(self.start_datetime)
+                        C_START_DATETIME:str(self.start_datetime)
                     }
                 )
             if self.end_datetime:
                 l_json.update(
                     {
-                        const('C_END_DATETIME').constant_value:str(self.end_datetime)
+                        C_END_DATETIME:str(self.end_datetime)
                     }
                 )
         if type(self).__name__=="Package":
             if self.job:
                 l_json.update(
                     {
-                        const('C_ETL').constant_value:self.__get_property_id(p_property=self.job)
+                        C_ETL:self.__get_property_id(p_property=self.job)
                     }
                 )
             if self.status:
                 l_json.update(
                     {
-                        const('C_STATUS').constant_value:self.status
+                        C_STATUS:self.status
                     }
                 )
         if type(self).__name__=="Job":
             if self.etl_id:
                 l_json.update(
                     {
-                        const('C_ETL_ATTRIBUTE_NAME').constant_value:self.etl_id
+                        C_ETL_ATTRIBUTE_NAME:self.etl_id
                     }
                 )
             if self.source_table_package:
                 l_json.update(
                     {
-                        const('C_QUEUE_ETL').constant_value:self.__get_property_id(p_property=self.source_table_package)
+                        C_QUEUE_ETL:self.__get_property_id(p_property=self.source_table_package)
                     }
                 )
             if self.idmap_package:
                 l_json.update(
                     {
-                        const('C_IDMAP_ETL').constant_value:self.__get_property_id(p_property=self.idmap_package)
+                        C_IDMAP_ETL:self.__get_property_id(p_property=self.idmap_package)
                     }
                 )
             if self.anchor_package:
                 l_json.update(
                     {
-                        const('C_ANCHOR_ETL').constant_value:self.__get_property_id(p_property=self.anchor_package)
+                        C_ANCHOR_ETL:self.__get_property_id(p_property=self.anchor_package)
                     }
                 )
             if self.attribute_table_package:
                 l_json.update(
                     {
-                        const('C_ATTRIBUTE_ETL').constant_value:self.__get_property_id(p_property=self.attribute_table_package)
+                        C_ATTRIBUTE_ETL:self.__get_property_id(p_property=self.attribute_table_package)
                     }
                 )
             if self.tie_package:
                 l_json.update(
                     {
-                        const('C_TIE_ETL').constant_value:self.__get_property_id(p_property=self.tie_package)
+                        C_TIE_ETL:self.__get_property_id(p_property=self.tie_package)
                     }
                 )
         return l_json
@@ -1504,16 +1482,16 @@ class Attribute(_DWHObject):
         l_name=None
         if self._name is not None:
             l_name=self._name.lower()
-        return l_name or self.object_attrs_meta.get(const('C_NAME').constant_value,None)
+        return l_name or self.object_attrs_meta.get(C_NAME,None)
 
     @property
     def datatype(self):
         """
         Тип данных
         """
-        l_datatype=self._datatype or self.object_attrs_meta.get(const('C_DATATYPE').constant_value,None)
-        l_length=self._length or self.object_attrs_meta.get(const('C_LENGTH').constant_value,None)
-        l_scale=self._scale or self.object_attrs_meta.get(const('C_SCALE').constant_value,None)
+        l_datatype=self._datatype or self.object_attrs_meta.get(C_DATATYPE,None)
+        l_length=self._length or self.object_attrs_meta.get(C_LENGTH,None)
+        l_scale=self._scale or self.object_attrs_meta.get(C_SCALE,None)
         l_datatype_obj=None
         if l_datatype is not None:
             l_datatype_obj=Driver.DataType(
@@ -1532,9 +1510,9 @@ class Attribute(_DWHObject):
         l_attribute_type=None
         if self._attribute_type is not None:
             l_attribute_type=self._attribute_type.lower()
-            if l_attribute_type not in const('C_ATTRIBUTE_TABLE_TYPE_LIST').constant_value:
+            if l_attribute_type not in C_ATTRIBUTE_TABLE_TYPE_LIST:
                 sys.exit("Некорректно задан тип атрибута "+str(l_attribute_type))
-        return l_attribute_type or self.object_attrs_meta.get(const('C_TYPE_VALUE').constant_value,None)
+        return l_attribute_type or self.object_attrs_meta.get(C_TYPE_VALUE,None)
 
     @property
     def pk(self):
@@ -1544,14 +1522,14 @@ class Attribute(_DWHObject):
         if self._pk is not None:
             return self._pk
         else:
-            return self.object_attrs_meta.get(const('C_PK').constant_value,None)
+            return self.object_attrs_meta.get(C_PK,None)
 
     def __source_attribute_exist_checker(self):
         """
         Проверяет наличие атрибута в таблице источнике
         """
         if self.source_table.schema+"."+self.source_table.name+"."+self.name not in self.source_table.source.source_attributes \
-                and self.attribute_type not in ([const('C_UPDATE_TYPE_NAME').constant_value,const('C_ETL_TYPE_NAME').constant_value]):
+                and self.attribute_type not in ([C_UPDATE, C_ETL_ATTR]):
             sys.exit("На источнике на найден атрибут "+self.source_table.schema+"."+self.source_table.name+"."+self.name)
 
 
@@ -1581,7 +1559,7 @@ class Entity(_DWHObject):
         """
         super().__init__(
             p_id=p_id,
-            p_type=const('C_ENTITY').constant_value,
+            p_type=C_ENTITY,
             p_entity_attribute=p_entity_attribute,
             p_source=p_source,
             p_source_table=p_source_table,
@@ -1602,7 +1580,7 @@ class Entity(_DWHObject):
         l_name=None
         if self._name is not None:
             l_name=self._name.lower()
-        return l_name or self.object_attrs_meta.get(const('C_NAME').constant_value,None)
+        return l_name or self.object_attrs_meta.get(C_NAME,None)
 
 
 class SourceTable(_DWHObject):
@@ -1628,7 +1606,7 @@ class SourceTable(_DWHObject):
         """
         super().__init__(
             p_id=p_id,
-            p_type=const('C_QUEUE_TABLE_TYPE_NAME').constant_value,
+            p_type=C_QUEUE,
             p_source_attribute=p_source_attribute,
             p_source=p_source
         )
@@ -1647,7 +1625,7 @@ class SourceTable(_DWHObject):
         l_name=None
         if self._name is not None:
             l_name=self._name.lower()
-        return l_name or self.object_attrs_meta.get(const('C_SOURCE_NAME').constant_value,None)
+        return l_name or self.object_attrs_meta.get(C_SOURCE_NAME,None)
 
     @property
     def schema(self):
@@ -1657,7 +1635,7 @@ class SourceTable(_DWHObject):
         l_schema=None
         if self._schema is not None:
             l_schema=self._schema.lower()
-        return l_schema or self.object_attrs_meta.get(const('C_SCHEMA').constant_value,None)
+        return l_schema or self.object_attrs_meta.get(C_SCHEMA,None)
 
 
     @property
@@ -1665,7 +1643,7 @@ class SourceTable(_DWHObject):
         """
         Наименование таблицы queue
         """
-        return self.source.name.replace(" ","_")+"_"+self.schema+"_"+self.name+"_"+const('C_QUEUE_TABLE_TYPE_NAME').constant_value
+        return self.source.name.replace(" ","_") +"_" + self.schema +"_" + self.name +"_" + C_QUEUE
 
     @property
     def increment(self):
@@ -1675,14 +1653,14 @@ class SourceTable(_DWHObject):
         if self._increment:
             if type(self._increment).__name__!="Attribute":
                 sys.exit("p_increment не является объектом класса Attribute") #TODO переделать
-            # if self._increment.datatype.data_type_name!=const('C_TIMESTAMP_DBMS').constant_value.get(self.source.type):
+            # if self._increment.datatype.data_type_name!=C_TIMESTAMP_DBMS.get(self.source.type):
             #     sys.exit("У инкремента некорректный тип данных") #TODO переделать
-        l_increment_meta_obj=self.object_attrs_meta.get(const('C_INCREMENT').constant_value,None)
+        l_increment_meta_obj=self.object_attrs_meta.get(C_INCREMENT,None)
         l_increment=None
         if l_increment_meta_obj:
             l_increment=Attribute(
                 p_id=l_increment_meta_obj,
-                p_type="queue_attr"
+                p_type=C_QUEUE_ATTR
             )
         return self._increment or l_increment
 
@@ -1697,7 +1675,7 @@ class SourceTable(_DWHObject):
         Возвращает значение последнего загруженного инкремента
         """
         l_increment=meta.search_object(
-            p_type=const('C_QUEUE_TABLE_TYPE_NAME').constant_value+"_"+const('C_INCREMENT').constant_value,
+            p_type=C_QUEUE_INCREMENT,
             p_uuid=[self.id]
         )
         if l_increment: # если указано значение
@@ -1715,14 +1693,14 @@ class SourceTable(_DWHObject):
         l_attribute_sql=""
         l_attribute_name_list=[]
         for i_attribute in self.source_attribute:
-            if i_attribute.attribute_type==const('C_QUEUE_ATTR_TYPE_NAME').constant_value: # не берем технические атрибуты
+            if i_attribute.attribute_type==C_QUEUE_ATTR: # не берем технические атрибуты
                 l_attribute_name_list.append(i_attribute.name)
         l_attribute_name_list.sort() # сортируем по наименоваию
         for i_attribute in l_attribute_name_list:
             l_attribute_sql=l_attribute_sql+"\n"+'"'+i_attribute+'"'+","
         l_attribute_sql=l_attribute_sql[1:] # убираем первый перенос строки
         l_increment_sql=""
-        l_timestamp_type=const('C_TIMESTAMP_DBMS').constant_value.get(self.source.type)
+        l_timestamp_type=C_TIMESTAMP_DBMS.get(self.source.type)
         if self.increment:
             l_increment_attr_sql='"'+self.increment.name+'"'+" AS update_timestamp"
         else:
@@ -1738,17 +1716,17 @@ class SourceTable(_DWHObject):
         Создает технические атрибуты для source таблицы
         """
         update_column=Attribute(
-            p_name=const('C_UPDATE_TIMESTAMP_NAME').constant_value,
-            p_type=const('C_QUEUE_COLUMN').constant_value,
-            p_datatype=const('C_TIMESTAMP_DBMS').constant_value.get(Connection().dbms_type),
-            p_attribute_type=const('C_UPDATE_TYPE_NAME').constant_value,
+            p_name=C_UPDATE_TIMESTAMP_NAME,
+            p_type=C_QUEUE_COLUMN,
+            p_datatype=C_TIMESTAMP_DBMS.get(Connection().dbms_type),
+            p_attribute_type=C_UPDATE,
             p_source_table=self
         )
         etl_column=Attribute(
-            p_name=const('C_ETL_ATTRIBUTE_NAME').constant_value,
-            p_type=const('C_QUEUE_COLUMN').constant_value,
-            p_datatype=const('C_BIGINT').constant_value,
-            p_attribute_type=const('C_ETL_TYPE_NAME').constant_value,
+            p_name=C_ETL_ATTRIBUTE_NAME,
+            p_type=C_QUEUE_COLUMN,
+            p_datatype=C_BIGINT,
+            p_attribute_type=C_ETL_ATTR,
             p_source_table=self
         )
         if not self.source_attribute:
@@ -1758,9 +1736,9 @@ class SourceTable(_DWHObject):
             l_attribute_type_list=[]
             for i_attribute in self.source_attribute:
                 l_attribute_type_list.append(i_attribute.attribute_type)
-            if const('C_UPDATE_TYPE_NAME').constant_value not in l_attribute_type_list:
+            if C_UPDATE not in l_attribute_type_list:
                 add_attribute(p_table=self, p_attribute=update_column)
-            if const('C_ETL_TYPE_NAME').constant_value not in l_attribute_type_list:
+            if C_ETL_ATTR not in l_attribute_type_list:
                 add_attribute(p_table=self, p_attribute=etl_column)
 
 
@@ -1778,7 +1756,7 @@ class Idmap(_DWHObject):
     ):
         super().__init__(
             p_id=p_id,
-            p_type=const('C_IDMAP_TABLE_TYPE_NAME').constant_value,
+            p_type=C_IDMAP,
             p_idmap_attribute=p_idmap_attribute,
             p_entity=p_entity
         )
@@ -1795,9 +1773,9 @@ class Idmap(_DWHObject):
         Наименование idmap
         """
         if self.entity.name:
-            return str(self.entity.name).lower()+_get_table_postfix(p_table_type=const('C_IDMAP_TABLE_TYPE_NAME').constant_value)
+            return str(self.entity.name).lower()+_get_table_postfix(p_table_type=C_IDMAP)
         else:
-            return self.object_attrs_meta.get(const('C_NAME').constant_value)
+            return self.object_attrs_meta.get(C_NAME)
 
     def __create_idmap_attribute(self):
         """
@@ -1805,25 +1783,25 @@ class Idmap(_DWHObject):
         """
         if not self.idmap_attribute:
             rk_column=Attribute(
-                p_name=self.entity.name+"_"+const('C_RK_TYPE_NAME').constant_value,
-                p_type=const('C_IDMAP_COLUMN').constant_value,
-                p_datatype=const('C_BIGINT').constant_value,
-                p_attribute_type=const('C_RK_TYPE_NAME').constant_value,
+                p_name=self.entity.name +"_" + C_RK,
+                p_type=C_IDMAP_COLUMN,
+                p_datatype=C_BIGINT,
+                p_attribute_type=C_RK,
                 p_idmap=self
             )
             nk_column=Attribute(
-                p_name=self.entity.name+"_"+const('C_NK_TYPE_NAME').constant_value,
-                p_type=const('C_IDMAP_COLUMN').constant_value,
-                p_datatype=const('C_VARCHAR').constant_value,
+                p_name=self.entity.name +"_" + C_NK,
+                p_type=C_IDMAP_COLUMN,
+                p_datatype=C_VARCHAR,
                 p_length=4000,
-                p_attribute_type=const('C_NK_TYPE_NAME').constant_value,
+                p_attribute_type=C_NK,
                 p_idmap=self
             )
             etl_column=Attribute(
-                p_name=const('C_ETL_TYPE_NAME').constant_value,
-                p_type=const('C_IDMAP_COLUMN').constant_value,
-                p_datatype=const('C_BIGINT').constant_value,
-                p_attribute_type=const('C_ETL_TYPE_NAME').constant_value,
+                p_name=C_ETL_ATTRIBUTE_NAME,
+                p_type=C_IDMAP_COLUMN,
+                p_datatype=C_BIGINT,
+                p_attribute_type=C_ETL_ATTR,
                 p_idmap=self
             )
             add_attribute(p_table=self, p_attribute=rk_column)
@@ -1842,13 +1820,13 @@ class Idmap(_DWHObject):
         Атрибуты таблицы источника для составного ключа
         """
         l_attribute=[]
-        l_attribute_meta_obj=self.object_attrs_meta.get(const('C_ATTRIBUTE_NK').constant_value)
+        l_attribute_meta_obj=self.object_attrs_meta.get(C_ATTRIBUTE_NK)
         if l_attribute_meta_obj:
             for i_attribute in l_attribute_meta_obj:
                 l_attribute.append(
                     Attribute(
                         p_id=i_attribute,
-                        p_type=const('C_QUEUE_COLUMN').constant_value
+                        p_type=C_QUEUE_COLUMN
                     )
             )
         return self._source_attribute_nk or l_attribute
@@ -1873,7 +1851,7 @@ class Anchor(_DWHObject):
                  ):
         super().__init__(
             p_id=p_id,
-            p_type=const('C_ANCHOR_TABLE_TYPE_NAME').constant_value,
+            p_type=C_ANCHOR,
             p_anchor_attribute=p_anchor_attribute,
             p_entity=p_entity
         )
@@ -1889,9 +1867,9 @@ class Anchor(_DWHObject):
         Наименование
         """
         if self.entity.name:
-           return str(self.entity.name).lower()+_get_table_postfix(p_table_type=const('C_ANCHOR_TABLE_TYPE_NAME').constant_value)
+           return str(self.entity.name).lower()+_get_table_postfix(p_table_type=C_ANCHOR)
         else:
-           return self.object_attrs_meta.get(const('C_NAME').constant_value)
+           return self.object_attrs_meta.get(C_NAME)
 
     def __create_anchor_attribute(self):
         """
@@ -1899,24 +1877,24 @@ class Anchor(_DWHObject):
         """
         if not self.anchor_attribute:
             rk_column=Attribute(
-                p_name=self.entity.name+"_"+const('C_RK_TYPE_NAME').constant_value,
-                p_type=const('C_ANCHOR_COLUMN').constant_value,
-                p_datatype=const('C_BIGINT').constant_value,
-                p_attribute_type=const('C_RK_TYPE_NAME').constant_value,
+                p_name=self.entity.name +"_" + C_RK,
+                p_type=C_ANCHOR_COLUMN,
+                p_datatype=C_BIGINT,
+                p_attribute_type=C_RK,
                 p_anchor=self
             )
             source_system_id=Attribute(
-                p_name=const('C_SOURCE_ATTRIBUTE_NAME').constant_value,
-                p_type=const('C_ANCHOR_COLUMN').constant_value,
-                p_datatype=const('C_INT').constant_value,
-                p_attribute_type=const('C_SOURCE_TYPE_NAME').constant_value,
+                p_name=C_SOURCE_ATTRIBUTE_NAME,
+                p_type=C_ANCHOR_COLUMN,
+                p_datatype=C_INT,
+                p_attribute_type=C_SOURCE_ATTR,
                 p_anchor=self
             )
             etl_id=Attribute(
-                p_name=const('C_ETL_ATTRIBUTE_NAME').constant_value,
-                p_type=const('C_ANCHOR_COLUMN').constant_value,
-                p_datatype=const('C_BIGINT').constant_value,
-                p_attribute_type=const('C_ETL_TYPE_NAME').constant_value,
+                p_name=C_ETL_ATTRIBUTE_NAME,
+                p_type=C_ANCHOR_COLUMN,
+                p_datatype=C_BIGINT,
+                p_attribute_type=C_ETL_ATTR,
                 p_anchor=self
             )
             add_attribute(p_table=self, p_attribute=rk_column)
@@ -1942,7 +1920,7 @@ class AttributeTable(_DWHObject):
                  ):
         super().__init__(
             p_id=p_id,
-            p_type=const('C_ATTRIBUTE_TABLE_TYPE_NAME').constant_value,
+            p_type=C_ATTRIBUTE_TABLE,
             p_attribute_table_attribute=p_attribute_table_attribute,
             p_entity=p_entity,
             p_entity_attribute=p_entity_attribute
@@ -1960,9 +1938,9 @@ class AttributeTable(_DWHObject):
         """
         if self.entity_attribute.name:
             return self.entity.name+"_"+self.entity_attribute.name\
-                   +_get_table_postfix(p_table_type=const('C_ATTRIBUTE_TABLE_TYPE_NAME').constant_value)
+                   +_get_table_postfix(p_table_type=C_ATTRIBUTE_TABLE)
         else:
-            return self.object_attrs_meta.get(const('C_NAME').constant_value)
+            return self.object_attrs_meta.get(C_NAME)
 
     def __create_attributetable_attribute(self):
         """
@@ -1970,40 +1948,40 @@ class AttributeTable(_DWHObject):
         """
         if not self.attribute_table_attribute:
             rk_column=Attribute(
-                p_name=self.entity.name+"_"+const('C_RK_TYPE_NAME').constant_value,
-                p_type=const('C_ATTRIBUTE_COLUMN').constant_value,
-                p_datatype=const('C_BIGINT').constant_value,
-                p_attribute_type=const('C_RK_TYPE_NAME').constant_value,
+                p_name=self.entity.name +"_" + C_RK,
+                p_type=C_ATTRIBUTE_COLUMN,
+                p_datatype=C_BIGINT,
+                p_attribute_type=C_RK,
                 p_attribute_table=self
             )
             value_column=Attribute(
                 p_name=self.entity_attribute.name,
-                p_type=const('C_ATTRIBUTE_COLUMN').constant_value,
+                p_type=C_ATTRIBUTE_COLUMN,
                 p_datatype=self.entity_attribute.datatype.data_type_name,
                 p_length=self.entity_attribute.datatype.data_type_length,
                 p_scale=self.entity_attribute.datatype.data_type_scale,
-                p_attribute_type=const('C_VALUE_TYPE_NAME').constant_value,
+                p_attribute_type=C_VALUE,
                 p_attribute_table=self
             )
             from_dttm=Attribute(
-                p_name=const('C_FROM_ATTRIBUTE_NAME').constant_value,
-                p_type=const('C_ATTRIBUTE_COLUMN').constant_value,
-                p_datatype=const('C_TIMESTAMP').constant_value,
-                p_attribute_type=const('C_FROM_TYPE_NAME').constant_value,
+                p_name=C_FROM_ATTRIBUTE_NAME,
+                p_type=C_ATTRIBUTE_COLUMN,
+                p_datatype=C_TIMESTAMP,
+                p_attribute_type=C_FROM,
                 p_attribute_table=self
             )
             to_dttm=Attribute(
-                p_name=const('C_TO_ATTRIBUTE_NAME').constant_value,
-                p_type=const('C_ATTRIBUTE_COLUMN').constant_value,
-                p_datatype=const('C_TIMESTAMP').constant_value,
-                p_attribute_type=const('C_TO_TYPE_NAME').constant_value,
+                p_name=C_TO_ATTRIBUTE_NAME,
+                p_type=C_ATTRIBUTE_COLUMN,
+                p_datatype=C_TIMESTAMP,
+                p_attribute_type=C_TO,
                 p_attribute_table=self
             )
             etl_id=Attribute(
-                p_name=const('C_ETL_ATTRIBUTE_NAME').constant_value,
-                p_type=const('C_ATTRIBUTE_COLUMN').constant_value,
-                p_datatype=const('C_BIGINT').constant_value,
-                p_attribute_type=const('C_ETL_TYPE_NAME').constant_value,
+                p_name=C_ETL_ATTRIBUTE_NAME,
+                p_type=C_ATTRIBUTE_COLUMN,
+                p_datatype=C_BIGINT,
+                p_attribute_type=C_ETL_ATTR,
                 p_attribute_table=self
             )
             add_attribute(p_table=self, p_attribute=rk_column)
@@ -2017,7 +1995,7 @@ class AttributeTable(_DWHObject):
         Добавляет таблицу attribute в entity
         """
 
-        l_attribute_id_list=self.entity.object_attrs_meta.get(const('C_ATTRIBUTE_TABLE_TYPE_NAME').constant_value)
+        l_attribute_id_list=self.entity.object_attrs_meta.get(C_ATTRIBUTE_TABLE)
         if not l_attribute_id_list:
             l_attribute_id_list=[]
         if self.id not in l_attribute_id_list:
@@ -2043,7 +2021,7 @@ class Tie(_DWHObject):
                  ):
         super().__init__(
             p_id=p_id,
-            p_type=const('C_TIE_TABLE_TYPE_NAME').constant_value,
+            p_type=C_TIE,
             p_tie_attribute=p_tie_attribute,
             p_link_entity=p_link_entity,
             p_entity_attribute=p_entity_attribute,
@@ -2063,7 +2041,7 @@ class Tie(_DWHObject):
         """
         l_name=self.entity.name+"_"+\
                self.link_entity.name+\
-               _get_table_postfix(p_table_type=const('C_TIE_TABLE_TYPE_NAME').constant_value)
+               _get_table_postfix(p_table_type=C_TIE)
         return l_name
 
     def __create_tie_attribute(self):
@@ -2072,38 +2050,38 @@ class Tie(_DWHObject):
         """
         if not self.tie_attribute:
             rk_column=Attribute( # атрибутом типом rk становится первый по порядку
-                p_name=self.entity.name+"_"+const('C_RK_TYPE_NAME').constant_value,
-                p_type=const('C_TIE_COLUMN').constant_value,
-                p_datatype=const('C_BIGINT').constant_value,
-                p_attribute_type=const('C_RK_TYPE_NAME').constant_value,
+                p_name=self.entity.name +"_" + C_RK,
+                p_type=C_TIE_COLUMN,
+                p_datatype=C_BIGINT,
+                p_attribute_type=C_RK,
                 p_tie=self
             )
             link_rk_column=Attribute( # атрибутом типом link_rk становится второй по порядку
-                p_name=self.link_entity.name+"_"+const('C_RK_TYPE_NAME').constant_value,
-                p_type=const('C_TIE_COLUMN').constant_value,
-                p_datatype=const('C_BIGINT').constant_value,
-                p_attribute_type=const('C_LINK_RK_TYPE_NAME').constant_value,
+                p_name=self.link_entity.name +"_" + C_RK,
+                p_type=C_TIE_COLUMN,
+                p_datatype=C_BIGINT,
+                p_attribute_type=C_LINK_RK,
                 p_tie=self
             )
             from_dttm=Attribute(
-                p_name=const('C_FROM_ATTRIBUTE_NAME').constant_value,
-                p_type=const('C_TIE_COLUMN').constant_value,
-                p_datatype=const('C_TIMESTAMP').constant_value,
-                p_attribute_type=const('C_FROM_TYPE_NAME').constant_value,
+                p_name=C_FROM_ATTRIBUTE_NAME,
+                p_type=C_TIE_COLUMN,
+                p_datatype=C_TIMESTAMP,
+                p_attribute_type=C_FROM,
                 p_tie=self
             )
             to_dttm=Attribute(
-                p_name=const('C_TO_ATTRIBUTE_NAME').constant_value,
-                p_type=const('C_TIE_COLUMN').constant_value,
-                p_datatype=const('C_TIMESTAMP').constant_value,
-                p_attribute_type=const('C_TO_TYPE_NAME').constant_value,
+                p_name=C_TO_ATTRIBUTE_NAME,
+                p_type=C_TIE_COLUMN,
+                p_datatype=C_TIMESTAMP,
+                p_attribute_type=C_TO,
                 p_tie=self
             )
             etl_id=Attribute(
-                p_name=const('C_ETL_ATTRIBUTE_NAME').constant_value,
-                p_type=const('C_TIE_COLUMN').constant_value,
-                p_datatype=const('C_BIGINT').constant_value,
-                p_attribute_type=const('C_ETL_TYPE_NAME').constant_value,
+                p_name=C_ETL_ATTRIBUTE_NAME,
+                p_type=C_TIE_COLUMN,
+                p_datatype=C_BIGINT,
+                p_attribute_type=C_ETL_ATTR,
                 p_tie=self
             )
             add_attribute(p_table=self, p_attribute=rk_column)
@@ -2117,7 +2095,7 @@ class Tie(_DWHObject):
         Добавляет tie в сущности
         """
 
-        l_tie_id_list=self.entity.object_attrs_meta.get(const('C_TIE_TABLE_TYPE_NAME').constant_value)
+        l_tie_id_list=self.entity.object_attrs_meta.get(C_TIE)
         if not l_tie_id_list:
             l_tie_id_list=[]
         if self.id not in l_tie_id_list:
@@ -2128,7 +2106,7 @@ class Tie(_DWHObject):
                 l_entity_tie=[self]
             self.entity.tie=l_entity_tie
 
-        l_link_tie_id_list=self.link_entity.object_attrs_meta.get(const('C_TIE_TABLE_TYPE_NAME').constant_value)
+        l_link_tie_id_list=self.link_entity.object_attrs_meta.get(C_TIE)
         if not l_link_tie_id_list:
             l_link_tie_id_list=[]
         if self.id not in l_link_tie_id_list:
@@ -2167,7 +2145,7 @@ class Job(_DWHObject):
         super().__init__(
             p_id=p_id,
             p_entity=p_entity,
-            p_type=p_type or const('C_ETL').constant_value,
+            p_type=p_type or C_ETL,
             p_entity_attribute=p_entity_attribute,
             p_source_table=p_source_table,
             p_idmap=p_idmap,
@@ -2192,29 +2170,29 @@ class Job(_DWHObject):
         """
         # вычисляем максимальный etl_id из метаданных
         l_etls=meta.search_object(
-            p_type=const('C_ETL').constant_value
+            p_type=C_ETL
         )
         l_etl_id_list=[] # список etl_id
         for i_etl in l_etls:
-            l_etl_id_list.append(i_etl.attrs.get(const('C_ETL_ATTRIBUTE_NAME').constant_value))
+            l_etl_id_list.append(i_etl.attrs.get(C_ETL_ATTRIBUTE_NAME))
         l_first_etl_id=None
         if l_etl_id_list.__len__()==0:
             l_first_etl_id=1
-        return self.object_attrs_meta.get(const('C_ETL_ATTRIBUTE_NAME').constant_value,None) or l_first_etl_id or max(l_etl_id_list)+1
+        return self.object_attrs_meta.get(C_ETL_ATTRIBUTE_NAME,None) or l_first_etl_id or max(l_etl_id_list)+1
 
     @property
     def start_datetime(self) -> str:
         """
         Дата и время начала job-а
         """
-        return self.object_attrs_meta.get(const('C_START_DATETIME').constant_value,None) or self._start_datetime
+        return self.object_attrs_meta.get(C_START_DATETIME,None) or self._start_datetime
 
     @property
     def end_datetime(self) -> str:
         """
         Дата и время окончания джоба
         """
-        return self.object_attrs_meta.get(const('C_END_DATETIME').constant_value,None) or self._end_datetime
+        return self.object_attrs_meta.get(C_END_DATETIME,None) or self._end_datetime
 
     @end_datetime.setter
     def end_datetime(self, p_new_end_datetime: str):
@@ -2225,7 +2203,7 @@ class Job(_DWHObject):
         """
         Текст ошибки
         """
-        return self.object_attrs_meta.get(const('C_ERROR').constant_value,None) or self._error
+        return self.object_attrs_meta.get(C_ERROR,None) or self._error
 
     @error.setter
     def error(self, p_new_error: str):
@@ -2239,9 +2217,9 @@ class Job(_DWHObject):
         # проверка объекта
         _class_checker(p_class_name="Package",p_object=self._source_table_package)
         # собираем метаданные, если указаны
-        l_meta_obj=self.object_attrs_meta.get(const('C_PACKAGE').constant_value,None)
+        l_meta_obj=self.object_attrs_meta.get(C_PACKAGE,None)
         # выбираем из метаданных
-        l_object=_get_object(p_id=l_meta_obj, p_class_name="Package", p_type=const('C_QUEUE_ETL').constant_value)
+        l_object=_get_object(p_id=l_meta_obj, p_class_name="Package", p_type=C_QUEUE_ETL)
 
         return self._source_table_package or l_object
 
@@ -2253,9 +2231,9 @@ class Job(_DWHObject):
         # проверка объекта
         _class_checker(p_class_name="Package",p_object=self._idmap_package)
         # собираем метаданные, если указаны
-        l_meta_obj=self.object_attrs_meta.get(const('C_PACKAGE').constant_value,None)
+        l_meta_obj=self.object_attrs_meta.get(C_PACKAGE,None)
         # выбираем из метаданных
-        l_object=_get_object(p_id=l_meta_obj, p_class_name="Package", p_type=const('C_IDMAP_ETL').constant_value)
+        l_object=_get_object(p_id=l_meta_obj, p_class_name="Package", p_type=C_IDMAP_ETL)
 
         return self._idmap_package or l_object
 
@@ -2267,9 +2245,9 @@ class Job(_DWHObject):
         # проверка объекта
         _class_checker(p_class_name="Package",p_object=self._anchor_package)
         # собираем метаданные, если указаны
-        l_meta_obj=self.object_attrs_meta.get(const('C_PACKAGE').constant_value,None)
+        l_meta_obj=self.object_attrs_meta.get(C_PACKAGE,None)
         # выбираем из метаданных
-        l_object=_get_object(p_id=l_meta_obj, p_class_name="Package", p_type=const('C_IDMAP_ETL').constant_value)
+        l_object=_get_object(p_id=l_meta_obj, p_class_name="Package", p_type=C_IDMAP_ETL)
 
         return self._anchor_package or l_object
 
@@ -2281,9 +2259,9 @@ class Job(_DWHObject):
         # проверка объекта
         _class_checker(p_class_name="Package",p_object=self._attribute_table_package)
         # собираем метаданные, если указаны
-        l_meta_obj=self.object_attrs_meta.get(const('C_PACKAGE').constant_value,None)
+        l_meta_obj=self.object_attrs_meta.get(C_PACKAGE,None)
         # выбираем из метаданных
-        l_object=_get_object(p_id=l_meta_obj, p_class_name="Package", p_type=const('C_IDMAP_ETL').constant_value)
+        l_object=_get_object(p_id=l_meta_obj, p_class_name="Package", p_type=C_IDMAP_ETL)
 
         return self._attribute_table_package or l_object
 
@@ -2295,9 +2273,9 @@ class Job(_DWHObject):
         # проверка объекта
         _class_checker(p_class_name="Package",p_object=self._tie_package)
         # собираем метаданные, если указаны
-        l_meta_obj=self.object_attrs_meta.get(const('C_PACKAGE').constant_value,None)
+        l_meta_obj=self.object_attrs_meta.get(C_PACKAGE,None)
         # выбираем из метаданных
-        l_object=_get_object(p_id=l_meta_obj, p_class_name="Package", p_type=const('C_IDMAP_ETL').constant_value)
+        l_object=_get_object(p_id=l_meta_obj, p_class_name="Package", p_type=C_IDMAP_ETL)
 
         return self._tie_package or l_object
 
@@ -2321,7 +2299,7 @@ class Job(_DWHObject):
     def tie_package(self, p_new):
         self._tie_package=p_new
 
-    def start_job(self, p_step_name: str =const('C_STG_SCHEMA').constant_value):
+    def start_job(self, p_step_name: str =C_STG_SCHEMA):
         """
         Загружает данные в ХД
 
@@ -2344,8 +2322,8 @@ class Job(_DWHObject):
                 l_anchor_list.append(self.entity_attribute.entity.anchor)
                 # attribute
                 l_attribute_meta=meta.search_object( # поиск таблицы атрибута в метаданных
-                    p_type=const("C_ATTRIBUTE_TABLE_TYPE_NAME").constant_value,
-                    p_attrs={const('C_ENTITY_COLUMN').constant_value:self.entity_attribute.id}
+                    p_type=C_ATTRIBUTE_TABLE,
+                    p_attrs={C_ENTITY_COLUMN:self.entity_attribute.id}
                 )[0]
                 l_attribute=AttributeTable(p_id=l_attribute_meta.uuid)
                 l_attribute_list.append(l_attribute)
@@ -2365,64 +2343,64 @@ class Job(_DWHObject):
                     l_tie_list.extend(self.entity.tie)
         else:
             # таблицы источники
-            l_source_table_meta=meta.search_object(p_type=const('C_QUEUE_TABLE_TYPE_NAME').constant_value)
+            l_source_table_meta=meta.search_object(p_type=C_QUEUE)
             for i_source_table_meta in l_source_table_meta:
                  l_source_table=SourceTable(p_id=i_source_table_meta.uuid)
                  l_source_table_list.append(l_source_table)
             # idmap
-            l_idmap_table_meta=meta.search_object(p_type=const('C_IDMAP_TABLE_TYPE_NAME').constant_value)
+            l_idmap_table_meta=meta.search_object(p_type=C_IDMAP)
             for i_idmap_meta in l_idmap_table_meta:
                 l_idmap=Idmap(p_id=i_idmap_meta.uuid)
                 l_idmap_list.append(l_idmap)
             # anchor
-            l_anchor_meta=meta.search_object(p_type=const('C_ANCHOR_TABLE_TYPE_NAME').constant_value)
+            l_anchor_meta=meta.search_object(p_type=C_ANCHOR)
             for i_anchor_meta in l_anchor_meta:
                 l_anchor=Anchor(p_id=i_anchor_meta.uuid)
                 l_anchor_list.append(l_anchor)
             # attribute
-            l_attribute_meta=meta.search_object(p_type=const('C_ATTRIBUTE_TABLE_TYPE_NAME').constant_value)
+            l_attribute_meta=meta.search_object(p_type=C_ATTRIBUTE_TABLE)
             for i_attribute_meta in l_attribute_meta:
                 l_attribute=AttributeTable(p_id=i_attribute_meta.uuid)
                 l_attribute_list.append(l_attribute)
             # tie
-            l_tie_meta=meta.search_object(p_type=const('C_TIE_TABLE_TYPE_NAME').constant_value)
+            l_tie_meta=meta.search_object(p_type=C_TIE)
             for i_tie_meta in l_tie_meta:
                 l_tie=Tie(p_id=i_tie_meta.uuid)
                 l_tie_list.append(l_tie)
 
 
         # грузим данные в таблицы источники
-        if p_step_name==const('C_STG_SCHEMA').constant_value:
-            print(Color.BOLD+"==============================")
+        if p_step_name==C_STG_SCHEMA:
+            print(C_COLOR_BOLD+"==============================")
             print("Source tables loading")
-            print("=============================="+Color.ENDC)
+            print("=============================="+C_COLOR_ENDC)
             self.source_table_load(p_source_table=l_source_table_list)
         # грузим данные в idmap
         if p_step_name in [
-            const('C_IDMAP_SCHEMA').constant_value,
-            const('C_STG_SCHEMA').constant_value
+            C_IDMAP_SCHEMA,
+            C_STG_SCHEMA
         ]:
-            print(Color.BOLD+"==============================")
+            print(C_COLOR_BOLD+"==============================")
             print("Idmap tables loading")
-            print("=============================="+Color.ENDC)
+            print("=============================="+C_COLOR_ENDC)
             self.idmap_load(p_idmap=l_idmap_list)
         if p_step_name in [
-            const('C_IDMAP_SCHEMA').constant_value,
-            const('C_STG_SCHEMA').constant_value,
-            const('C_AM_SCHEMA').constant_value
+            C_IDMAP_SCHEMA,
+            C_STG_SCHEMA,
+            C_AM_SCHEMA
         ]:
-            print(Color.BOLD+"==============================")
+            print(C_COLOR_BOLD+"==============================")
             print("Anchor tables loading")
-            print("=============================="+Color.ENDC)
+            print("=============================="+C_COLOR_ENDC)
             self.anchor_load(p_anchor=l_anchor_list)
-            print(Color.BOLD+"==============================")
+            print(C_COLOR_BOLD+"==============================")
             print("Attribute tables loading")
-            print("=============================="+Color.ENDC)
+            print("=============================="+C_COLOR_ENDC)
             self.attribute_table_load(p_attribute_table=l_attribute_list)
             if l_tie_list.__len__()>0: # не всегда ест tie у сущности
-                print(Color.BOLD+"==============================")
+                print(C_COLOR_BOLD+"==============================")
                 print("Tie tables loading")
-                print("=============================="+Color.ENDC)
+                print("=============================="+C_COLOR_ENDC)
                 self.tie_load(p_tie=l_tie_list)
         # записываем метаданные
         self.end_datetime=datetime.datetime.now() # проставляем дату окончания процесса
@@ -2435,14 +2413,14 @@ class Job(_DWHObject):
         """
         Определяет цвет статуса в терминале
         """
-        if p_status==const('C_STATUS_SUCCESS').constant_value:
-            return Color.OKGREEN+p_status+Color.ENDC
-        if p_status==const('C_STATUS_PARTLY_SUCCESS').constant_value:
-            return Color.WARNING+p_status+Color.ENDC
-        if p_status==const('C_STATUS_FAIL').constant_value:
-            return Color.FAIL+p_status+Color.ENDC
-        if p_status==const('C_STATUS_IN_PROGRESS').constant_value:
-            return Color.OKBLUE+p_status+Color.ENDC
+        if p_status==C_STATUS_SUCCESS:
+            return C_COLOR_OKGREEN+p_status+C_COLOR_ENDC
+        if p_status==C_STATUS_PARTLY_SUCCESS:
+            return C_COLOR_WARNING+p_status+C_COLOR_ENDC
+        if p_status==C_STATUS_FAIL:
+            return C_COLOR_FAIL+p_status+C_COLOR_ENDC
+        if p_status==C_STATUS_IN_PROGRESS:
+            return C_COLOR_OKBLUE+p_status+C_COLOR_ENDC
 
 
     def source_table_load(self, p_source_table: list):
@@ -2452,10 +2430,10 @@ class Job(_DWHObject):
         :param p_source_table: список таблиц источников, которые требуется прогрузить
         """
         for i_source_table in p_source_table:
-            print("("+i_source_table.source.name+") "+i_source_table.name+" : "+self.__status_color(const('C_STATUS_IN_PROGRESS').constant_value), end="")
+            print("("+i_source_table.source.name+") "+i_source_table.name+" : "+self.__status_color(C_STATUS_IN_PROGRESS), end="")
             l_package=Package(
                 p_source_table=i_source_table,
-                p_type=const('C_QUEUE_ETL').constant_value,
+                p_type=C_QUEUE_ETL,
                 p_job=self
             )
             l_package.start_etl()
@@ -2468,13 +2446,13 @@ class Job(_DWHObject):
         :param p_idmap: список idmap, которые требуется прогрузить
         """
         for i_idmap in p_idmap:
-            print(i_idmap.name+" : "+self.__status_color(const('C_STATUS_IN_PROGRESS').constant_value), end="")
+            print(i_idmap.name+" : "+self.__status_color(C_STATUS_IN_PROGRESS), end="")
             l_error_cnt=0
             l_source_table_cnt=0
             for i_source_table in i_idmap.entity.source_table:
                 l_package=Package(
                     p_idmap=i_idmap,
-                    p_type=const('C_IDMAP_ETL').constant_value,
+                    p_type=C_IDMAP_ETL,
                     p_job=self,
                     p_source_table=i_source_table
                 )
@@ -2483,11 +2461,11 @@ class Job(_DWHObject):
                     l_error_cnt+=1
                 l_source_table_cnt+=1
             if l_error_cnt==l_source_table_cnt:
-                l_status=const('C_STATUS_FAIL').constant_value
+                l_status=C_STATUS_FAIL
             elif l_error_cnt==0:
-                l_status=const('C_STATUS_SUCCESS').constant_value
+                l_status=C_STATUS_SUCCESS
             else:
-                l_status=const('C_STATUS_PARTLY_SUCCESS').constant_value
+                l_status=C_STATUS_PARTLY_SUCCESS
             print("\r"+i_idmap.name+" : "+self.__status_color(l_status))
 
     def anchor_load(self, p_anchor: list):
@@ -2497,10 +2475,10 @@ class Job(_DWHObject):
         :param p_anchor: список якорей, которые требуется прогрузить
         """
         for i_anchor in p_anchor:
-            print(i_anchor.name+" : "+self.__status_color(const('C_STATUS_IN_PROGRESS').constant_value), end="")
+            print(i_anchor.name+" : "+self.__status_color(C_STATUS_IN_PROGRESS), end="")
             l_package=Package(
                 p_anchor=i_anchor,
-                p_type=const('C_ANCHOR_ETL').constant_value,
+                p_type=C_ANCHOR_ETL,
                 p_job=self
             )
             l_package.start_etl()
@@ -2513,7 +2491,7 @@ class Job(_DWHObject):
         :param p_attribute_table: список таблиц атрибутов, которые требуется прогрузить
         """
         for i_attribute_table in p_attribute_table:
-            print(i_attribute_table.name+" : "+self.__status_color(const('C_STATUS_IN_PROGRESS').constant_value), end="")
+            print(i_attribute_table.name+" : "+self.__status_color(C_STATUS_IN_PROGRESS), end="")
             l_error_cnt=0
             l_source_table_cnt=0
             for i_source_attribute in i_attribute_table.entity_attribute.source_attribute:
@@ -2521,18 +2499,18 @@ class Job(_DWHObject):
                     p_attribute_table=i_attribute_table,
                     p_source_table=i_source_attribute.source_table,
                     p_job=self,
-                    p_type=const('C_ATTRIBUTE_ETL').constant_value
+                    p_type=C_ATTRIBUTE_ETL
                 )
                 l_package.start_etl()
                 if l_package.error:
                     l_error_cnt+=1
                 l_source_table_cnt+=1
             if l_error_cnt==l_source_table_cnt:
-                l_status=const('C_STATUS_FAIL').constant_value
+                l_status=C_STATUS_FAIL
             elif l_error_cnt==0:
-                l_status=const('C_STATUS_SUCCESS').constant_value
+                l_status=C_STATUS_SUCCESS
             else:
-                l_status=const('C_STATUS_PARTLY_SUCCESS').constant_value
+                l_status=C_STATUS_PARTLY_SUCCESS
             print("\r"+i_attribute_table.name+" : "+self.__status_color(l_status))
 
     def tie_load(self, p_tie: list):
@@ -2542,7 +2520,7 @@ class Job(_DWHObject):
         :param p_tie: список таблиц tie, которые требуется прогрузить
         """
         for i_tie in p_tie:
-            print(i_tie.name+" : "+self.__status_color(const('C_STATUS_IN_PROGRESS').constant_value), end="")
+            print(i_tie.name+" : "+self.__status_color(C_STATUS_IN_PROGRESS), end="")
             l_error_cnt=0
             l_source_table_cnt=0
             for i_source_table in i_tie.source_table:
@@ -2550,18 +2528,18 @@ class Job(_DWHObject):
                     p_tie=i_tie,
                     p_source_table=i_source_table,
                     p_job=self,
-                    p_type=const('C_TIE_ETL').constant_value
+                    p_type=C_TIE_ETL
                 )
                 l_package.start_etl()
                 if l_package.error:
                     l_error_cnt+=1
                 l_source_table_cnt+=1
             if l_error_cnt==l_source_table_cnt:
-                l_status=const('C_STATUS_FAIL').constant_value
+                l_status=C_STATUS_FAIL
             elif l_error_cnt==0:
-                l_status=const('C_STATUS_SUCCESS').constant_value
+                l_status=C_STATUS_SUCCESS
             else:
-                l_status=const('C_STATUS_PARTLY_SUCCESS').constant_value
+                l_status=C_STATUS_PARTLY_SUCCESS
             print("\r"+i_tie.name+" : "+self.__status_color(l_status))
 
 
@@ -2616,7 +2594,7 @@ class Package(Job):
         """
         Статус etl-процесса
         """
-        return self.object_attrs_meta.get(const('C_STATUS').constant_value) or self._status
+        return self.object_attrs_meta.get(C_STATUS) or self._status
 
     @status.setter
     def status(self, p_new_status: str):
@@ -2630,7 +2608,7 @@ class Package(Job):
         # проверка объекта
         _class_checker(p_class_name="Job",p_object=self._job)
         # собираем метаданные, если указаны
-        l_meta_obj=self.object_attrs_meta.get(const('C_ETL').constant_value,None)
+        l_meta_obj=self.object_attrs_meta.get(C_ETL,None)
         # выбираем из метаданных
         l_object=_get_object(p_id=l_meta_obj, p_class_name="Job")
 
@@ -2647,7 +2625,7 @@ class Package(Job):
         l_result=None
         # загружаем данные
         # таблицы источники
-        if self.type==const('C_QUEUE_ETL').constant_value:
+        if self.type==C_QUEUE_ETL:
             l_attribute_value=self.get_source_data() # получаем данные с источника, преобразованные для вставки в таблицу
             if l_attribute_value[1]: # если захват данных с источника завершился ошибкой
                 l_result=None, l_attribute_value[1]
@@ -2655,19 +2633,19 @@ class Package(Job):
                 # формируем sql-запрос
                 l_etl=get_source_table_etl(p_source_table=self.source_table, p_etl_id=self.etl_id, p_attribute_value=l_attribute_value[0])
         # idmap
-        elif self.type==const('C_IDMAP_ETL').constant_value:
+        elif self.type==C_IDMAP_ETL:
             # sql-запрос
             l_etl=get_idmap_etl(p_idmap=self.idmap, p_etl_id=str(self.etl_id), p_source_table=self.source_table)[0]
         # anchor
-        elif self.type==const('C_ANCHOR_ETL').constant_value:
+        elif self.type==C_ANCHOR_ETL:
             # sql-запрос
             l_etl=get_anchor_etl(p_anchor=self.anchor, p_etl_id=str(self.etl_id))
         # attribute
-        elif self.type==const('C_ATTRIBUTE_ETL').constant_value:
+        elif self.type==C_ATTRIBUTE_ETL:
             # sql-запрос
             l_etl=get_attribute_etl(p_attribute_table=self.attribute_table, p_source_table=self.source_table, p_etl_id=str(self.etl_id))[0]
         #tie
-        elif self.type==const('C_TIE_ETL').constant_value:
+        elif self.type==C_TIE_ETL:
             #sql-запрос
             l_etl=get_tie_etl(p_tie=self.tie, p_source_table=self.source_table, p_etl_id=str(self.etl_id))[0]
         # выполняем запрос в ХД
@@ -2676,10 +2654,10 @@ class Package(Job):
         # логируем
         self.end_datetime=datetime.datetime.now() # проставляем дату окончания процесса
         if l_result[1]: # если завершилось с ошибкой
-            self.status=const('C_STATUS_FAIL').constant_value
+            self.status=C_STATUS_FAIL
             self.error=getattr(l_result[1], "pgerror",None) or l_result[1].args[1] # бывают случаи, когда pgerror не указан
         else:
-            self.status=const('C_STATUS_SUCCESS').constant_value
+            self.status=C_STATUS_SUCCESS
         # записываем в метаданные
         self.create_metadata()
         return l_etl
@@ -2696,7 +2674,7 @@ class Package(Job):
         l_cast_dict={}
         l_attribute_name_list=[] # список с наименованиями атрибутов для последующей сортировки
         for i_attribute in self.source_table.source_attribute:
-            if i_attribute.attribute_type!=const('C_ETL_TYPE_NAME').constant_value:
+            if i_attribute.attribute_type!=C_ETL_ATTR:
                 l_attribute_name_list.append(i_attribute.name)
         l_attribute_name_list.sort()
         i=0
@@ -2709,7 +2687,7 @@ class Package(Job):
                     i+=1
         l_cast_dict.update(
             {
-                i:"CAST("+str(i)+"AS "+const('C_TIMESTAMP_DBMS').constant_value.get(Connection().dbms_type)+")"
+                i:"CAST("+str(i)+"AS "+C_TIMESTAMP_DBMS.get(Connection().dbms_type)+")"
             }
         )
         if l_data_frame[1]: # если возникла ошибка
