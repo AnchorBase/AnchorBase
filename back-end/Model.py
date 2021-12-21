@@ -3,6 +3,7 @@ import Source
 import json
 from DWH import *
 from collections import Counter
+from Constants import *
 
 class Model:
     """
@@ -54,9 +55,9 @@ class Model:
         Проверки сущности
         """
         l_entity=_EntityParam(
-            p_name=self.json.get(const('C_ENTITY').constant_value),
-            p_desc=self.json.get(const('C_DESC').constant_value),
-            p_attribute_param=self.json.get(const('C_ATTRIBUTE').constant_value)
+            p_name=self.json.get(C_ENTITY),
+            p_desc=self.json.get(C_DESC),
+            p_attribute_param=self.json.get(C_ATTRIBUTE)
         )
         return l_entity
 
@@ -276,7 +277,7 @@ class Model:
             p_length=p_attribute_param.length,
             p_scale=p_attribute_param.scale,
             p_link_entity=link_entity,
-            p_type=const('C_ENTITY_COLUMN').constant_value,
+            p_type=C_ENTITY_COLUMN,
             p_pk=p_attribute_param.pk
         )
         # добавляем атрибут в сущность
@@ -300,9 +301,9 @@ class Model:
         )
         # ищем указанную таблицу в метаданных, если она ранее была добавлена
         l_source_table_meta_obj=search_object(
-            p_type=const('C_QUEUE_TABLE_TYPE_NAME').constant_value,
+            p_type=C_QUEUE,
             p_attrs={
-                const('C_NAME').constant_value:l_source_table_param.queue_name
+                C_NAME:l_source_table_param.queue_name
             }
         )
         l_source_table_meta=None
@@ -335,10 +336,10 @@ class Model:
         # ищем указанный атрибут в метаданных, если он ранее был добавлен
         l_source_attribute_meta_obj=search_object(
             # ищем по id таблицы источника и наименованию атрибута
-            p_type=const('C_QUEUE_COLUMN').constant_value,
+            p_type=C_QUEUE_COLUMN,
             p_attrs={
-                const('C_QUEUE_TABLE_TYPE_NAME'):str(p_source_table.id),
-                const('C_NAME').constant_value:p_source_param.column
+                C_QUEUE:str(p_source_table.id),
+                C_NAME:p_source_param.column
             }
         )
         l_source_attribute=None
@@ -346,15 +347,15 @@ class Model:
         if l_source_attribute_meta_obj.__len__()>0:
             l_source_attribute=Attribute(
                 p_id=l_source_attribute_meta_obj[0].uuid,
-                p_type=const('C_QUEUE_COLUMN').constant_value,
-                p_attribute_type=const('C_QUEUE_ATTR_TYPE_NAME').constant_value
+                p_type=C_QUEUE_COLUMN,
+                p_attribute_type=C_QUEUE_ATTR
             )
         else: # иначе создаем новый атрибут
             l_source_attribute=Attribute(
                 p_name=p_source_param.column,
-                p_type=const('C_QUEUE_COLUMN').constant_value,
-                p_attribute_type=const('C_QUEUE_ATTR_TYPE_NAME').constant_value,
-                p_datatype="VARCHAR", # все атрибуты таблицы источника, кроме технических имеют тип данных VARCHAR(4000)
+                p_type=C_QUEUE_COLUMN,
+                p_attribute_type=C_QUEUE_ATTR,
+                p_datatype=C_VARCHAR, # все атрибуты таблицы источника, кроме технических имеют тип данных VARCHAR(4000)
                 p_length=4000
             )
         # добавляем атрибут в таблицу источник
@@ -823,10 +824,10 @@ class _AttributeParam:
             l_source_table_name_list=[] # список уникальных наименований таблиц источников
             l_source=[]
             for i_source in self._source_param:
-                l_source_id=i_source.get(const('C_SOURCE').constant_value)
-                l_source_table=i_source.get(const('C_TABLE').constant_value)
-                l_source_schema=i_source.get(const('C_SCHEMA').constant_value)
-                l_source_attribute=i_source.get(const('C_COLUMN').constant_value)
+                l_source_id=i_source.get(C_SOURCE)
+                l_source_table=i_source.get(C_TABLE)
+                l_source_schema=i_source.get(C_SCHEMA)
+                l_source_attribute=i_source.get(C_COLUMN)
                 # формируем уникальное наименование таблицы источника
                 l_unique_source_table_name=str(l_source_id)+"_"\
                                            +str(l_source_schema)+"_"\
@@ -852,7 +853,6 @@ class _AttributeParam:
             sys.exit("Некорректное значение признака первичного ключа")
         elif self._pk>1:
             sys.exit("Некорректное значение признака первичного ключа")
-
 
 class _EntityParam:
     """
@@ -929,17 +929,17 @@ class _EntityParam:
             for i_attribute in self._attribute_param:
                 l_attribute.append(
                     _AttributeParam(
-                        p_name=i_attribute.get(const('C_NAME').constant_value),
-                        p_desc=i_attribute.get(const('C_DESC').constant_value),
-                        p_pk=i_attribute.get(const('C_PK').constant_value),
-                        p_datatype=i_attribute.get(const('C_DATATYPE').constant_value),
-                        p_length=i_attribute.get(const('C_LENGTH').constant_value),
-                        p_scale=i_attribute.get(const('C_SCALE').constant_value),
-                        p_link_entity_id=i_attribute.get(const('C_LINK_ENTITY').constant_value),
-                        p_source_param=i_attribute.get(const('C_SOURCE').constant_value)
+                        p_name=i_attribute.get(C_NAME),
+                        p_desc=i_attribute.get(C_DESC),
+                        p_pk=i_attribute.get(C_PK),
+                        p_datatype=i_attribute.get(C_DATATYPE),
+                        p_length=i_attribute.get(C_LENGTH),
+                        p_scale=i_attribute.get(C_SCALE),
+                        p_link_entity_id=i_attribute.get(C_LINK_ENTITY),
+                        p_source_param=i_attribute.get(C_SOURCE)
                     )
                 )
-                l_pk_cnt=l_pk_cnt+i_attribute.get(const('C_PK').constant_value)
+                l_pk_cnt=l_pk_cnt+i_attribute.get(C_PK)
             if l_pk_cnt==0:
                 sys.exit("Не указано ни одного первичного ключа у сущности")
 
@@ -976,9 +976,9 @@ class _EntityParam:
         Проверяет, что в метаданных нет сущности с таким наименованием
         """
         l_entity_meta_obj=search_object(
-            p_type=const('C_ENTITY').constant_value,
+            p_type=C_ENTITY,
             p_attrs={
-                const('C_NAME').constant_value:self.name
+                C_NAME:self.name
             }
         )
         if l_entity_meta_obj.__len__()>0:

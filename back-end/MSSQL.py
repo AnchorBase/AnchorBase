@@ -1,6 +1,6 @@
 import pyodbc
 from platform import system
-from SystemObjects import Constant as const
+from Constants import *
 
 def sql_exec(
         p_server: str,
@@ -28,10 +28,10 @@ def sql_exec(
                 server=p_server,
                 database=p_database,
                 uid=p_user,
-                tds_version=const('C_TDS_VERSION').constant_value,
+                tds_version=C_TDS_VERSION,
                 pwd=p_password,
                 port=p_port,
-                driver=const('C_MSSQL_DRIVER_MACOS_PATH').constant_value,
+                driver=C_MSSQL_DRIVER_MACOS_PATH,
                 timeout=10
             )
         else:
