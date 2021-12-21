@@ -1,6 +1,7 @@
 # coding=utf-8
 import DWH
 import Model
+import Postgresql
 
 # source = DWH.Source(
 #     p_id='0a884f59-48b6-4afe-838e-57bdbbb9ec7c'
@@ -247,9 +248,9 @@ l_json2="""
 }
 """
 
-# model=Model.Model(p_json=l_json)
-#
-# model.create_model()
+model=Model.Model(p_json=l_json)
+
+model.create_model()
 
 
 
@@ -282,23 +283,20 @@ l_json2="""
 
 # l_entity_column=DWH.Attribute(p_id="2788efbe-419a-484c-b77c-e5b275901896", p_type="entity_column")
 #
-l_job=DWH.Job(
-)
 
 
-l_job.start_job()
+# l_job=DWH.Job(
+# )
+# l_job.start_job()
 
-
-# print(
+# l_entity=DWH.Entity(
+#     p_id="b115babb-7925-4020-bf7d-aaa4c8519b84"
+# )
 #
+# print(
+#     l_entity.get_entity_function()
 # )
 
-
-# for i in model.create_model():
-#     # for j in i.source_attribute:
-#     print(
-#         i.metadata_json
-#     )
 
 
 

@@ -65,6 +65,7 @@ class Model:
         """
         Создает модель данных
         """
+        print("Entity's creation is in process...", end="")
         # переменные для последующего использования
         l_source_table_name_list=[] # лист с уникальными наименованиями таблиц источников
         l_source_attribute_name_list=[] # лист с уникальными наименованиями атрибутов источников
@@ -221,7 +222,8 @@ class Model:
             p_idmap=l_idmap,
             p_anchor=l_anchor,
             p_attribute_table=l_attribute_table_list,
-            p_tie=l_tie_list
+            p_tie=l_tie_list,
+            p_entity=l_entity
         )
         # проверяем ddl
         self.__ddl_checker(p_ddl=l_ddl)
@@ -245,6 +247,8 @@ class Model:
         )
         # создаем таблицы и представления в ХД
         self.__create_ddl(p_ddl=l_ddl)
+
+        print(C_COLOR_OKGREEN+"\rEntity has created")
 
 
     def __create_entity(self) -> object:
@@ -437,7 +441,8 @@ class Model:
                   p_idmap: object,
                   p_anchor: object,
                   p_attribute_table: list,
-                  p_tie: list
+                  p_tie: list,
+                  p_entity: object
     ):
         """
         Генерирует общий скрипт DDL для всех объектов сущности
@@ -447,6 +452,7 @@ class Model:
         :param p_anchor: якорь cущности
         :param p_attribute_table: таблица атрибут сущности
         :param p_tie: связь сущности
+        :param p_entity: сущность
         """
         l_ddl="" # список со всеми DDL объектов сущности
 
@@ -471,6 +477,8 @@ class Model:
         for i_tie in p_tie:  # может быть несколько
             l_ddl+=create_table_ddl(p_table=i_tie)+"\n"
             l_ddl+=create_view_ddl(p_table=i_tie)+"\n"
+        # формируем скрипт для функции - конструктора запросов для сущности
+        l_ddl+=p_entity.get_entity_function()
         return l_ddl
 
     def __ddl_checker(self, p_ddl: str):

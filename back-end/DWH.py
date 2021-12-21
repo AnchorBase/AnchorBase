@@ -1582,6 +1582,23 @@ class Entity(_DWHObject):
             l_name=self._name.lower()
         return l_name or self.object_attrs_meta.get(C_NAME,None)
 
+    def get_entity_function(self):
+        """
+        Генерирует скрипт создания функции-конструктора запросов для сущности
+        """
+        # формируем словарь из атрибутов сущности и их типов данных
+        l_entity_attr_dict={}
+        for i_entity_attribute in self.entity_attribute:
+            l_entity_attr_dict.update(
+                {
+                    i_entity_attribute.name:i_entity_attribute.datatype.data_type_sql
+                }
+            )
+        return Connection().dbms.get_entity_function_sql(
+            p_entity_name=self.name,
+            p_entity_attribute_dict=l_entity_attr_dict
+        )
+
 
 class SourceTable(_DWHObject):
     """
@@ -1740,6 +1757,7 @@ class SourceTable(_DWHObject):
                 add_attribute(p_table=self, p_attribute=update_column)
             if C_ETL_ATTR not in l_attribute_type_list:
                 add_attribute(p_table=self, p_attribute=etl_column)
+
 
 
 class Idmap(_DWHObject):

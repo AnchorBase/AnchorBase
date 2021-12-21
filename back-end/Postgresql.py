@@ -474,3 +474,50 @@ def get_table_partition_etl(
           "LANGUAGE 'plpgsql';"
 
     return l_etl
+
+def get_entity_function_sql(
+    p_entity_name: str,
+    p_entity_attribute_dict: dict
+):
+    """
+    Генерация скрипта создания функции-конструктора запросов для сущности
+
+    :param p_entity_name: наименование сущности
+    :param p_entity_attribute_dict: словарь с атрибутами сущности и их типами данных
+    """
+    l_entity_attribute_name_list=list(p_entity_attribute_dict.keys()) # лист с наименованиями атрибутов сущности
+    l_entity_attribute_name_param="" # атрибуты сущности через запятую
+    l_entity_attribute_name_datatype="" # атрибуты сущности через запятую с типами данных
+    l_entity_attribute_var="" # список переменных функции для атрибутов сущности
+    l_entity_attribute_join_sql="" # список переменных со скриптами джоинов атрибутов сущности
+    l_entity_attribute_select_sql="" # скрипт переменной для формирования select
+    l_entity_attribute_sql="" # скрипт переменной финального sql
+    for i_entity_attribute in l_entity_attribute_name_list:
+        l_entity_attribute_name_param+=str(i_entity_attribute)+","
+        l_entity_attribute_name_datatype+='"'+str(i_entity_attribute)+'"'+" "+p_entity_attribute_dict.get(i_entity_attribute)+",\n\t"
+        l_entity_attribute_var+="v_"+str(i_entity_attribute)+" char(1):=(select case when v_col like '%,"+str(i_entity_attribute)+\
+                                ",%' then '' else NULL end);\n\t"
+        l_entity_attribute_join_sql+="v_"+str(i_entity_attribute)+"_join_sql varchar(1000):=("\
+                                     "case when v_"+str(i_entity_attribute)+" is not null "\
+                                     "then ' left join "+C_AM_SCHEMA+"."+'"'+p_entity_name+"_"+str(i_entity_attribute)+C_TABLE_NAME_POSTFIX.get(C_ATTRIBUTE)+'"'+""\
+                                     " as "+'"'+str(i_entity_attribute)+'"'+" on "+'"main"'+"."+p_entity_name+"_"+C_RK+"="+""\
+                                     '"'+str(i_entity_attribute)+'"'+"."+p_entity_name+"_"+C_RK+""\
+                                     " and cast('''||dt||''' as timestamp) between "+'"'+str(i_entity_attribute)+'"'+"."+C_FROM_ATTRIBUTE_NAME+" and "+'"'+str(i_entity_attribute)+'"'+"."+C_TO_ATTRIBUTE_NAME+"'"\
+                                     " else '' end);\n\t"
+        l_entity_attribute_select_sql+="coalesce(v_"+str(i_entity_attribute)+"||'"+str(i_entity_attribute)+",','NULL::"+p_entity_attribute_dict.get(i_entity_attribute)+",')||"
+        l_entity_attribute_sql+="coalesce(v_"+str(i_entity_attribute)+"_join_sql,'')||"
+    # удаляем лишние символы (последние запятые и тд)
+    l_entity_attribute_name_param=l_entity_attribute_name_param[:-1]
+    l_entity_attribute_select_sql=l_entity_attribute_select_sql[:-2]
+    l_sql="DROP FUNCTION IF EXISTS "+p_entity_name+"(TIMESTAMP, VARCHAR(1000));\n" \
+          "CREATE OR REPLACE FUNCTION "+'"'+p_entity_name+'"'+"(\n\t"\
+          "dt TIMESTAMP DEFAULT '5999-12-31'::TIMESTAMP,\n\t"\
+          "col VARCHAR(1000) DEFAULT '"+l_entity_attribute_name_param+"'\n) RETURNS\n"\
+          "TABLE(\n\t"+p_entity_name+"_"+C_RK+" "+C_BIGINT+",\n\t"+l_entity_attribute_name_datatype+C_SOURCE_ATTRIBUTE_NAME+" "+C_INT+"\n) AS\n"\
+          "$$\ndeclare\n\tv_col varchar(1000) :=','||replace(col,' ','')||',';\n\t"+l_entity_attribute_var+""\
+          "v_from_sql varchar(1000):=(' from "+C_AM_SCHEMA+"."+'"'+p_entity_name+C_TABLE_NAME_POSTFIX.get(C_ANCHOR)+'"'+" as "+'"main"'+"');\n\t"+l_entity_attribute_join_sql+""\
+          "v_select_sql varchar(1000) := ' select main."+p_entity_name+"_"+C_RK+",'||regexp_replace("+l_entity_attribute_select_sql+",',$','')"+""\
+          "||',main."+C_SOURCE_ATTRIBUTE_NAME+"';\n\t"\
+          "v_sql varchar(1000):=v_select_sql||' '||v_from_sql||' '||"+l_entity_attribute_sql+"';'"+";\n"\
+          "begin\n\treturn query execute v_sql;\nend;\n$$\nlanguage plpgsql;"
+    return l_sql
