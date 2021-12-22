@@ -21,12 +21,14 @@ def get_source(p_source_name: str =None, p_source_id: str =None):
     if p_source_id: # если указан id
         l_source.append(Source(p_id=p_source_id))
     elif p_source_name:
-        l_source_meta=search_object(p_type=C_SOURCE, p_attrs={C_NAME:p_source_name})[0]
-        l_source.append(Source(p_id=l_source_meta.uuid))
+        l_source_meta=search_object(p_type=C_SOURCE, p_attrs={C_NAME:p_source_name})
+        if l_source_meta.__len__()>0:
+            l_source.append(Source(p_id=l_source_meta[0].uuid))
     else:  # если ничего не указано, выдает все существующие источники
         l_source_meta=search_object(p_type=C_SOURCE)
-        for i_source_meta in l_source_meta:
-            l_source.append(Source(p_id=i_source_meta.uuid))
+        if l_source_meta.__len__()>0:
+            for i_source_meta in l_source_meta:
+                l_source.append(Source(p_id=i_source_meta.uuid))
     l_json_object=[] # лист с объектами в формате json
     for i_source in l_source:
         l_json_object.append(
@@ -79,7 +81,7 @@ class _JsonOutput:
     Результат в формате json
     """
 
-    def __init__(self, p_json_object: list):
+    def __init__(self, p_json_object: list =None):
         """
         Конструктор
 
@@ -92,11 +94,16 @@ class _JsonOutput:
         """
         Тело результата
         """
-        l_object_list=[]
-        for i_json_object in self._json_object:
-            l_object_list.append(i_json_object.body)
-        l_output= {
-            C_DATA:l_object_list
-        }
+        if not self._json_object or self._json_object.__len__()==0:
+            l_output= {
+                C_ERROR:"Ничего не найдено"
+            }
+        else:
+            l_object_list=[]
+            for i_json_object in self._json_object:
+                l_object_list.append(i_json_object.body)
+            l_output= {
+                C_DATA:l_object_list
+            }
         l_output=json.dumps(l_output)
         return l_output

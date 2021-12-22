@@ -8,6 +8,9 @@ import Source
 import API
 import Metadata
 import Constants
+import shlex
+import ConsoleWork
+import uuid
 # source = DWH.Source(
 #     p_id='0a884f59-48b6-4afe-838e-57bdbbb9ec7c'
 # )
@@ -293,13 +296,13 @@ l_json2="""
 
 # l_source=Source.Source(p_id="0a884f59-48b6-4afe-838e-57bdbbb9ec7c")
 
-l_entity=Metadata.search_object(p_type=Constants.C_ENTITY)
 
-l_new_entity=Metadata.MetaObject(p_attrs={"name":"new_client"}, p_type="entity")
+txt="get_source  -name  'test source'"
 
 print(
-    l_new_entity.attrs
+    uuid.UUID("sfsd")
 )
+
 
 # l_job=DWH.Job(
 # )

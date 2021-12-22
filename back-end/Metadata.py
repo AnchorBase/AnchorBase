@@ -35,6 +35,7 @@ def __search_uuid_sql(p_uuid_list: list):
     """
     l_sql=" AND id IN ("
     for i_uuid in p_uuid_list:
+        uuid.UUID(i_uuid) # проверка на корректный uuid
         l_sql=l_sql+"'"+str(i_uuid)+"'"+","
     return l_sql[:-1]+")"
 

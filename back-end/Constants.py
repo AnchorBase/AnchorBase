@@ -53,7 +53,6 @@ C_PK = "pk" # ключ
 C_DESC="description" # описание
 C_ID="id" # идентификатор
 C_DATA="data" # данные
-
 #================================
 #  Параметры подключения к СУБД
 #================================
@@ -62,14 +61,11 @@ C_DATABASE = "database" # наименование базы данных
 C_USER = "user" # пользователь
 C_PASSWORD = "password" # пароль
 C_PORT = "port" # порт
-
 #================================
 #  SQL
 #================================
 C_CAST = "CAST" # операция CAST
 C_CONCAT_SYMBOL = "@@" #символ для конкатенаци
-
-
 #================================
 #  ETL
 #================================
@@ -494,7 +490,25 @@ C_COLOR_UNDERLINE = '\033[4m' #  подчеркивание
 # не забыть добавить новые команды в список C_CONSOLE_COMMAND_LIST
 C_GET_SOURCE="get_source" # получение источника/источников
 C_EXIT="exit"
+C_HELP="help"
 C_CONSOLE_COMMAND_LIST=[
     C_GET_SOURCE,
-    C_EXIT
+    C_EXIT,
+    C_HELP
 ]
+# АРГУМЕНТЫ КОМАНД КОНСОЛИ
+C_NAME_CONSOLE_ARG="-name"
+C_ID_CONSOLE_ARG="-id"
+C_CONSOLE_ARGS={
+    C_GET_SOURCE:[C_NAME_CONSOLE_ARG,C_ID_CONSOLE_ARG]
+}
+# описание команд консоли
+C_CONSOLE_COMMAND_DESC={
+    C_GET_SOURCE:"\n"+C_COLOR_HEADER+C_GET_SOURCE+C_COLOR_ENDC+"\n"+
+                 C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tВозвращает источники и их свойства\n"+
+                 C_COLOR_BOLD+"Аргументы:"+C_COLOR_ENDC+"\n\t"+
+                 C_COLOR_OKCYAN+C_ID_CONSOLE_ARG+C_COLOR_ENDC+": id источника (необязательный)\n\t"+
+                 C_COLOR_OKCYAN+C_NAME_CONSOLE_ARG+C_COLOR_ENDC+": наименование источника (необязательный)",
+    C_EXIT:"\n"+C_COLOR_HEADER+C_EXIT+C_COLOR_ENDC+"\n"+
+           C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tЗавершает работу"
+}
