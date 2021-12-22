@@ -1,8 +1,13 @@
 # coding=utf-8
+#!path/to/interpretter
+#!/usr/bin/python
 import DWH
 import Model
 import Postgresql
-
+import Source
+import API
+import Metadata
+import Constants
 # source = DWH.Source(
 #     p_id='0a884f59-48b6-4afe-838e-57bdbbb9ec7c'
 # )
@@ -248,9 +253,11 @@ l_json2="""
 }
 """
 
-model=Model.Model(p_json=l_json)
+# model=Model.Model(p_json=l_json)
+#
+# model.create_model()
 
-model.create_model()
+
 
 
 
@@ -284,6 +291,15 @@ model.create_model()
 # l_entity_column=DWH.Attribute(p_id="2788efbe-419a-484c-b77c-e5b275901896", p_type="entity_column")
 #
 
+# l_source=Source.Source(p_id="0a884f59-48b6-4afe-838e-57bdbbb9ec7c")
+
+l_entity=Metadata.search_object(p_type=Constants.C_ENTITY)
+
+l_new_entity=Metadata.MetaObject(p_attrs={"name":"new_client"}, p_type="entity")
+
+print(
+    l_new_entity.attrs
+)
 
 # l_job=DWH.Job(
 # )
