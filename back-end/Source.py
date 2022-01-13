@@ -43,10 +43,11 @@ class Source:
         self._password=p_password
         self._type=p_type
         self._port=p_port
-        self._deleted=0
 
         # проверяем, есть ли указанный id и определяем атрибуты из метаданных
         self.source_meta_attrs=self.__source_meta_attrs()
+        # максимальный source_id
+        self._max_source_id=self.__max_source_id()
 
     def __source_meta_attrs(self):
         """
@@ -131,12 +132,10 @@ class Source:
         """
         return self._port or self.source_meta_attrs.get(C_PORT, None)
 
-    @property
-    def source_id(self):
+    def __max_source_id(self) -> int:
         """
-        source_system_id
+        Вычисляет максимальный source_id в метаданных
         """
-        # вычисляем максимальный source_id из метаданных
         l_sources=Metadata.search_object(
             p_type=C_SOURCE_META
         )
@@ -146,7 +145,14 @@ class Source:
         l_first_etl_id=None
         if l_source_id_list.__len__()==0:
             l_first_etl_id=1
-        return self.source_meta_attrs.get(C_SOURCE_ID, None) or l_first_etl_id or max(l_source_id_list) + 1
+        return l_first_etl_id or max(l_source_id_list) + 1
+
+    @property
+    def source_id(self):
+        """
+        source_system_id
+        """
+        return self.source_meta_attrs.get(C_SOURCE_ID, None) or self._max_source_id
 
     @property
     def type(self):
@@ -276,8 +282,7 @@ class Source:
         """
         Удаляет источник
         """
-        self.deleted=1
-        Metadata.update_object(
+        Metadata.delete_object(
             p_object=self.__meta_obj
         )
 

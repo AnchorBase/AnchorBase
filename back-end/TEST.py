@@ -11,6 +11,7 @@ import Constants
 import shlex
 import ConsoleWork
 import uuid
+import datetime
 # source = DWH.Source(
 #     p_id='0a884f59-48b6-4afe-838e-57bdbbb9ec7c'
 # )
@@ -297,11 +298,6 @@ l_json2="""
 # l_source=Source.Source(p_id="0a884f59-48b6-4afe-838e-57bdbbb9ec7c")
 
 
-txt="get_source  -name  'test source'"
-
-print(
-    uuid.UUID("sfsd")
-)
 
 
 # l_job=DWH.Job(
@@ -315,6 +311,14 @@ print(
 # print(
 #     l_entity.get_entity_function()
 # )
+
+l_job=DWH.Job(
+    p_id='b7968b8e-19dc-4851-955f-c799b5ea0e49'
+)
+
+l_package=DWH.Package(p_id='86274565-bcc1-48b1-bbfe-b23e81150b15', p_type='queue_etl')
+
+print(l_job.status)
 
 
 
