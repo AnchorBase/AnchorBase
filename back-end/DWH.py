@@ -782,6 +782,19 @@ def get_tie_etl(
         )
         return l_etl
 
+def get_max_etl_id():
+    """
+    Возвращает максимальный etl_id
+    """
+    # вычисляем максимальный etl_id из метаданных
+    l_etls=meta.search_object(
+        p_type=C_ETL
+    )
+    l_etl_id_list=[0] # список etl_id, начинается с 0, так как в метаданных может не быть etl_id
+    for i_etl in l_etls:
+        l_etl_id_list.append(i_etl.attrs.get(C_ETL_ATTRIBUTE_NAME))
+    return max(l_etl_id_list)
+
 class _DWHObject:
     """
     Обхъект ХД
@@ -2187,16 +2200,13 @@ class Job(_DWHObject):
         Целочисленный id для хранения в ХД
         """
         # вычисляем максимальный etl_id из метаданных
-        l_etls=meta.search_object(
-            p_type=C_ETL
-        )
-        l_etl_id_list=[] # список etl_id
-        for i_etl in l_etls:
-            l_etl_id_list.append(i_etl.attrs.get(C_ETL_ATTRIBUTE_NAME))
+        l_max_etl_id=get_max_etl_id()
         l_first_etl_id=None
-        if l_etl_id_list.__len__()==0:
+        if l_max_etl_id==0:
             l_first_etl_id=1
-        return self.object_attrs_meta.get(C_ETL_ATTRIBUTE_NAME,None) or l_first_etl_id or max(l_etl_id_list)+1
+        return self.object_attrs_meta.get(C_ETL_ATTRIBUTE_NAME,None) \
+               or l_first_etl_id \
+               or l_max_etl_id+1
 
     @property
     def start_datetime(self) -> datetime:

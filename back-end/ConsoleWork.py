@@ -148,6 +148,15 @@ def __command_exec(p_command: str, p_arg: dict =None, p_help_command: str =None)
             p_entity=p_arg.get(C_ENTITY_CONSOLE_ARG),
             p_entity_attribute=p_arg.get(C_ENTITY_ATTR_CONSOLE_ARG)
         )
+    elif p_command==C_GET_LAST_ETL:
+        l_json=get_last_etl()
+    elif p_command==C_GET_ETL_HIST:
+        l_json=get_etl_hist(p_date=p_arg.get(C_DATE_CONSOLE_ARG))
+    elif p_command==C_GET_ETL_DETAIL:
+        l_json=get_etl_detail(
+            p_etl=p_arg.get(C_ID_CONSOLE_ARG),
+            p_etl_id=p_arg.get(C_ETL_ID_CONSOLE_ARG)
+        )
     elif p_command==C_EXIT:
         sys.exit()
     elif p_command==C_HELP:
