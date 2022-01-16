@@ -143,3 +143,10 @@ class DataType(DBMS):
                 l_data_type_ddl=l_data_type_ddl+","+str(self.data_type_scale)
             l_data_type_ddl=l_data_type_ddl+")"
         return l_data_type_ddl
+
+## тут написать метод создания DDL таблиц метаданных
+def create_ddl_metadata():
+    x=""
+    for i in C_META_TABLES:
+        x+='create table '+i+'(\n \tid '+C_UUID+' PRIMARY KEY,\n \tvalue '+ C_JSON+' NOT NULL\n);\n'
+    return x
