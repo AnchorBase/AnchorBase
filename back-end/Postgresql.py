@@ -19,6 +19,7 @@ def sql_exec(
 ):
     """
     Выполняет запросы в PostgreSQL
+
     :param p_database: база данных
     :param p_server: сервер
     :param p_user: пользователь

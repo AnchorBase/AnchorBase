@@ -1,8 +1,17 @@
 # coding=utf-8
+#!path/to/interpretter
+#!/usr/bin/python
 import DWH
 import Model
 import Postgresql
-
+import Source
+import API
+import Metadata
+import Constants
+import shlex
+import ConsoleWork
+import uuid
+import datetime
 # source = DWH.Source(
 #     p_id='0a884f59-48b6-4afe-838e-57bdbbb9ec7c'
 # )
@@ -248,9 +257,11 @@ l_json2="""
 }
 """
 
-model=Model.Model(p_json=l_json)
+# model=Model.Model(p_json=l_json)
+#
+# model.create_model()
 
-model.create_model()
+
 
 
 
@@ -284,6 +295,10 @@ model.create_model()
 # l_entity_column=DWH.Attribute(p_id="2788efbe-419a-484c-b77c-e5b275901896", p_type="entity_column")
 #
 
+# l_source=Source.Source(p_id="0a884f59-48b6-4afe-838e-57bdbbb9ec7c")
+
+
+
 
 # l_job=DWH.Job(
 # )
@@ -296,6 +311,14 @@ model.create_model()
 # print(
 #     l_entity.get_entity_function()
 # )
+
+l_job=DWH.Job(
+    p_id='b7968b8e-19dc-4851-955f-c799b5ea0e49'
+)
+
+l_package=DWH.Package(p_id='86274565-bcc1-48b1-bbfe-b23e81150b15', p_type='queue_etl')
+
+print(l_job.status)
 
 
 

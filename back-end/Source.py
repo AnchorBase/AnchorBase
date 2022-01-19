@@ -43,10 +43,11 @@ class Source:
         self._password=p_password
         self._type=p_type
         self._port=p_port
-        self._deleted=0
 
         # проверяем, есть ли указанный id и определяем атрибуты из метаданных
-        self.__source_meta_attrs=self.__source_meta_attrs()
+        self.source_meta_attrs=self.__source_meta_attrs()
+        # максимальный source_id
+        self._max_source_id=self.__max_source_id()
 
     def __source_meta_attrs(self):
         """
@@ -87,56 +88,54 @@ class Source:
         """
         Наименование источника
         """
-        return self._name or self.__source_meta_attrs.get(C_NAME,None)
+        return self._name or self.source_meta_attrs.get(C_NAME, None)
 
     @property
     def description(self):
         """
         Описание источника
         """
-        return self._desc or self.__source_meta_attrs.get(C_DESC,None)
+        return self._desc or self.source_meta_attrs.get(C_DESC, None)
 
     @property
     def server(self):
         """
         Сервер
         """
-        return self._server or self.__source_meta_attrs.get(C_SERVER,None)
+        return self._server or self.source_meta_attrs.get(C_SERVER, None)
 
     @property
     def database(self):
         """
         База данных
         """
-        return self._database or self.__source_meta_attrs.get(C_DATABASE,None)
+        return self._database or self.source_meta_attrs.get(C_DATABASE, None)
 
     @property
     def user(self):
         """
         Логин
         """
-        return self._user or self.__source_meta_attrs.get(C_USER,None)
+        return self._user or self.source_meta_attrs.get(C_USER, None)
 
     @property
     def password(self):
         """
         Пароль
         """
-        return self._password or self.__source_meta_attrs.get(C_PASSWORD,None)
+        return self._password or self.source_meta_attrs.get(C_PASSWORD, None)
 
     @property
     def port(self):
         """
         Порт
         """
-        return self._port or self.__source_meta_attrs.get(C_PORT,None)
+        return self._port or self.source_meta_attrs.get(C_PORT, None)
 
-    @property
-    def source_id(self):
+    def __max_source_id(self) -> int:
         """
-        source_system_id
+        Вычисляет максимальный source_id в метаданных
         """
-        # вычисляем максимальный source_id из метаданных
         l_sources=Metadata.search_object(
             p_type=C_SOURCE_META
         )
@@ -146,7 +145,14 @@ class Source:
         l_first_etl_id=None
         if l_source_id_list.__len__()==0:
             l_first_etl_id=1
-        return self.__source_meta_attrs.get(C_SOURCE_ID,None) or l_first_etl_id or max(l_source_id_list)+1
+        return l_first_etl_id or max(l_source_id_list) + 1
+
+    @property
+    def source_id(self):
+        """
+        source_system_id
+        """
+        return self.source_meta_attrs.get(C_SOURCE_ID, None) or self._max_source_id
 
     @property
     def type(self):
@@ -155,7 +161,7 @@ class Source:
         """
         if self._type is not None and self._type not in C_AVAILABLE_SOURCE_LIST:
             sys.exit("Некорректный источник "+self._type)
-        return self._type or self.__source_meta_attrs.get(C_TYPE_VALUE,None)
+        return self._type or self.source_meta_attrs.get(C_TYPE_VALUE, None)
 
     @property
     def __source_objects(self):
@@ -198,7 +204,7 @@ class Source:
         """
         if self.type==C_MSSQL:
             return mssql
-        if self.type==C_POSTGRESQL:
+        elif self.type==C_POSTGRESQL:
             return pgsql
 
     def sql_exec(self, p_sql: str):
@@ -276,8 +282,7 @@ class Source:
         """
         Удаляет источник
         """
-        self.deleted=1
-        Metadata.update_object(
+        Metadata.delete_object(
             p_object=self.__meta_obj
         )
 

@@ -26,6 +26,7 @@
 # - СУБД
 # - Типы данных
 # - Цвета шрифтов для консоли
+# - Команды консоли
 
 
 #================================
@@ -40,6 +41,8 @@ C_ATTRIBUTE = "attribute" # атрибут
 C_SCHEMA = "schema" # схема
 C_NAME = "name" # наименование
 C_SOURCE = "source" # источник
+C_SOURCE_COLUMN = "source_column" # атрибут источник
+C_SOURCE_TABLE = "source_table" # таблица источник
 C_DDL = "ddl"
 C_VIEW = "view"
 C_ETL = "etl"
@@ -50,7 +53,9 @@ C_DWH = "dwh" # ХД
 C_INCREMENT = "increment" # инкремент
 C_PK = "pk" # ключ
 C_DESC="description" # описание
-
+C_ID="id" # идентификатор
+C_DATA="data" # данные
+C_MESSAGE="message" # сообщение
 #================================
 #  Параметры подключения к СУБД
 #================================
@@ -59,21 +64,19 @@ C_DATABASE = "database" # наименование базы данных
 C_USER = "user" # пользователь
 C_PASSWORD = "password" # пароль
 C_PORT = "port" # порт
-
 #================================
 #  SQL
 #================================
 C_CAST = "CAST" # операция CAST
 C_CONCAT_SYMBOL = "@@" #символ для конкатенаци
-
-
+C_DUMMY_UUID="00000000-0000-0000-0000-000000000000" # пустой uuid
 #================================
 #  ETL
 #================================
 C_STATUS="status"
 C_STATUS_IN_PROGRESS="in progress"
 C_STATUS_FAIL="fail"
-C_STATUS_SUCCESS="success"
+C_STATUS_SUCCESS="success    " # пробелы поставлены для корректного возврата каретки в консоли
 C_STATUS_PARTLY_SUCCESS="partly success"
 C_STATUS_START="start"
 C_START_DATETIME="start_datetime"
@@ -485,3 +488,159 @@ C_COLOR_FAIL = '\033[91m' # красный
 C_COLOR_ENDC = '\033[0m' # дефолтный цвет
 C_COLOR_BOLD = '\033[1m' # жирный шрифт
 C_COLOR_UNDERLINE = '\033[4m' #  подчеркивание
+#================================
+#  Команды консоли
+#================================
+# не забыть добавить новые команды в список C_CONSOLE_COMMAND_LIST
+C_GET_SOURCE="get_source" # получение источника/источников
+C_ADD_SOURCE="add_source" # добавление нового источника
+C_ALTER_SOURCE="alter_source" # изменение параметров источника
+C_GET_SOURCE_TYPE="get_source_type" # показывается все типы источников, с которыми AnchorBase умеет работать
+C_GET_ENTITY="get_entity" # получение сущности
+C_GET_ENTITY_ATTR="get_attr" # получение атрибута сущности
+C_GET_ENTITY_SOURCE="get_entity_source" # получение источников сущности
+C_GET_ATTR_SOURCE="get_attr_source" # получение источников атрибутов сущности
+C_START_JOB="load_data" # загрузка данных в ХД
+C_EXIT="exit"
+C_HELP="help"
+C_CONSOLE_COMMAND_LIST=[
+    C_GET_SOURCE,
+    C_ADD_SOURCE,
+    C_ALTER_SOURCE,
+    C_GET_SOURCE_TYPE,
+    C_GET_ENTITY,
+    C_GET_ENTITY_ATTR,
+    C_GET_ATTR_SOURCE,
+    C_GET_ENTITY_SOURCE,
+    C_START_JOB,
+    C_EXIT,
+    C_HELP
+]
+# АРГУМЕНТЫ КОМАНД КОНСОЛИ
+C_NAME_CONSOLE_ARG="-name"
+C_ID_CONSOLE_ARG="-id"
+C_SERVER_CONSOLE_ARG="-server"
+C_DATABASE_CONSOLE_ARG="-db"
+C_USER_CONSOLE_ARG="-user"
+C_PASSWORD_CONSOLE_ARG="-pwrd"
+C_PORT_CONSOLE_ARG="-port"
+C_DESC_CONSOLE_ARG="-desc"
+C_TYPE_CONSOLE_ARG="-type"
+C_ENTITY_CONSOLE_ARG="-entity"
+C_ENTITY_ATTR_CONSOLE_ARG="-attr"
+C_SOURCE_ID_CONSOLE_ARG="-source_id"
+C_CONSOLE_ARGS={
+    C_GET_SOURCE:{
+        C_NAME_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"наименование источника (необязательный)"},
+        C_ID_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"id источника (необязательный)"},
+    },
+    C_ADD_SOURCE:{
+        C_NAME_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"наименование источника (обязательный)"},
+        C_DESC_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"описание источника (необязательный)"},
+        C_SERVER_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"сервер/хост (обязательный)"},
+        C_DATABASE_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"база данных (обязательный)"},
+        C_USER_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"логин (обязательный)"},
+        C_PASSWORD_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"пароль (обязательный)"},
+        C_PORT_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"порт (обязательный)"},
+        C_TYPE_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"тип источника (обязательный)"}
+    },
+    C_ALTER_SOURCE:{
+        C_ID_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"id источника (обязательный)"},
+        C_NAME_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"новое наименование источника (необязательный)"},
+        C_DESC_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"новое описание источника (необязательный)"},
+        C_SERVER_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"новый сервер/хост (необязательный)"},
+        C_DATABASE_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"новая база данных (необязательный)"},
+        C_USER_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"новый логин (необязательный)"},
+        C_PASSWORD_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"новый пароль (необязательный)"},
+        C_PORT_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"новый порт (необязательный)"},
+        C_TYPE_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"новый тип источника (необязательный)"}
+    },
+    C_GET_ENTITY:{
+        C_NAME_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"наименование сущности (необязательный)"},
+        C_ID_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"id сущности (необязательный)"},
+    },
+    C_GET_ENTITY_ATTR:{
+        C_NAME_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"наименование атрибута (необязательный)"},
+        C_ID_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"id атрибута (необязательный)"},
+        C_ENTITY_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"наименование сущности (необязательный)"}
+    },
+    C_GET_ATTR_SOURCE:{
+        C_NAME_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"наименование атрибута (необязательный)"},
+        C_ID_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"id атрибута (необязательный)"},
+        C_ENTITY_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"наименование сущности (необязательный)"},
+        C_SOURCE_ID_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"id источника (необязательный)"}
+    },
+    C_GET_ENTITY_SOURCE:{
+        C_NAME_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"наименование сущности (необязательный)"},
+        C_ID_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"id сущности (необязательный)"},
+        C_SOURCE_ID_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"id источника (необязательный)"}
+    },
+    C_START_JOB:{
+        C_ENTITY_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"id сущности, данные которой требуется обновить (необязательный)"},
+        C_ENTITY_ATTR_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"id атрибута, данные которого требуется обновить (необязательный)"}
+    }
+}
+# описание команд консоли
+C_CONSOLE_COMMAND_DESC={
+    C_GET_SOURCE:"\n"+C_COLOR_HEADER+C_GET_SOURCE+C_COLOR_ENDC+"\n"+
+                 C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tВозвращает источники и их свойства\n"+
+                 C_COLOR_BOLD+"Аргументы:"+C_COLOR_ENDC+"\n\t"+
+                 C_COLOR_OKCYAN+C_ID_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_GET_SOURCE).get(C_ID_CONSOLE_ARG).get(C_DESC)+"\n\t"+
+                 C_COLOR_OKCYAN+C_NAME_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_GET_SOURCE).get(C_NAME_CONSOLE_ARG).get(C_DESC),
+    C_ADD_SOURCE:"\n"+C_COLOR_HEADER+C_ADD_SOURCE+C_COLOR_ENDC+"\n"+
+                 C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tДобавляет новый источник\n"+
+                 C_COLOR_BOLD+"Аргументы:"+C_COLOR_ENDC+"\n\t"+
+                 C_COLOR_OKCYAN+C_NAME_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ADD_SOURCE).get(C_NAME_CONSOLE_ARG).get(C_DESC)+"\n\t"+
+                 C_COLOR_OKCYAN+C_DESC_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ADD_SOURCE).get(C_DESC_CONSOLE_ARG).get(C_DESC)+"\n\t"+
+                 C_COLOR_OKCYAN+C_SERVER_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ADD_SOURCE).get(C_SERVER_CONSOLE_ARG).get(C_DESC)+"\n\t"+
+                 C_COLOR_OKCYAN+C_DATABASE_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ADD_SOURCE).get(C_DATABASE_CONSOLE_ARG).get(C_DESC)+"\n\t"+
+                 C_COLOR_OKCYAN+C_USER_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ADD_SOURCE).get(C_USER_CONSOLE_ARG).get(C_DESC)+"\n\t"+
+                 C_COLOR_OKCYAN+C_PASSWORD_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ADD_SOURCE).get(C_PASSWORD_CONSOLE_ARG).get(C_DESC)+"\n\t"+
+                 C_COLOR_OKCYAN+C_PORT_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ADD_SOURCE).get(C_PORT_CONSOLE_ARG).get(C_DESC)+"\n\t"+
+                 C_COLOR_OKCYAN+C_TYPE_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ADD_SOURCE).get(C_TYPE_CONSOLE_ARG).get(C_DESC)+"\n\t",
+    C_ALTER_SOURCE:"\n"+C_COLOR_HEADER+C_ALTER_SOURCE+C_COLOR_ENDC+"\n"+
+                   C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tДобавляет новый источник\n"+
+                   C_COLOR_BOLD+"Аргументы:"+C_COLOR_ENDC+"\n\t"+
+                   C_COLOR_OKCYAN+C_ID_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_GET_SOURCE).get(C_ID_CONSOLE_ARG).get(C_DESC)+"\n\t"+
+                   C_COLOR_OKCYAN+C_NAME_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ALTER_SOURCE).get(C_NAME_CONSOLE_ARG).get(C_DESC)+"\n\t"+
+                   C_COLOR_OKCYAN+C_DESC_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ALTER_SOURCE).get(C_DESC_CONSOLE_ARG).get(C_DESC)+"\n\t"+
+                   C_COLOR_OKCYAN+C_SERVER_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ALTER_SOURCE).get(C_SERVER_CONSOLE_ARG).get(C_DESC)+"\n\t"+
+                   C_COLOR_OKCYAN+C_DATABASE_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ALTER_SOURCE).get(C_DATABASE_CONSOLE_ARG).get(C_DESC)+"\n\t"+
+                   C_COLOR_OKCYAN+C_USER_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ALTER_SOURCE).get(C_USER_CONSOLE_ARG).get(C_DESC)+"\n\t"+
+                   C_COLOR_OKCYAN+C_PASSWORD_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ALTER_SOURCE).get(C_PASSWORD_CONSOLE_ARG).get(C_DESC)+"\n\t"+
+                   C_COLOR_OKCYAN+C_PORT_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ALTER_SOURCE).get(C_PORT_CONSOLE_ARG).get(C_DESC)+"\n\t"+
+                   C_COLOR_OKCYAN+C_TYPE_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ALTER_SOURCE).get(C_TYPE_CONSOLE_ARG).get(C_DESC)+"\n\t",
+    C_GET_SOURCE_TYPE:"\n"+C_COLOR_HEADER+C_GET_SOURCE_TYPE+C_COLOR_ENDC+"\n"+
+                      C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tПоказывает все типы источников, с которыми AnchorBase умеет работать",
+    C_GET_ENTITY:"\n"+C_COLOR_HEADER+C_GET_ENTITY+C_COLOR_ENDC+"\n"+
+                 C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tВозвращает сущности и их свойства\n"+
+                 C_COLOR_BOLD+"Аргументы:"+C_COLOR_ENDC+"\n\t"+
+                 C_COLOR_OKCYAN+C_ID_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_GET_ENTITY).get(C_ID_CONSOLE_ARG).get(C_DESC)+"\n\t"+
+                 C_COLOR_OKCYAN+C_NAME_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_GET_ENTITY).get(C_NAME_CONSOLE_ARG).get(C_DESC),
+    C_GET_ENTITY_ATTR:"\n"+C_COLOR_HEADER+C_GET_ENTITY_ATTR+C_COLOR_ENDC+"\n"+
+                     C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tВозвращает атрибуты и их свойства\n"+
+                     C_COLOR_BOLD+"Аргументы:"+C_COLOR_ENDC+"\n\t"+
+                     C_COLOR_OKCYAN+C_ID_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_GET_ENTITY_ATTR).get(C_ID_CONSOLE_ARG).get(C_DESC)+"\n\t"+
+                     C_COLOR_OKCYAN+C_NAME_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_GET_ENTITY_ATTR).get(C_NAME_CONSOLE_ARG).get(C_DESC)+"\n\t"+
+                     C_COLOR_OKCYAN+C_ENTITY_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_GET_ENTITY_ATTR).get(C_ENTITY_CONSOLE_ARG).get(C_DESC),
+    C_GET_ATTR_SOURCE:"\n"+C_COLOR_HEADER+C_GET_ATTR_SOURCE+C_COLOR_ENDC+"\n"+
+                      C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tВозвращает атрибуты и их источники\n"+
+                      C_COLOR_BOLD+"Аргументы:"+C_COLOR_ENDC+"\n\t"+
+                      C_COLOR_OKCYAN+C_ID_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_GET_ATTR_SOURCE).get(C_ID_CONSOLE_ARG).get(C_DESC)+"\n\t"+
+                      C_COLOR_OKCYAN+C_NAME_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_GET_ATTR_SOURCE).get(C_NAME_CONSOLE_ARG).get(C_DESC)+"\n\t"+
+                      C_COLOR_OKCYAN+C_ENTITY_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_GET_ATTR_SOURCE).get(C_ENTITY_CONSOLE_ARG).get(C_DESC)+"\n\t"+
+                      C_COLOR_OKCYAN+C_SOURCE_ID_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_GET_ATTR_SOURCE).get(C_SOURCE_ID_CONSOLE_ARG).get(C_DESC),
+    C_GET_ENTITY_SOURCE:"\n"+C_COLOR_HEADER+C_GET_ENTITY_SOURCE+C_COLOR_ENDC+"\n"+
+                        C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tВозвращает сущности и их источники\n"+
+                        C_COLOR_BOLD+"Аргументы:"+C_COLOR_ENDC+"\n\t"+
+                        C_COLOR_OKCYAN+C_ID_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_GET_ENTITY_SOURCE).get(C_ID_CONSOLE_ARG).get(C_DESC)+"\n\t"+
+                        C_COLOR_OKCYAN+C_NAME_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_GET_ENTITY_SOURCE).get(C_NAME_CONSOLE_ARG).get(C_DESC)+"\n\t"+
+                        C_COLOR_OKCYAN+C_SOURCE_ID_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_GET_ENTITY_SOURCE).get(C_SOURCE_ID_CONSOLE_ARG).get(C_DESC),
+    C_START_JOB:"\n"+C_COLOR_HEADER+C_START_JOB+C_COLOR_ENDC+"\n"+
+                C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tЗапускает загрузку данных в ХД\n"+
+                C_COLOR_BOLD+"Аргументы:"+C_COLOR_ENDC+"\n\t"+
+                C_COLOR_OKCYAN+C_ID_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_START_JOB).get(C_ENTITY_CONSOLE_ARG).get(C_DESC)+"\n\t"+
+                C_COLOR_OKCYAN+C_NAME_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_START_JOB).get(C_ENTITY_ATTR_CONSOLE_ARG).get(C_DESC),
+    C_EXIT:"\n"+C_COLOR_HEADER+C_EXIT+C_COLOR_ENDC+"\n"+
+           C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tЗавершает работу"
+}

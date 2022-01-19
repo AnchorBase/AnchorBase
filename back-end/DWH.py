@@ -181,7 +181,7 @@ def _class_define(p_class_name: str, p_id: str, p_type: str =None):
     if p_class_name.lower()=="package":
         return Package(p_id=p_id, p_type=p_type)
     if p_class_name.lower()=="job":
-        return Package(p_id=p_id)
+        return Job(p_id=p_id)
 
 def _get_object(p_id, p_class_name: str, p_type: str=None):
     """
@@ -2199,22 +2199,56 @@ class Job(_DWHObject):
         return self.object_attrs_meta.get(C_ETL_ATTRIBUTE_NAME,None) or l_first_etl_id or max(l_etl_id_list)+1
 
     @property
-    def start_datetime(self) -> str:
+    def start_datetime(self) -> datetime:
         """
         Дата и время начала job-а
         """
-        return self.object_attrs_meta.get(C_START_DATETIME,None) or self._start_datetime
-
+        l_start_datetime=str(self.object_attrs_meta.get(C_START_DATETIME,None) or self._start_datetime)
+        return datetime.datetime.strptime(l_start_datetime,'%Y-%m-%d %H:%M:%S.%f')
     @property
-    def end_datetime(self) -> str:
+    def end_datetime(self) -> datetime:
         """
         Дата и время окончания джоба
         """
-        return self.object_attrs_meta.get(C_END_DATETIME,None) or self._end_datetime
+        l_end_datetime=str(self.object_attrs_meta.get(C_END_DATETIME,None) or self._end_datetime)
+        return datetime.datetime.strptime(l_end_datetime,'%Y-%m-%d %H:%M:%S.%f')
 
     @end_datetime.setter
     def end_datetime(self, p_new_end_datetime: str):
         self._end_datetime=p_new_end_datetime
+
+    @property
+    def duration(self):
+        """
+        Длительность job-а в микросекундах
+        """
+        l_dur=self.end_datetime-self.start_datetime
+        return l_dur.microseconds
+
+    @property
+    def status(self):
+        """
+        Статус job-а
+        """
+        l_fail=None
+        # если хотя бы один объект прогружен с ошибкой - статус джоба ошибка
+        for i_src_pack in self.source_table_package:
+            if i_src_pack.status==C_STATUS_FAIL:
+                l_fail=C_STATUS_FAIL
+        for i_idmp_pack in self.idmap_package:
+            if i_idmp_pack.status==C_STATUS_FAIL:
+                l_fail=C_STATUS_FAIL
+        for i_anchr_pack in self.anchor_package:
+            if i_anchr_pack.status==C_STATUS_FAIL:
+                l_fail=C_STATUS_FAIL
+        for i_attr_pack in self.attribute_table_package:
+            if i_attr_pack.status==C_STATUS_FAIL:
+                l_fail=C_STATUS_FAIL
+        if self.tie_package: # так как может не быть tie у джоба
+            for i_tie_pack in self.tie_package:
+                if i_tie_pack.status==C_STATUS_FAIL:
+                    l_fail=C_STATUS_FAIL
+        return l_fail or C_STATUS_SUCCESS
 
     @property
     def error(self):
@@ -2235,7 +2269,7 @@ class Job(_DWHObject):
         # проверка объекта
         _class_checker(p_class_name="Package",p_object=self._source_table_package)
         # собираем метаданные, если указаны
-        l_meta_obj=self.object_attrs_meta.get(C_PACKAGE,None)
+        l_meta_obj=self.object_attrs_meta.get(C_QUEUE_ETL,None)
         # выбираем из метаданных
         l_object=_get_object(p_id=l_meta_obj, p_class_name="Package", p_type=C_QUEUE_ETL)
 
@@ -2249,7 +2283,7 @@ class Job(_DWHObject):
         # проверка объекта
         _class_checker(p_class_name="Package",p_object=self._idmap_package)
         # собираем метаданные, если указаны
-        l_meta_obj=self.object_attrs_meta.get(C_PACKAGE,None)
+        l_meta_obj=self.object_attrs_meta.get(C_IDMAP_ETL,None)
         # выбираем из метаданных
         l_object=_get_object(p_id=l_meta_obj, p_class_name="Package", p_type=C_IDMAP_ETL)
 
@@ -2263,9 +2297,9 @@ class Job(_DWHObject):
         # проверка объекта
         _class_checker(p_class_name="Package",p_object=self._anchor_package)
         # собираем метаданные, если указаны
-        l_meta_obj=self.object_attrs_meta.get(C_PACKAGE,None)
+        l_meta_obj=self.object_attrs_meta.get(C_ANCHOR_ETL,None)
         # выбираем из метаданных
-        l_object=_get_object(p_id=l_meta_obj, p_class_name="Package", p_type=C_IDMAP_ETL)
+        l_object=_get_object(p_id=l_meta_obj, p_class_name="Package", p_type=C_ANCHOR_ETL)
 
         return self._anchor_package or l_object
 
@@ -2277,9 +2311,9 @@ class Job(_DWHObject):
         # проверка объекта
         _class_checker(p_class_name="Package",p_object=self._attribute_table_package)
         # собираем метаданные, если указаны
-        l_meta_obj=self.object_attrs_meta.get(C_PACKAGE,None)
+        l_meta_obj=self.object_attrs_meta.get(C_ATTRIBUTE_ETL,None)
         # выбираем из метаданных
-        l_object=_get_object(p_id=l_meta_obj, p_class_name="Package", p_type=C_IDMAP_ETL)
+        l_object=_get_object(p_id=l_meta_obj, p_class_name="Package", p_type=C_ATTRIBUTE_ETL)
 
         return self._attribute_table_package or l_object
 
@@ -2291,9 +2325,9 @@ class Job(_DWHObject):
         # проверка объекта
         _class_checker(p_class_name="Package",p_object=self._tie_package)
         # собираем метаданные, если указаны
-        l_meta_obj=self.object_attrs_meta.get(C_PACKAGE,None)
+        l_meta_obj=self.object_attrs_meta.get(C_TIE_ETL,None)
         # выбираем из метаданных
-        l_object=_get_object(p_id=l_meta_obj, p_class_name="Package", p_type=C_IDMAP_ETL)
+        l_object=_get_object(p_id=l_meta_obj, p_class_name="Package", p_type=C_TIE_ETL)
 
         return self._tie_package or l_object
 
@@ -2719,7 +2753,8 @@ class Package(Job):
         """
         Добавляет пакет к джобу
         """
-        add_attribute(p_table=self.job, p_attribute=self, p_add_table_flg=0)
+        if self._job: # только если джоб указан при инициализации объекта
+            add_attribute(p_table=self.job, p_attribute=self, p_add_table_flg=0)
 
 
 
