@@ -488,6 +488,21 @@ def create_view_ddl(p_table: object):
           +"\nFROM "+l_schema+"."+'"'+str(p_table.id)+'";'
     return l_sql
 
+def drop_view_ddl(p_table: object):
+    """
+    Генерирует скрипт удаления представления
+
+    :param p_table: таблица
+    """
+    l_table_name=None
+    if p_table.type==C_QUEUE: # для таблицы queue другой атрибут объекта в качестве имени
+        l_table_name=p_table.queue_name
+    else:
+        l_table_name=p_table.name
+    l_schema=C_SCHEMA_TABLE_TYPE.get(p_table.type,None) # схема таблицы
+    l_sql="DROP VIEW IF EXISTS "+l_schema+"."+'"'+l_table_name+'";'
+    return l_sql
+
 def get_source_table_etl(p_source_table: object, p_attribute_value: str):
     """
     ETL таблицы источника
