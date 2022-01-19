@@ -27,6 +27,16 @@ def sql_exec(p_sql: str, p_result: int =1):
     else:
         return l_result[0]
 
+def __create_ddl_metadata():
+    """
+    Генерирует скрипт создания таблиц метаданных
+
+    """
+    l_sql=""
+    for i in C_META_TABLES:
+        l_sql+='CREATE TABLE '+i+'(\n \tid '+C_UUID+' PRIMARY KEY,\n \tvalue '+ C_JSON+' NOT NULL\n);\n'
+    return l_sql
+
 def __search_uuid_sql(p_uuid_list: list):
     """
     Формирует запрос поиска по метаданным с помощью uuid
