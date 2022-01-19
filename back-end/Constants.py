@@ -501,6 +501,10 @@ C_GET_ENTITY_ATTR="get_attr" # получение атрибута сущнос�
 C_GET_ENTITY_SOURCE="get_entity_source" # получение источников сущности
 C_GET_ATTR_SOURCE="get_attr_source" # получение источников атрибутов сущности
 C_START_JOB="load_data" # загрузка данных в ХД
+C_GET_LAST_ETL="get_last_etl" # получение информации о последнем etl
+C_GET_ETL_HIST="get_etl_hist" # получение логов etl-процессов
+C_GET_ETL_DETAIL="get_etl_detail" # получение детализации по etl-процессу
+C_ADD_ENTITY="add_entity" # добавление сущности в ХД
 C_EXIT="exit"
 C_HELP="help"
 C_CONSOLE_COMMAND_LIST=[
@@ -513,6 +517,10 @@ C_CONSOLE_COMMAND_LIST=[
     C_GET_ATTR_SOURCE,
     C_GET_ENTITY_SOURCE,
     C_START_JOB,
+    C_GET_LAST_ETL,
+    C_GET_ETL_HIST,
+    C_GET_ETL_DETAIL,
+    C_ADD_ENTITY,
     C_EXIT,
     C_HELP
 ]
@@ -529,6 +537,9 @@ C_TYPE_CONSOLE_ARG="-type"
 C_ENTITY_CONSOLE_ARG="-entity"
 C_ENTITY_ATTR_CONSOLE_ARG="-attr"
 C_SOURCE_ID_CONSOLE_ARG="-source_id"
+C_DATE_CONSOLE_ARG="-date"
+C_ETL_ID_CONSOLE_ARG="-etl_id"
+C_FILE_CONSOLE_ARG="-file"
 C_CONSOLE_ARGS={
     C_GET_SOURCE:{
         C_NAME_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"наименование источника (необязательный)"},
@@ -574,6 +585,9 @@ C_CONSOLE_ARGS={
         C_NAME_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"наименование сущности (необязательный)"},
         C_ID_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"id сущности (необязательный)"},
         C_SOURCE_ID_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"id источника (необязательный)"}
+    },
+    C_ADD_ENTITY:{
+        C_FILE_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"путь до файла с параметрами сущности в формате json (необязательный)"}
     },
     C_START_JOB:{
         C_ENTITY_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"id сущности, данные которой требуется обновить (необязательный)"},
@@ -636,6 +650,10 @@ C_CONSOLE_COMMAND_DESC={
                         C_COLOR_OKCYAN+C_ID_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_GET_ENTITY_SOURCE).get(C_ID_CONSOLE_ARG).get(C_DESC)+"\n\t"+
                         C_COLOR_OKCYAN+C_NAME_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_GET_ENTITY_SOURCE).get(C_NAME_CONSOLE_ARG).get(C_DESC)+"\n\t"+
                         C_COLOR_OKCYAN+C_SOURCE_ID_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_GET_ENTITY_SOURCE).get(C_SOURCE_ID_CONSOLE_ARG).get(C_DESC),
+    C_ADD_ENTITY:"\n"+C_COLOR_HEADER+C_ADD_ENTITY+C_COLOR_ENDC+"\n"+
+                        C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tДобавляет сущность в ХД на основе заданных параметров. Генерирует таблицы и ETL.\n"+
+                        C_COLOR_BOLD+"Аргументы:"+C_COLOR_ENDC+"\n\t"+
+                        C_COLOR_OKCYAN+C_ID_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ADD_ENTITY).get(C_FILE_CONSOLE_ARG).get(C_DESC),
     C_START_JOB:"\n"+C_COLOR_HEADER+C_START_JOB+C_COLOR_ENDC+"\n"+
                 C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tЗапускает загрузку данных в ХД\n"+
                 C_COLOR_BOLD+"Аргументы:"+C_COLOR_ENDC+"\n\t"+
@@ -644,3 +662,33 @@ C_CONSOLE_COMMAND_DESC={
     C_EXIT:"\n"+C_COLOR_HEADER+C_EXIT+C_COLOR_ENDC+"\n"+
            C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tЗавершает работу"
 }
+
+# шаблон json для создания сущности
+C_ENTITY_PARAM_TEMPLATE="""{
+    "entity":"description: name of the entity, type: str",
+    "description":"description: description of the entity, type: str",
+    "attribute":
+    [
+        {
+            "name":"description: name of the attribute, type: str",
+            "description":"description: description of the attribute, type: str",
+            "pk":"description: the attribute is the entity's primary key (0 or 1 or null), type: int",
+            "datatype":"description: datatype of the attribute, type: str",
+            "length":"description: length of the attribute (number or null), type: int",
+            "scale":"description: scale of the attribute (number or null), type: int",
+            "link_entity":"description: id of the linked entity, type: str",
+            "source":
+            [
+                {
+                    "source":"description: id of the source, type: str",
+                    "schema":"description: the source schema, type: str",
+                    "table":"description: the source table, type: str",
+                    "column":"the source column"
+                }
+            ]
+        }
+    ]
+
+}"""
+
+C_ENTITY_PARAM_TEMPLATE_FILE_PATH='../Entity param.json' # путь до файла с параметрами сущности для создания

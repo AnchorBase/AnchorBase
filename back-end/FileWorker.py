@@ -8,7 +8,6 @@ class File:
     def __init__(self, p_file_path : str, p_file_body =None):
         """
         :param p_file_path: путь до файла
-        :param p_file_path: тип файла
         :param p_file_body: наполнение файла
         """
         self._file_path=p_file_path
