@@ -337,7 +337,219 @@ def start_job(p_entity: str =None, p_entity_attribute: str =None):
     l_job.start_job()
     return _JsonOutput(p_json_object=None, p_message="Загрузка данных завершена").body
 
+def get_last_etl():
+    """
+    Возвращает информацию о последнем ETL
+    """
+    l_error=None
+    l_json_object=[]
+    l_id=None
+    # максимальный etl_id
+    l_max_etl_id=get_max_etl_id()
+    l_etl_meta_attrs={C_ETL_ATTRIBUTE_NAME:l_max_etl_id}
+    l_last_etl_meta=search_object(p_type=C_ETL, p_attrs=l_etl_meta_attrs) # ищем в метаданных по etl_id
+    if l_last_etl_meta.__len__()==0:
+        l_error="Нет завершенных etl-процессов"
+    else:
+        l_etl=Job(
+            p_id=str(l_last_etl_meta[0].uuid)
+        )
+        l_id=str(l_etl.id)
+        l_entity_name=None
+        if l_etl.entity:
+            l_entity_name=l_etl.entity.name
+        l_entity_attr_name=None
+        if l_etl.entity_attribute:
+            l_entity_attr_name=l_etl.entity_attribute.name
+        l_etl_dict={
+            C_ETL_ATTRIBUTE_NAME:l_etl.etl_id,
+            C_ENTITY:l_entity_name,
+            C_ENTITY_ATTRIBUTE:l_entity_attr_name,
+            C_STATUS:l_etl.status,
+            C_START_DATETIME:str(l_etl.start_datetime),
+            C_END_DATETIME:str(l_etl.end_datetime),
+            C_DURATION:l_etl.duration
+        }
+        l_json_object.append(
+            _JsonObject(p_type=C_ETL,p_id=l_id, p_attribute=l_etl_dict)
+        )
+    return _JsonOutput(p_json_object=l_json_object, p_error=l_error).body
 
+def get_etl_hist(p_date: str =None):
+    """
+    Возвращает логи по etl-процессам
+
+    :param p_date: дата запуска etl-процесса
+    """
+    l_error=None
+    l_json_object=[]
+    l_etl_meta=search_object(p_type=C_ETL)
+    if l_etl_meta.__len__()==0:
+        l_error="Нет завершенных etl-процессов"
+    else:
+        for i_etl_meta in l_etl_meta:
+            l_etl=Job(
+                p_id=str(i_etl_meta.uuid)
+            )
+            l_entity_name=None
+            if l_etl.entity:
+                l_entity_name=l_etl.entity.name
+            l_entity_attr_name=None
+            if l_etl.entity_attribute:
+                l_entity_attr_name=l_etl.entity_attribute.name
+            l_etl_dict={
+                C_ETL_ATTRIBUTE_NAME:l_etl.etl_id,
+                C_ENTITY:l_entity_name,
+                C_ENTITY_ATTRIBUTE:l_entity_attr_name,
+                C_STATUS:l_etl.status,
+                C_START_DATETIME:str(l_etl.start_datetime),
+                C_END_DATETIME:str(l_etl.end_datetime),
+                C_DURATION:l_etl.duration
+            }
+            if not p_date or datetime.datetime.strptime(p_date,'%Y-%m-%d').date()==l_etl.start_datetime.date():
+                l_json_object.append(
+                    _JsonObject(p_type=C_ETL,p_id=l_etl.id, p_attribute=l_etl_dict)
+                )
+    return _JsonOutput(p_json_object=l_json_object, p_error=l_error).body
+
+def get_etl_detail(p_etl: str =None, p_etl_id: str =None):
+    """
+    Возвращает детализацию по etl-процессу
+
+    :param p_etl: id etl
+    :param p_etl_id: etl_id
+    """
+    l_error=None
+    l_json_object=[]
+    l_attr={}
+    if not p_etl and not p_etl_id: # хоть одно должен быть заполнено
+        l_error="Либо id, либо etl_id должны быть заполнены"
+        return _JsonOutput(p_json_object=l_json_object, p_error=l_error).body
+    elif p_etl:
+        l_attr.update(
+            {C_ETL:p_etl}
+        )
+    elif p_etl_id:
+        # ищем id etl
+        l_etl_id=search_object(p_type=C_ETL, p_attrs={C_ETL_ATTRIBUTE_NAME:p_etl_id})
+        if l_etl_id.__len__()>0:
+            l_attr.update(
+                {C_ETL:str(l_etl_id[0].uuid)}
+            )
+    else:
+        l_attr=None
+    # ищем логи в метаданных
+    # логи по queue таблицам
+    l_etl_queue_meta=search_object(
+        p_type=C_QUEUE_ETL,
+        p_attrs=l_attr
+    )
+    if l_etl_queue_meta.__len__()>0:
+        for i_etl_queue in l_etl_queue_meta:
+            l_queue_pack=Package(
+                p_type=C_QUEUE_ETL,
+                p_id=str(i_etl_queue.uuid)
+            )
+            l_queue_pack_dict={
+                C_TABLE:l_queue_pack.source_table.queue_name,
+                C_STATUS:l_queue_pack.status,
+                C_ERROR:l_queue_pack.error,
+                C_START_DATETIME:str(l_queue_pack.start_datetime),
+                C_END_DATETIME:str(l_queue_pack.end_datetime),
+                C_DURATION:l_queue_pack.duration
+            }
+            l_json_object.append(
+                _JsonObject(p_type=C_QUEUE,p_id=l_queue_pack.id, p_attribute=l_queue_pack_dict)
+            )
+    # логи по idmap таблицам
+    l_etl_idmap_meta=search_object(
+        p_type=C_IDMAP_ETL,
+        p_attrs=l_attr
+    )
+    if l_etl_idmap_meta.__len__()>0:
+        for i_etl_idmap in l_etl_idmap_meta:
+            l_idmap_pack=Package(
+                p_type=C_IDMAP_ETL,
+                p_id=str(i_etl_idmap.uuid)
+            )
+            l_idmap_pack_dict={
+                C_TABLE:l_idmap_pack.idmap.name,
+                C_STATUS:l_idmap_pack.status,
+                C_ERROR:l_idmap_pack.error,
+                C_START_DATETIME:str(l_idmap_pack.start_datetime),
+                C_END_DATETIME:str(l_idmap_pack.end_datetime),
+                C_DURATION:l_idmap_pack.duration
+            }
+            l_json_object.append(
+                _JsonObject(p_type=C_IDMAP,p_id=l_idmap_pack.id, p_attribute=l_idmap_pack_dict)
+            )
+    # логи по якорным таблицам
+    l_etl_anchor_meta=search_object(
+        p_type=C_ANCHOR_ETL,
+        p_attrs=l_attr
+    )
+    if l_etl_anchor_meta.__len__()>0:
+        for i_etl_anchor in l_etl_anchor_meta:
+            l_anchor_pack=Package(
+                p_type=C_ANCHOR_ETL,
+                p_id=str(i_etl_anchor.uuid)
+            )
+            l_anchor_pack_dict={
+                C_TABLE:l_anchor_pack.anchor.name,
+                C_STATUS:l_anchor_pack.status,
+                C_ERROR:l_anchor_pack.error,
+                C_START_DATETIME:str(l_anchor_pack.start_datetime),
+                C_END_DATETIME:str(l_anchor_pack.end_datetime),
+                C_DURATION:l_anchor_pack.duration
+            }
+            l_json_object.append(
+                _JsonObject(p_type=C_ANCHOR,p_id=l_anchor_pack.id, p_attribute=l_anchor_pack_dict)
+            )
+    # логи по таблица атрибутам
+    l_etl_attr_meta=search_object(
+        p_type=C_ATTRIBUTE_ETL,
+        p_attrs=l_attr
+    )
+    if l_etl_attr_meta.__len__()>0:
+        for i_etl_attr in l_etl_attr_meta:
+            l_attr_pack=Package(
+                p_type=C_ATTRIBUTE_ETL,
+                p_id=str(i_etl_attr.uuid)
+            )
+            l_attr_pack_dict={
+                C_TABLE:l_attr_pack.attribute_table.name,
+                C_STATUS:l_attr_pack.status,
+                C_ERROR:l_attr_pack.error,
+                C_START_DATETIME:str(l_attr_pack.start_datetime),
+                C_END_DATETIME:str(l_attr_pack.end_datetime),
+                C_DURATION:l_attr_pack.duration
+            }
+            l_json_object.append(
+                _JsonObject(p_type=C_ATTRIBUTE,p_id=l_attr_pack.id, p_attribute=l_attr_pack_dict)
+            )
+    # логи по tie
+    l_etl_tie_meta=search_object(
+        p_type=C_TIE_ETL,
+        p_attrs=l_attr
+    )
+    if l_etl_tie_meta.__len__()>0:
+        for i_etl_tie in l_etl_tie_meta:
+            l_tie_pack=Package(
+                p_type=C_TIE_ETL,
+                p_id=str(i_etl_tie.uuid)
+            )
+            l_tie_pack_dict={
+                C_TABLE:l_tie_pack.tie.name,
+                C_STATUS:l_tie_pack.status,
+                C_ERROR:l_tie_pack.error,
+                C_START_DATETIME:str(l_tie_pack.start_datetime),
+                C_END_DATETIME:str(l_tie_pack.end_datetime),
+                C_DURATION:l_tie_pack.duration
+            }
+            l_json_object.append(
+                _JsonObject(p_type=C_TIE,p_id=l_tie_pack.id, p_attribute=l_tie_pack_dict)
+            )
+    return _JsonOutput(p_json_object=l_json_object, p_error=l_error).body
 
 
 class _JsonObject:
