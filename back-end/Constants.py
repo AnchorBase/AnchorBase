@@ -442,6 +442,8 @@ C_TIME = "time"
 C_INTERVAL = "interval"
 C_BOOLEAN = "boolean"
 C_DATETIME = "datetime"
+C_UUID = "uuid"
+C_JSON = "json"
 # СПИСКИ ТИПОВ ДАННЫХ ДЛЯ КАЖДОЙ СУБД
 C_POSTGRESQL_DATA_TYPE_LIST = [ # фиксированный список типов данных для PostgreSQL, с которыми умеет работать AnchorBase
      C_SMALLINT
