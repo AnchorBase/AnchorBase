@@ -522,6 +522,8 @@ C_CONSOLE_COMMAND_LIST=[
     C_GET_ETL_HIST,
     C_GET_ETL_DETAIL,
     C_ADD_ENTITY,
+    C_EXIT,
+    C_HELP
 ]
 # АРГУМЕНТЫ КОМАНД КОНСОЛИ
 C_NAME_CONSOLE_ARG="-name"
