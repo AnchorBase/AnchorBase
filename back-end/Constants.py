@@ -83,6 +83,7 @@ C_START_DATETIME="start_datetime"
 C_END_DATETIME="end_datetime"
 C_PACKAGE="package"
 C_ERROR="error"
+C_DURATION="duration" # длительность отработки etl
 #================================
 #  Таблицы ХД
 #================================
@@ -592,6 +593,13 @@ C_CONSOLE_ARGS={
     C_START_JOB:{
         C_ENTITY_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"id сущности, данные которой требуется обновить (необязательный)"},
         C_ENTITY_ATTR_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"id атрибута, данные которого требуется обновить (необязательный)"}
+    },
+    C_GET_ETL_HIST:{
+        C_DATE_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"дата выполнения etl-процесса в формате YYYY-MM-DD (необязательный)"}
+    },
+    C_GET_ETL_DETAIL:{
+        C_ID_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"дата выполнения etl-процесса в формате YYYY-MM-DD (необязательный)"},
+        C_ETL_ID_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"дата выполнения etl-процесса в формате YYYY-MM-DD (необязательный)"}
     }
 }
 # описание команд консоли
@@ -657,8 +665,19 @@ C_CONSOLE_COMMAND_DESC={
     C_START_JOB:"\n"+C_COLOR_HEADER+C_START_JOB+C_COLOR_ENDC+"\n"+
                 C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tЗапускает загрузку данных в ХД\n"+
                 C_COLOR_BOLD+"Аргументы:"+C_COLOR_ENDC+"\n\t"+
-                C_COLOR_OKCYAN+C_ID_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_START_JOB).get(C_ENTITY_CONSOLE_ARG).get(C_DESC)+"\n\t"+
-                C_COLOR_OKCYAN+C_NAME_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_START_JOB).get(C_ENTITY_ATTR_CONSOLE_ARG).get(C_DESC),
+                C_COLOR_OKCYAN+C_ENTITY_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_START_JOB).get(C_ENTITY_CONSOLE_ARG).get(C_DESC)+"\n\t"+
+                C_COLOR_OKCYAN+C_ENTITY_ATTR_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_START_JOB).get(C_ENTITY_ATTR_CONSOLE_ARG).get(C_DESC),
+    C_GET_LAST_ETL:"\n"+C_COLOR_HEADER+C_GET_LAST_ETL+C_COLOR_ENDC+"\n"+
+                   C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tВыдает информацию о последнем ETL",
+    C_GET_ETL_HIST:"\n"+C_COLOR_HEADER+C_GET_ETL_HIST+C_COLOR_ENDC+"\n"+
+                  C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tВыдает логи по ETL-процессу\n"+
+                  C_COLOR_BOLD+"Аргументы:"+C_COLOR_ENDC+"\n\t"+
+                  C_COLOR_OKCYAN+C_DATE_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_GET_ETL_HIST).get(C_DATE_CONSOLE_ARG).get(C_DESC),
+    C_GET_ETL_DETAIL:"\n"+C_COLOR_HEADER+C_GET_ETL_DETAIL+C_COLOR_ENDC+"\n"+
+                      C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tВыдает детализацию по ETL-процессу\n"+
+                      C_COLOR_BOLD+"Аргументы (хотя бы один должен быть заполнен):"+C_COLOR_ENDC+"\n\t"+
+                      C_COLOR_OKCYAN+C_ID_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_GET_ETL_DETAIL).get(C_ID_CONSOLE_ARG).get(C_DESC)+"\n\t"+
+                      C_COLOR_OKCYAN+C_ETL_ID_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_GET_ETL_DETAIL).get(C_ETL_ID_CONSOLE_ARG).get(C_DESC),
     C_EXIT:"\n"+C_COLOR_HEADER+C_EXIT+C_COLOR_ENDC+"\n"+
            C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tЗавершает работу"
 }
