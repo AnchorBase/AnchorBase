@@ -34,7 +34,6 @@ class Model:
         Проверки модели данных
         """
         self.__json_checker()
-        self.__entity_checker()
 
     def __json_checker(self):
         """
@@ -48,24 +47,19 @@ class Model:
         """
         Сущность
         """
-        return self.__entity_checker()
-
-    def __entity_checker(self):
-        """
-        Проверки сущности
-        """
         l_entity=_EntityParam(
             p_name=self.json.get(C_ENTITY),
             p_desc=self.json.get(C_DESC),
-            p_attribute_param=self.json.get(C_ATTRIBUTE)
+            p_attribute_param=self.json.get(C_ATTRIBUTE),
+            p_id=self.json.get(C_ID)
         )
         return l_entity
+
 
     def create_model(self):
         """
         Создает модель данных
         """
-        print("Entity's creation is in process...", end="")
         # переменные для последующего использования
         l_source_table_name_list=[] # лист с уникальными наименованиями таблиц источников
         l_source_attribute_name_list=[] # лист с уникальными наименованиями атрибутов источников
@@ -250,15 +244,43 @@ class Model:
 
         print(C_COLOR_OKGREEN+"\rEntity has created")
 
+    def rename_entity(self):
+        """
+        Переименовывает сущность
+        """
+        # проверяем имя сущности
+        self.entity_param.name_checker()
+        # инициализируем объект сущности
+        l_entity=Entity(
+            p_id=self.entity_param.id,
+            p_name=self.entity_param.name # присваиваем новое имя
+        ) # если id указан некорректно - проверка происходит при инициализации
+        # формируем скрипт удаления всех представлений сущности
+        # удаление idmap
+        l_sql=drop_view_ddl(p_table=l_entity.idmap)+"\n"
+        # удаление anchor
+        l_sql+=drop_view_ddl(p_table=l_entity.anchor)+"\n"
+        # удаление attribute
+        for i_attribute in l_entity.attribute_table:
+            l_sql+=drop_view_ddl(p_table=i_attribute)+"\n"
+        # удаление tie
+        for i_tie in l_entity.tie:
+            l_sql+=drop_view_ddl(p_table=i_tie)+"\n"
+        # изменяем имя у сущности и имена ее атрибутов
+
 
     def __create_entity(self) -> object:
         """
         Создает объект сущность на основе параметров
         """
+        # проверяем сущность
+        self.entity_param.entity_creation_checker()
+
         l_entity=Entity(
             p_name=self.entity_param.name,
             p_desc=self.entity_param.desc
         )
+
         return l_entity
 
     def __create_entity_attribute(self, p_entity: object, p_attribute_param: object) -> object:
@@ -867,13 +889,15 @@ class _EntityParam:
     Параметры сущности
     """
     def __init__(self,
-                 p_name: str,
-                 p_attribute_param: list,
+                 p_id: str =None,
+                 p_name: str =None,
+                 p_attribute_param: list =None,
                  p_desc: str =None
     ):
         """
         Конструктор
 
+        :param p_id: id сущности
         :param p_name: наименование сущности
         :param p_attribute: атрибуты сущности
         :param p_desc: описание сущности
@@ -882,9 +906,15 @@ class _EntityParam:
         self._name=p_name
         self._attribute_param=p_attribute_param
         self._desc=p_desc
+        self._id=p_id
 
-        # проверка параметров во время инициализации
-        self.__entity_checker()
+    @property
+    def id(self) -> str:
+        """
+        Id сущности
+        """
+        return self._id
+
 
     @property
     def name(self):
@@ -898,7 +928,7 @@ class _EntityParam:
         """
         Атрибуты сущности
         """
-        return self.__attribute_checker()
+        return self.attribute_checker()
 
     @property
     def desc(self):
@@ -907,25 +937,24 @@ class _EntityParam:
         """
         return self._desc
 
-    def __entity_checker(self):
+    def entity_creation_checker(self):
         """
         Проверка параметров сущности
-        :return:
         """
-        self.__name_checker()
-        self.__attribute_checker()
-        self.__source_table_pk_checker()
-        self.__attribute_double_checker()
-        self.__entity_name_double_checker()
+        self.name_checker()
+        self.attribute_checker()
+        self.source_table_pk_checker()
+        self.attribute_double_checker()
+        self.entity_name_double_checker()
 
-    def __name_checker(self):
+    def name_checker(self):
         """
         Проверяет корректность наименования сущности
         """
         if not self._name:
             sys.exit("У сущности не указано наименование")
 
-    def __attribute_checker(self):
+    def attribute_checker(self):
         """
         Проверка параметров атрибутов
         """
@@ -953,7 +982,7 @@ class _EntityParam:
 
         return l_attribute
 
-    def __source_table_pk_checker(self):
+    def source_table_pk_checker(self):
         """
         Проверяет, что все таблицы источники фигурируют, как источники у pk атрибута
         """
@@ -968,7 +997,7 @@ class _EntityParam:
             if i_source_table not in l_source_table_pk:
                 sys.exit("Таблица источник не указана в качестве источника у первичного ключа")
 
-    def __attribute_double_checker(self):
+    def attribute_double_checker(self):
             """
             Проверка на дублирующийся атрибут сущности
             """
@@ -979,7 +1008,7 @@ class _EntityParam:
                 if l_attribute_cnt>1:
                     sys.exit("Атрибут "+i_attribute.name+" указан больше одного раза")
 
-    def __entity_name_double_checker(self):
+    def entity_name_double_checker(self):
         """
         Проверяет, что в метаданных нет сущности с таким наименованием
         """
