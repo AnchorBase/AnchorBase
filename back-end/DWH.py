@@ -877,9 +877,16 @@ class _DWHObject:
     @property
     def name(self):
         """
-        Наименование объекта
+        Наименование
         """
-        return None # переопределяется в дочерних классах
+        l_name=None
+        if self._name is not None:
+            l_name=self._name.lower()
+        return l_name or self.object_attrs_meta.get(C_NAME,None)
+
+    @name.setter
+    def name(self, p_new_name: str):
+        self._name=p_new_name
 
     def __object_attrs_meta(self):
         """
@@ -1503,16 +1510,6 @@ class Attribute(_DWHObject):
 
 
     @property
-    def name(self):
-        """
-        Наименование атрибута
-        """
-        l_name=None
-        if self._name is not None:
-            l_name=self._name.lower()
-        return l_name or self.object_attrs_meta.get(C_NAME,None)
-
-    @property
     def datatype(self):
         """
         Тип данных
@@ -1599,16 +1596,35 @@ class Entity(_DWHObject):
         )
         self._name=p_name
 
-
     @property
     def name(self):
         """
         Наименование сущности
         """
-        l_name=None
-        if self._name is not None:
-            l_name=self._name.lower()
-        return l_name or self.object_attrs_meta.get(C_NAME,None)
+        return super().name
+    @name.setter
+    def name(self, p_new_name: str):
+
+        # изменяем наименование сущности
+        self._name=p_new_name.lower()
+        # изменяем наименования объектов путем изменения у них сущности
+        # idmap
+        l_idmap=self.idmap
+        l_idmap.entity=self
+        self.idmap=l_idmap
+        #anchor
+        l_anchor=self.anchor
+        l_anchor.entity=self
+        self.anchor=l_anchor
+        #attribute
+        l_attributes=[]
+        for i_attribute in self.attribute_table:
+            l_attribute=i_attribute
+            l_attribute.entity=self
+            l_attributes.append(l_attribute)
+        self.attribute_table=l_attributes
+
+
 
     def get_entity_function(self):
         """
@@ -1671,6 +1687,11 @@ class SourceTable(_DWHObject):
         if self._name is not None:
             l_name=self._name.lower()
         return l_name or self.object_attrs_meta.get(C_SOURCE_NAME,None)
+
+    @name.setter
+    def name(self, p_new_name: str):
+        self._name=p_new_name
+
 
     @property
     def schema(self):
@@ -1818,10 +1839,33 @@ class Idmap(_DWHObject):
         """
         Наименование idmap
         """
-        if self.entity.name:
-            return str(self.entity.name).lower()+_get_table_postfix(p_table_type=C_IDMAP)
+        if self._entity and self._entity.name:
+            return str(self._entity.name).lower()+_get_table_postfix(p_table_type=C_IDMAP)
         else:
             return self.object_attrs_meta.get(C_NAME)
+
+    @property
+    def entity(self):
+        """
+        Сущность
+        """
+        return super().entity
+
+    @entity.setter
+    def entity(self, p_new_entity: object):
+        self._entity=p_new_entity
+        # изменяем наименование атрибутов
+        l_idmap_atrribute=[]
+        for i_attribute in self.idmap_attribute:
+            l_attribute=i_attribute
+            if l_attribute.attribute_type in (C_RK, C_NK):
+                l_attribute.name=self.entity.name+"_"+i_attribute.attribute_type
+            l_idmap_atrribute.append(l_attribute)
+        self.idmap_attribute=l_idmap_atrribute
+        # изменяем source_attribute_nk - TBD
+
+
+
 
     def __create_idmap_attribute(self):
         """
@@ -1912,10 +1956,29 @@ class Anchor(_DWHObject):
         """
         Наименование
         """
-        if self.entity.name:
-           return str(self.entity.name).lower()+_get_table_postfix(p_table_type=C_ANCHOR)
+        if self._entity and self._entity.name:
+           return str(self._entity.name).lower()+_get_table_postfix(p_table_type=C_ANCHOR)
         else:
            return self.object_attrs_meta.get(C_NAME)
+
+    @property
+    def entity(self):
+        """
+        Сущность
+        """
+        return super().entity
+
+    @entity.setter
+    def entity(self, p_new_entity: object):
+        self._entity=p_new_entity
+        # изменяем наименование атрибутов
+        l_anchor_atrribute=[]
+        for i_attribute in self.anchor_attribute:
+            l_attribute=i_attribute
+            if l_attribute.attribute_type in (C_RK):
+                l_attribute.name=self.entity.name+"_"+i_attribute.attribute_type
+            l_anchor_atrribute.append(l_attribute)
+        self.anchor_attribute=l_anchor_atrribute
 
     def __create_anchor_attribute(self):
         """
@@ -1982,11 +2045,32 @@ class AttributeTable(_DWHObject):
         """
         Наименование
         """
-        if self.entity_attribute.name:
-            return self.entity.name+"_"+self.entity_attribute.name\
+        if self._entity_attribute and self._entity_attribute.name:
+            return self._entity.name+"_"+self._entity_attribute.name\
+                   +_get_table_postfix(p_table_type=C_ATTRIBUTE_TABLE)
+        elif self._entity and self._entity.name:
+            return self._entity.name+"_"+self.entity_attribute.name \
                    +_get_table_postfix(p_table_type=C_ATTRIBUTE_TABLE)
         else:
             return self.object_attrs_meta.get(C_NAME)
+    @property
+    def entity(self):
+        """
+        Сущность
+        """
+        return super().entity
+
+    @entity.setter
+    def entity(self, p_new_entity: object):
+        self._entity=p_new_entity
+        # изменяем наименование атрибутов
+        l_atrribute_table_attr=[]
+        for i_attribute in self.attribute_table_attribute:
+            l_attribute=i_attribute
+            if l_attribute.attribute_type in (C_RK):
+                l_attribute.name=self.entity.name+"_"+i_attribute.attribute_type
+            l_atrribute_table_attr.append(l_attribute)
+        self.attribute_table_attribute=l_atrribute_table_attr
 
     def __create_attributetable_attribute(self):
         """
