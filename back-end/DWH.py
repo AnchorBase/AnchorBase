@@ -1623,6 +1623,15 @@ class Entity(_DWHObject):
             l_attribute.entity=self
             l_attributes.append(l_attribute)
         self.attribute_table=l_attributes
+        #tie
+        l_ties=[]
+        if self.tie:
+            for i_tie in self.tie:
+                l_tie=i_tie
+                l_tie.entity=self
+                l_ties.append(l_tie)
+            self.tie=l_ties
+
 
 
 
@@ -2067,7 +2076,7 @@ class AttributeTable(_DWHObject):
         l_atrribute_table_attr=[]
         for i_attribute in self.attribute_table_attribute:
             l_attribute=i_attribute
-            if l_attribute.attribute_type in (C_RK):
+            if l_attribute.attribute_type==C_RK:
                 l_attribute.name=self.entity.name+"_"+i_attribute.attribute_type
             l_atrribute_table_attr.append(l_attribute)
         self.attribute_table_attribute=l_atrribute_table_attr
@@ -2173,6 +2182,45 @@ class Tie(_DWHObject):
                self.link_entity.name+\
                _get_table_postfix(p_table_type=C_TIE)
         return l_name
+
+    @property
+    def entity(self):
+        """
+        Сущность
+        """
+        return super().entity
+
+    @entity.setter
+    def entity(self, p_new_entity: object):
+        self._entity=p_new_entity
+        # изменяем наименование атрибутов
+        l_tie_attribute=[]
+        for i_attribute in self.tie_attribute:
+            l_attribute=i_attribute
+            if l_attribute.attribute_type==C_RK:
+                l_attribute.name=self.entity.name+"_"+i_attribute.attribute_type
+            l_tie_attribute.append(l_attribute)
+        self.tie_attribute=l_tie_attribute
+
+    @property
+    def link_entity(self):
+        """
+        Связанная сущность
+        """
+        return super().link_entity
+
+    @link_entity.setter
+    def link_entity(self, p_new_link_entity):
+        self._link_entity=p_new_link_entity
+        # изменяем наименование атрибутов
+        l_tie_attribute=[]
+        for i_attribute in self.tie_attribute:
+            l_attribute=i_attribute
+            if l_attribute.attribute_type==C_LINK_RK:
+                l_attribute.name=self.link_entity.name+"_"+C_RK
+            l_tie_attribute.append(l_attribute)
+        self.tie_attribute=l_tie_attribute
+
 
     def __create_tie_attribute(self):
         """

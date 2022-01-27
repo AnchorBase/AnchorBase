@@ -242,8 +242,6 @@ class Model:
         # создаем таблицы и представления в ХД
         self.__create_ddl(p_ddl=l_ddl)
 
-        print(C_COLOR_OKGREEN+"\rEntity has created")
-
     def rename_entity(self):
         """
         Переименовывает сущность
@@ -252,21 +250,58 @@ class Model:
         self.entity_param.name_checker()
         # инициализируем объект сущности
         l_entity=Entity(
-            p_id=self.entity_param.id,
-            p_name=self.entity_param.name # присваиваем новое имя
+            p_id=self.entity_param.id
         ) # если id указан некорректно - проверка происходит при инициализации
         # формируем скрипт удаления всех представлений сущности
         # удаление idmap
-        l_sql=drop_view_ddl(p_table=l_entity.idmap)+"\n"
+        l_drop_sql=drop_view_ddl(p_table=l_entity.idmap)+"\n"
         # удаление anchor
-        l_sql+=drop_view_ddl(p_table=l_entity.anchor)+"\n"
+        l_drop_sql+=drop_view_ddl(p_table=l_entity.anchor)+"\n"
         # удаление attribute
         for i_attribute in l_entity.attribute_table:
-            l_sql+=drop_view_ddl(p_table=i_attribute)+"\n"
+            l_drop_sql+=drop_view_ddl(p_table=i_attribute)+"\n"
         # удаление tie
-        for i_tie in l_entity.tie:
-            l_sql+=drop_view_ddl(p_table=i_tie)+"\n"
-        # изменяем имя у сущности и имена ее атрибутов
+        if l_entity.tie:
+            for i_tie in l_entity.tie:
+                l_drop_sql+=drop_view_ddl(p_table=i_tie)+"\n"
+        # удаляем tie, где переименованная сущность - связанная
+        l_link_tie_meta=meta.search_object(
+            p_type=C_TIE,
+            p_attrs={C_LINK_ENTITY:self.entity_param.id}
+        )
+        l_link_ties=None
+        if l_link_tie_meta.__len__()>0:
+            l_link_ties=[]
+            for i_tie in l_link_tie_meta:
+                l_link_tie=Tie(p_id=str(i_tie.uuid))
+                l_drop_sql+=drop_view_ddl(p_table=l_link_tie)+"\n"
+                l_link_ties.append(l_link_tie)
+        # изменяем имя у сущности, а также у таблиц и ее атрибутов
+        l_entity.name=self.entity_param.name # автоматически заменяются имена у всех производных объектов
+        # отдельно заменяем наименование у tie, где переименованная сущность - связанная
+        for i_link_tie in l_link_ties:
+            i_link_tie.link_entity=l_entity
+        # формируем скрипт создания представлений с новым наименованием
+        # idmap
+        l_create_sql=create_view_ddl(p_table=l_entity.idmap)+"\n"
+        # anchor
+        l_create_sql+=create_view_ddl(p_table=l_entity.anchor)+"\n"
+        # attribute
+        for i_attribute in l_entity.attribute_table:
+            l_create_sql+=create_view_ddl(p_table=i_attribute)+"\n"
+        # tie
+        if l_entity.tie:
+            for i_tie in l_entity.tie:
+                l_create_sql+=create_view_ddl(p_table=i_tie)+"\n"
+        # link_tie
+        if l_link_ties:
+            for i_link_tie in l_link_ties:
+                l_create_sql+=create_view_ddl(p_table=i_link_tie)+"\n"
+        l_sql=l_drop_sql+l_create_sql
+        
+
+
+
 
 
     def __create_entity(self) -> object:
