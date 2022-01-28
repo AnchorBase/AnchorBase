@@ -276,6 +276,8 @@ class Model:
                 l_link_tie=Tie(p_id=str(i_tie.uuid))
                 l_drop_sql+=drop_view_ddl(p_table=l_link_tie)+"\n"
                 l_link_ties.append(l_link_tie)
+        # удаление функции-конструктора запросов
+        l_drop_sql+=l_entity.get_drop_entity_function_sql()+"\n"
         # изменяем имя у сущности, а также у таблиц и ее атрибутов
         l_entity.name=self.entity_param.name # автоматически заменяются имена у всех производных объектов
         # отдельно заменяем наименование у tie, где переименованная сущность - связанная
@@ -297,12 +299,42 @@ class Model:
         if l_link_ties:
             for i_link_tie in l_link_ties:
                 l_create_sql+=create_view_ddl(p_table=i_link_tie)+"\n"
+        # пересоздаем функцию-конструктор запросов
+        l_create_sql+=l_entity.get_entity_function()
         l_sql=l_drop_sql+l_create_sql
-        
+        # проверяем ddl
+        self.__ddl_checker(p_ddl=l_sql)
+        # проверяем метаданные
+        self.__metadata_checker(
+            p_entity=l_entity,
+            p_idmap=l_entity.idmap,
+            p_anchor=l_entity.anchor,
+            p_attribute_table=l_entity.attribute_table,
+            p_tie=l_entity.tie
+        )
+        # дополнительно проверяем link_tie
+        self.__metadata_checker(p_tie=l_link_ties)
+        # записываем метаданные
+        self.__update_metadata(
+            p_entity=l_entity,
+            p_idmap=l_entity.idmap,
+            p_anchor=l_entity.anchor,
+            p_attribute_table=l_entity.attribute_table,
+            p_tie=l_entity.tie
+        )
+        # дополнительно обновляем link_tie
+        self.__update_metadata(p_tie=l_link_ties)
+        # выполняем ddl
+        self.__create_ddl(p_ddl=l_sql)
 
-
-
-
+    def alter_desc(self):
+        """
+        Изменяет описание сущности
+        """
+        # инициализируем объект сущности
+        l_entity=Entity(
+            p_id=self.entity_param.id
+        )
 
     def __create_entity(self) -> object:
         """
@@ -551,12 +583,12 @@ class Model:
 
 
     def __metadata_checker(self,
-                           p_entity: object,
-                           p_source_table: list,
-                           p_idmap: object,
-                           p_anchor: object,
-                           p_attribute_table: list,
-                           p_tie: list):
+                           p_entity: object =None,
+                           p_source_table: list =None,
+                           p_idmap: object =None,
+                           p_anchor: object =None,
+                           p_attribute_table: list =None,
+                           p_tie: list =None):
         """
         Проверяет корректнось метаданных
 
@@ -568,40 +600,46 @@ class Model:
         :param p_tie: таблицы связи
         """
         # метаданные сущности и ее атрибутов
-        p_entity.metadata_object.attrs_checker()
-        for i_entity_attribute in p_entity.entity_attribute:
-            i_entity_attribute.metadata_object.attrs_checker()
+        if p_entity:
+            p_entity.metadata_object.attrs_checker()
+            for i_entity_attribute in p_entity.entity_attribute:
+                i_entity_attribute.metadata_object.attrs_checker()
         # таблицы источники и их атрибуты
-        for i_source_table in p_source_table:
-            i_source_table.metadata_object.attrs_checker()
-            for i_source_attribute in i_source_table.source_attribute:
-                i_source_attribute.metadata_object.attrs_checker()
+        if p_source_table:
+            for i_source_table in p_source_table:
+                i_source_table.metadata_object.attrs_checker()
+                for i_source_attribute in i_source_table.source_attribute:
+                    i_source_attribute.metadata_object.attrs_checker()
         # idmap и его атрибуты
-        p_idmap.metadata_object.attrs_checker()
-        for i_idmap_attribute in p_idmap.idmap_attribute:
-            i_idmap_attribute.metadata_object.attrs_checker()
+        if p_idmap:
+            p_idmap.metadata_object.attrs_checker()
+            for i_idmap_attribute in p_idmap.idmap_attribute:
+                i_idmap_attribute.metadata_object.attrs_checker()
         # якорь и его атрибуты
-        p_anchor.metadata_object.attrs_checker()
-        for i_anchor_attribute in p_anchor.anchor_attribute:
-            i_anchor_attribute.metadata_object.attrs_checker()
+        if p_anchor:
+            p_anchor.metadata_object.attrs_checker()
+            for i_anchor_attribute in p_anchor.anchor_attribute:
+                i_anchor_attribute.metadata_object.attrs_checker()
         # таблицы атрибуты и их атрибуты
-        for i_attribute_table in p_attribute_table:
-            i_attribute_table.metadata_object.attrs_checker()
-            for i_attribute_table_attribute in i_attribute_table.attribute_table_attribute:
-                i_attribute_table_attribute.metadata_object.attrs_checker()
+        if p_attribute_table:
+            for i_attribute_table in p_attribute_table:
+                i_attribute_table.metadata_object.attrs_checker()
+                for i_attribute_table_attribute in i_attribute_table.attribute_table_attribute:
+                    i_attribute_table_attribute.metadata_object.attrs_checker()
         # таблицы связи и их атрибуты
-        for i_tie in p_tie:
-            i_tie.metadata_object.attrs_checker()
-            for i_tie_attribute in i_tie.tie_attribute:
-                i_tie_attribute.metadata_object.attrs_checker()
+        if p_tie:
+            for i_tie in p_tie:
+                i_tie.metadata_object.attrs_checker()
+                for i_tie_attribute in i_tie.tie_attribute:
+                    i_tie_attribute.metadata_object.attrs_checker()
 
     def __create_metadata(self,
-                          p_entity: object,
-                          p_source_table: list,
-                          p_idmap: object,
-                          p_anchor: object,
-                          p_attribute_table: list,
-                          p_tie: list):
+                          p_entity: object =None,
+                          p_source_table: list =None,
+                          p_idmap: object =None,
+                          p_anchor: object =None,
+                          p_attribute_table: list =None,
+                          p_tie: list =None):
         """
         Записывает метаданные
 
@@ -613,36 +651,95 @@ class Model:
         :param p_tie: таблицы связи
         """
         # метаданные сущности и ее атрибутов
-        p_entity.create_metadata()
-        for i_entity_attribute in p_entity.entity_attribute:
-            i_entity_attribute.create_metadata()
-        # таблицы источники и их атрибуты
-        for i_source_table in p_source_table:
-            # сперва удаляем таблицу источник из метеданных (так как она могла существовать ранее)
-            i_source_table.delete_metadata()
-            i_source_table.create_metadata()
-            for i_source_attribute in i_source_table.source_attribute:
-                # сперва удаляем атрибуты таблицы источника
-                i_source_attribute.delete_metadata()
-                i_source_attribute.create_metadata()
+        if p_entity:
+            p_entity.create_metadata()
+            for i_entity_attribute in p_entity.entity_attribute:
+                i_entity_attribute.create_metadata()
+        if p_source_table:
+            # таблицы источники и их атрибуты
+            for i_source_table in p_source_table:
+                # сперва удаляем таблицу источник из метеданных (так как она могла существовать ранее)
+                i_source_table.delete_metadata()
+                i_source_table.create_metadata()
+                for i_source_attribute in i_source_table.source_attribute:
+                    # сперва удаляем атрибуты таблицы источника
+                    i_source_attribute.delete_metadata()
+                    i_source_attribute.create_metadata()
         # idmap и его атрибуты
-        p_idmap.create_metadata()
-        for i_idmap_attribute in p_idmap.idmap_attribute:
-            i_idmap_attribute.create_metadata()
+        if p_idmap:
+            p_idmap.create_metadata()
+            for i_idmap_attribute in p_idmap.idmap_attribute:
+                i_idmap_attribute.create_metadata()
         # якорь и его атрибуты
-        p_anchor.create_metadata()
-        for i_anchor_attribute in p_anchor.anchor_attribute:
-            i_anchor_attribute.create_metadata()
+        if p_anchor:
+            p_anchor.create_metadata()
+            for i_anchor_attribute in p_anchor.anchor_attribute:
+                i_anchor_attribute.create_metadata()
         # таблицы атрибуты и их атрибуты
-        for i_attribute_table in p_attribute_table:
-            i_attribute_table.create_metadata()
-            for i_attribute_table_attribute in i_attribute_table.attribute_table_attribute:
-                i_attribute_table_attribute.create_metadata()
+        if p_attribute_table:
+            for i_attribute_table in p_attribute_table:
+                i_attribute_table.create_metadata()
+                for i_attribute_table_attribute in i_attribute_table.attribute_table_attribute:
+                    i_attribute_table_attribute.create_metadata()
         # таблицы связи и их атрибуты
-        for i_tie in p_tie:
-            i_tie.create_metadata()
-            for i_tie_attribute in i_tie.tie_attribute:
-                i_tie_attribute.create_metadata()
+        if p_tie:
+            for i_tie in p_tie:
+                i_tie.create_metadata()
+                for i_tie_attribute in i_tie.tie_attribute:
+                    i_tie_attribute.create_metadata()
+
+    def __update_metadata(self,
+                          p_entity: object =None,
+                          p_source_table: list =None,
+                          p_idmap: object =None,
+                          p_anchor: object =None,
+                          p_attribute_table: list =None,
+                          p_tie: list =None):
+        """
+        Обновляет метаданные
+
+        :param p_entity: сущность
+        :param p_source_table: таблицы источники
+        :param p_idmap: idmap таблица
+        :param p_anchor: якорь сущности
+        :param p_attribute_table: таблицы атрибуты
+        :param p_tie: таблицы связи
+        """
+        # метаданные сущности и ее атрибутов
+        if p_entity:
+            p_entity.update_metadata()
+            for i_entity_attribute in p_entity.entity_attribute:
+                i_entity_attribute.update_metadata()
+        if p_source_table:
+            # таблицы источники и их атрибуты
+            for i_source_table in p_source_table:
+                # сперва удаляем таблицу источник из метеданных (так как она могла существовать ранее)
+                i_source_table.update_metadata()
+                for i_source_attribute in i_source_table.source_attribute:
+                    # сперва удаляем атрибуты таблицы источника
+                    i_source_attribute.update_metadata()
+        # idmap и его атрибуты
+        if p_idmap:
+            p_idmap.update_metadata()
+            for i_idmap_attribute in p_idmap.idmap_attribute:
+                i_idmap_attribute.update_metadata()
+        # якорь и его атрибуты
+        if p_anchor:
+            p_anchor.update_metadata()
+            for i_anchor_attribute in p_anchor.anchor_attribute:
+                i_anchor_attribute.update_metadata()
+        # таблицы атрибуты и их атрибуты
+        if p_attribute_table:
+            for i_attribute_table in p_attribute_table:
+                i_attribute_table.update_metadata()
+                for i_attribute_table_attribute in i_attribute_table.attribute_table_attribute:
+                    i_attribute_table_attribute.update_metadata()
+        # таблицы связи и их атрибуты
+        if p_tie:
+            for i_tie in p_tie:
+                i_tie.update_metadata()
+                for i_tie_attribute in i_tie.tie_attribute:
+                    i_tie_attribute.update_metadata()
 
     def __create_ddl(self, p_ddl: str):
         """

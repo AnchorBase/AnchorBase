@@ -1632,9 +1632,6 @@ class Entity(_DWHObject):
                 l_ties.append(l_tie)
             self.tie=l_ties
 
-
-
-
     def get_entity_function(self):
         """
         Генерирует скрипт создания функции-конструктора запросов для сущности
@@ -1651,6 +1648,11 @@ class Entity(_DWHObject):
             p_entity_name=self.name,
             p_entity_attribute_dict=l_entity_attr_dict
         )
+    def get_drop_entity_function_sql(self):
+        """
+        Генерирует скрипт удаления функции-конструктора запросов
+        """
+        return Connection().dbms.get_drop_entity_function_sql(p_entity_name=self.name)
 
 
 class SourceTable(_DWHObject):
