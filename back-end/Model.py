@@ -335,6 +335,12 @@ class Model:
         l_entity=Entity(
             p_id=self.entity_param.id
         )
+        # изменяем у объекта описание
+        l_entity.desc=self.entity_param.desc
+        # проверяем метаданные
+        self.__metadata_checker(p_entity=l_entity)
+        # обновляем метаданные
+        self.__update_metadata(p_entity=l_entity)
 
     def __create_entity(self) -> object:
         """

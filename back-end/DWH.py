@@ -1219,6 +1219,12 @@ class _DWHObject:
                     C_NAME:self.name,
                 }
             )
+        if self.desc:
+            l_json.update(
+                {
+                    C_DESC:self.desc,
+                }
+            )
         # атрибуты объекта Attribute
         if type(self).__name__=="Attribute":
             l_json.update(
