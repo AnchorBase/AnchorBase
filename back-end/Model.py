@@ -207,37 +207,31 @@ class Model:
         # Окончание блока обработки параметров модели и создание объектов
         ########
 
+        # создаем лист из всех объектов, которые нужно создать в ЕХД
+        l_obj=self.__get_object_list(p_entity_child=l_entity, p_source_table=l_source_table_list)
         ########
         # Блок создания DDL и ETL
         #######
         # формируем ddl
-        l_ddl=self.__get_ddl(
-            p_source_table=l_source_table_list,
-            p_idmap=l_idmap,
-            p_anchor=l_anchor,
-            p_attribute_table=l_attribute_table_list,
-            p_tie=l_tie_list,
-            p_entity=l_entity
-        )
+        l_ddl=self.__get_create_table_sql(p_objects=l_obj) # таблицы
+        l_ddl+=self.__get_create_view_sql(p_objects=l_obj) # представления
+        l_ddl+=l_entity.get_entity_function()
         # проверяем ddl
         self.__ddl_checker(p_ddl=l_ddl)
+        # заново формируем список объектов, добавляя туда атрибуты и сущность
+        l_obj=self.__get_object_list(
+            p_entity=l_entity,
+            p_entity_child=l_entity,
+            p_source_table=l_source_table_list,
+            p_attribute=1
+        )
         # проверяем метаданные
         self.__metadata_checker(
-            p_entity=l_entity,
-            p_source_table=l_source_table_list,
-            p_idmap=l_idmap,
-            p_anchor=l_anchor,
-            p_attribute_table=l_attribute_table_list,
-            p_tie=l_tie_list
+            p_objects=l_obj
         )
         # вставляем метаданные
         self.__create_metadata(
-            p_entity=l_entity,
-            p_source_table=l_source_table_list,
-            p_idmap=l_idmap,
-            p_anchor=l_anchor,
-            p_attribute_table=l_attribute_table_list,
-            p_tie=l_tie_list
+            p_objects=l_obj
         )
         # создаем таблицы и представления в ХД
         self.__create_ddl(p_ddl=l_ddl)
@@ -252,19 +246,7 @@ class Model:
         l_entity=Entity(
             p_id=self.entity_param.id
         ) # если id указан некорректно - проверка происходит при инициализации
-        # формируем скрипт удаления всех представлений сущности
-        # удаление idmap
-        l_drop_sql=drop_view_ddl(p_table=l_entity.idmap)+"\n"
-        # удаление anchor
-        l_drop_sql+=drop_view_ddl(p_table=l_entity.anchor)+"\n"
-        # удаление attribute
-        for i_attribute in l_entity.attribute_table:
-            l_drop_sql+=drop_view_ddl(p_table=i_attribute)+"\n"
-        # удаление tie
-        if l_entity.tie:
-            for i_tie in l_entity.tie:
-                l_drop_sql+=drop_view_ddl(p_table=i_tie)+"\n"
-        # удаляем tie, где переименованная сущность - связанная
+        # находим tie, где переименованная сущность - связанная
         l_link_tie_meta=meta.search_object(
             p_type=C_TIE,
             p_attrs={C_LINK_ENTITY:self.entity_param.id}
@@ -274,56 +256,48 @@ class Model:
             l_link_ties=[]
             for i_tie in l_link_tie_meta:
                 l_link_tie=Tie(p_id=str(i_tie.uuid))
-                l_drop_sql+=drop_view_ddl(p_table=l_link_tie)+"\n"
                 l_link_ties.append(l_link_tie)
+        # создаем лист из всех объектов, для которых нужно переделать представления
+        l_obj=self.__get_object_list(
+            p_entity_child=l_entity,
+            p_tie=l_link_ties
+        )
+        # формируем скрипт удаления всех представлений сущности
+        l_sql=self.__get_drop_view_sql(p_objects=l_obj)
         # удаление функции-конструктора запросов
-        l_drop_sql+=l_entity.get_drop_entity_function_sql()+"\n"
+        l_sql+=l_entity.get_drop_entity_function_sql()+"\n"
         # изменяем имя у сущности, а также у таблиц и ее атрибутов
         l_entity.name=self.entity_param.name # автоматически заменяются имена у всех производных объектов
         # отдельно заменяем наименование у tie, где переименованная сущность - связанная
-        for i_link_tie in l_link_ties:
-            i_link_tie.link_entity=l_entity
-        # формируем скрипт создания представлений с новым наименованием
-        # idmap
-        l_create_sql=create_view_ddl(p_table=l_entity.idmap)+"\n"
-        # anchor
-        l_create_sql+=create_view_ddl(p_table=l_entity.anchor)+"\n"
-        # attribute
-        for i_attribute in l_entity.attribute_table:
-            l_create_sql+=create_view_ddl(p_table=i_attribute)+"\n"
-        # tie
-        if l_entity.tie:
-            for i_tie in l_entity.tie:
-                l_create_sql+=create_view_ddl(p_table=i_tie)+"\n"
-        # link_tie
         if l_link_ties:
             for i_link_tie in l_link_ties:
-                l_create_sql+=create_view_ddl(p_table=i_link_tie)+"\n"
+                i_link_tie.link_entity=l_entity
+
+        l_obj=self.__get_object_list(
+            p_entity_child=l_entity,
+            p_tie=l_link_ties
+        )
+        # формируем скрипт создания представлений с новым наименованием
+        l_sql+=self.__get_create_view_sql(p_objects=l_obj)
         # пересоздаем функцию-конструктор запросов
-        l_create_sql+=l_entity.get_entity_function()
-        l_sql=l_drop_sql+l_create_sql
+        l_sql+=l_entity.get_entity_function()
         # проверяем ddl
         self.__ddl_checker(p_ddl=l_sql)
+        # заново формируем список объектов, добавляя туда сущность и атрибуты объектов
+        l_obj=self.__get_object_list(
+            p_entity=l_entity,
+            p_entity_child=l_entity,
+            p_tie=l_link_ties,
+            p_attribute=1
+        )
         # проверяем метаданные
         self.__metadata_checker(
-            p_entity=l_entity,
-            p_idmap=l_entity.idmap,
-            p_anchor=l_entity.anchor,
-            p_attribute_table=l_entity.attribute_table,
-            p_tie=l_entity.tie
+            p_objects=l_obj
         )
-        # дополнительно проверяем link_tie
-        self.__metadata_checker(p_tie=l_link_ties)
         # записываем метаданные
         self.__update_metadata(
-            p_entity=l_entity,
-            p_idmap=l_entity.idmap,
-            p_anchor=l_entity.anchor,
-            p_attribute_table=l_entity.attribute_table,
-            p_tie=l_entity.tie
+            p_objects=l_obj
         )
-        # дополнительно обновляем link_tie
-        self.__update_metadata(p_tie=l_link_ties)
         # выполняем ddl
         self.__create_ddl(p_ddl=l_sql)
 
@@ -338,9 +312,52 @@ class Model:
         # изменяем у объекта описание
         l_entity.desc=self.entity_param.desc
         # проверяем метаданные
-        self.__metadata_checker(p_entity=l_entity)
+        self.__metadata_checker(p_objects=[l_entity])
         # обновляем метаданные
-        self.__update_metadata(p_entity=l_entity)
+        self.__update_metadata(p_objects=[l_entity])
+
+    def drop_entity(self):
+        """
+        Удаляет сущность
+        """
+        # инициализируем объект сущности
+        l_entity=Entity(
+            p_id=self.entity_param.id
+        )
+        # находим tie, где переименованная сущность - связанная
+        l_link_tie_meta=meta.search_object(
+            p_type=C_TIE,
+            p_attrs={C_LINK_ENTITY:self.entity_param.id}
+        )
+        l_link_ties=None
+        if l_link_tie_meta.__len__()>0:
+            l_link_ties=[]
+            for i_tie in l_link_tie_meta:
+                l_link_tie=Tie(p_id=str(i_tie.uuid))
+                l_link_ties.append(l_link_tie)
+        # формируем список объектов, которые требуется удалить
+        l_obj=self.__get_object_list(p_entity_child=l_entity, p_tie=l_link_ties)
+        # формируем скрипт удаления объектов
+        l_sql=l_entity.get_drop_entity_function_sql()+"\n"
+        l_sql+=self.__get_drop_view_sql(p_objects=l_obj)
+        l_sql+=self.__get_drop_table_sql(p_objects=l_obj)
+        # проверяем скрипт
+        self.__ddl_checker(p_ddl=l_sql)
+        # формируем метаданные для удаления
+        # снова формируем список объектов
+        l_obj=self.__get_object_list(
+            p_entity_child=l_entity,
+            p_entity=l_entity,
+            p_tie=l_link_ties,
+            p_attribute=1
+        )
+        # удаляем метаданные
+        self.__delete_metadata(p_objects=l_obj)
+        # обновляем метаданные у сущностей, которые ссылались на удаленный tie (l_link_tie)
+        # for i_link_tie in l_link_ties:
+        #TODO: вынести проверку метаданные и ddl, а также их запуск в отедльный метод
+
+
 
     def __create_entity(self) -> object:
         """
@@ -531,50 +548,129 @@ class Model:
         )
         return l_idmap
 
-    def __get_ddl(self,
-                  p_source_table: list,
-                  p_idmap: object,
-                  p_anchor: object,
-                  p_attribute_table: list,
-                  p_tie: list,
-                  p_entity: object
+    def __get_object_list(
+            self,
+            p_entity: object =None,
+            p_entity_child: object =None,
+            p_idmap: list =None,
+            p_anchor: list =None,
+            p_attribute_table: list =None,
+            p_tie: list =None,
+            p_source_table: list =None, 
+            p_attribute: int =0
     ):
         """
-        Генерирует общий скрипт DDL для всех объектов сущности
+        Собирает в список указанные объекты
+        Если указана сущность (p_entity_child), будут собираться все ее дочерние объекты.
 
-        :param p_source_table: таблица источник
-        :param p_idmap: idmap сущности
-        :param p_anchor: якорь cущности
-        :param p_attribute_table: таблица атрибут сущности
-        :param p_tie: связь сущности
         :param p_entity: сущность
+        :param p_entity_child: сущность, для которой нужно добавить дочерние объекты
+        :param p_idmap: idmap (лист объектов)
+        :param p_anchor: якорная таблица (лист объектов)
+        :param p_attribute_table: таблица атрибута (лист объектов)
+        :param p_tie: таблица связи (лист объектов)
+        :param p_source_table: таблица источник (лист объектов)
+        :param p_attribute: признак, что также нужно добавить атрибуты объектов (по-дефолту 0)
         """
-        l_ddl="" # список со всеми DDL объектов сущности
+        l_obj=[] # лист объектов, для которых требуется сформировать скрипт
 
-        # формируем скрипт для таблиц источников
-        for i_source_table in p_source_table: # таблиц источников у сущности может быть несколько
-            # сперва удаление таблицы источника (если существует)
-            l_ddl+=drop_table_ddl(p_table=i_source_table)+"\n"
-            # создание таблицы источника
-            l_ddl+=create_table_ddl(p_table=i_source_table)+"\n"
-            l_ddl+=create_view_ddl(p_table=i_source_table)+"\n"
-        # формируем скрипт для idmap
-        l_ddl+=create_table_ddl(p_table=p_idmap)+"\n"
-        l_ddl+=create_view_ddl(p_table=p_idmap)+"\n"
-        # формируем скрипт для anchor
-        l_ddl+=create_table_ddl(p_table=p_anchor)+"\n"
-        l_ddl+=create_view_ddl(p_table=p_anchor)+"\n"
-        # формируем скрипт для attribute
-        for i_attribute_table in p_attribute_table: # может быть несколько
-            l_ddl+=create_table_ddl(p_table=i_attribute_table)+"\n"
-            l_ddl+=create_view_ddl(p_table=i_attribute_table)+"\n"
-        # формируем скрипт для tie
-        for i_tie in p_tie:  # может быть несколько
-            l_ddl+=create_table_ddl(p_table=i_tie)+"\n"
-            l_ddl+=create_view_ddl(p_table=i_tie)+"\n"
-        # формируем скрипт для функции - конструктора запросов для сущности
-        l_ddl+=p_entity.get_entity_function()
-        return l_ddl
+        if p_source_table:
+            l_obj.extend(p_source_table)
+            if p_attribute==1:
+                for i_table in p_source_table:
+                    l_obj.extend(i_table.source_attribute)
+        if p_anchor:
+            l_obj.extend(p_anchor)
+            if p_attribute==1:
+                for i_table in p_anchor:
+                    l_obj.extend(i_table.anchor_attribute)
+        if p_attribute_table:
+            l_obj.extend(p_attribute_table)
+            if p_attribute==1:
+                for i_table in p_attribute_table:
+                    l_obj.extend(i_table.attribute_table_attribute)
+        if p_tie:
+            l_obj.extend(p_tie)
+            if p_attribute==1:
+                for i_table in p_tie:
+                    l_obj.extend(i_table.tie_attribute)
+        if p_idmap:
+            l_obj.extend(p_idmap)
+            if p_attribute==1:
+                for i_table in p_idmap:
+                    l_obj.extend(i_table.idmap_attribute)
+        if p_entity_child: # если указана сущность - из нее вытаскиваются все дочерние объекты
+            l_obj.extend(
+                [
+                    p_entity_child.anchor,
+                    p_entity_child.idmap
+                ]
+            )
+            if p_attribute==1:
+                l_obj.extend(p_entity_child.anchor.anchor_attribute)
+                l_obj.extend(p_entity_child.idmap.idmap_attribute)
+            for i_attribute_table in p_entity_child.attribute_table:
+                l_obj.append(i_attribute_table)
+                if p_attribute==1:
+                    l_obj.extend(i_attribute_table.attribute_table_attribute)
+            if p_entity_child.tie:
+                for i_tie in p_entity_child.tie:
+                    l_obj.append(i_tie)
+                    if p_attribute==1:
+                        l_obj.extend(i_tie.tie_attribute)
+        if p_entity:
+            l_obj.append(p_entity)
+            if p_attribute==1:
+                l_obj.extend(p_entity.entity_attribute)
+        return l_obj
+
+    def __get_create_table_sql(self, p_objects: list) -> str:
+        """
+        Генерирует SQL по созданию таблиц
+
+        :param p_objects: лист объектов, для которых требуется сформировать SQL
+        """
+        l_sql=""
+        for i_obj in p_objects:
+            l_sql+=create_table_ddl(p_table=i_obj)+"\n"
+
+        return l_sql
+
+    def __get_create_view_sql(self, p_objects: list) -> str:
+        """
+        Генерирует SQL по созданию представлений
+
+        :param p_objects: лист объектов, для которых требуется сформировать SQL
+        """
+        l_sql=""
+        for i_obj in p_objects:
+            l_sql+=create_view_ddl(p_table=i_obj)+"\n"
+
+        return l_sql
+
+    def __get_drop_table_sql(self, p_objects: list) -> str:
+        """
+        Генерирует SQL по удалению таблиц
+
+        :param p_objects: лист объектов, для которых требуется сформировать SQL
+        """
+        l_sql=""
+        for i_obj in p_objects:
+            l_sql+=drop_table_ddl(p_table=i_obj)+"\n"
+
+        return l_sql
+
+    def __get_drop_view_sql(self, p_objects: list) -> str:
+        """
+        Генерирует SQL по удалению представлений
+
+        :param p_objects: лист объектов, для которых требуется сформировать SQL
+        """
+        l_sql=""
+        for i_obj in p_objects:
+            l_sql+=drop_view_ddl(p_table=i_obj)+"\n"
+
+        return l_sql
 
     def __ddl_checker(self, p_ddl: str):
         """
@@ -588,164 +684,45 @@ class Model:
             sys.exit("В сформированном DDL ошибка \n"+str(l_result[1]))
 
 
-    def __metadata_checker(self,
-                           p_entity: object =None,
-                           p_source_table: list =None,
-                           p_idmap: object =None,
-                           p_anchor: object =None,
-                           p_attribute_table: list =None,
-                           p_tie: list =None):
+    def __metadata_checker(self,p_objects: list):
         """
         Проверяет корректнось метаданных
 
-        :param p_entity: сущность
-        :param p_source_table: таблицы источники
-        :param p_idmap: idmap таблица
-        :param p_anchor: якорь сущности
-        :param p_attribute_table: таблицы атрибуты
-        :param p_tie: таблицы связи
+        :param p_objects: лист объектов, для которых требуется проверить метаданные
         """
         # метаданные сущности и ее атрибутов
-        if p_entity:
-            p_entity.metadata_object.attrs_checker()
-            for i_entity_attribute in p_entity.entity_attribute:
-                i_entity_attribute.metadata_object.attrs_checker()
-        # таблицы источники и их атрибуты
-        if p_source_table:
-            for i_source_table in p_source_table:
-                i_source_table.metadata_object.attrs_checker()
-                for i_source_attribute in i_source_table.source_attribute:
-                    i_source_attribute.metadata_object.attrs_checker()
-        # idmap и его атрибуты
-        if p_idmap:
-            p_idmap.metadata_object.attrs_checker()
-            for i_idmap_attribute in p_idmap.idmap_attribute:
-                i_idmap_attribute.metadata_object.attrs_checker()
-        # якорь и его атрибуты
-        if p_anchor:
-            p_anchor.metadata_object.attrs_checker()
-            for i_anchor_attribute in p_anchor.anchor_attribute:
-                i_anchor_attribute.metadata_object.attrs_checker()
-        # таблицы атрибуты и их атрибуты
-        if p_attribute_table:
-            for i_attribute_table in p_attribute_table:
-                i_attribute_table.metadata_object.attrs_checker()
-                for i_attribute_table_attribute in i_attribute_table.attribute_table_attribute:
-                    i_attribute_table_attribute.metadata_object.attrs_checker()
-        # таблицы связи и их атрибуты
-        if p_tie:
-            for i_tie in p_tie:
-                i_tie.metadata_object.attrs_checker()
-                for i_tie_attribute in i_tie.tie_attribute:
-                    i_tie_attribute.metadata_object.attrs_checker()
+        for i_obj in p_objects:
+            i_obj.metadata_object.attrs_checker()
 
-    def __create_metadata(self,
-                          p_entity: object =None,
-                          p_source_table: list =None,
-                          p_idmap: object =None,
-                          p_anchor: object =None,
-                          p_attribute_table: list =None,
-                          p_tie: list =None):
+    def __create_metadata(self,p_objects: list):
         """
         Записывает метаданные
 
-        :param p_entity: сущность
-        :param p_source_table: таблицы источники
-        :param p_idmap: idmap таблица
-        :param p_anchor: якорь сущности
-        :param p_attribute_table: таблицы атрибуты
-        :param p_tie: таблицы связи
+        :param p_objects: лист объектов, которым требуется записать метаданные
         """
         # метаданные сущности и ее атрибутов
-        if p_entity:
-            p_entity.create_metadata()
-            for i_entity_attribute in p_entity.entity_attribute:
-                i_entity_attribute.create_metadata()
-        if p_source_table:
-            # таблицы источники и их атрибуты
-            for i_source_table in p_source_table:
-                # сперва удаляем таблицу источник из метеданных (так как она могла существовать ранее)
-                i_source_table.delete_metadata()
-                i_source_table.create_metadata()
-                for i_source_attribute in i_source_table.source_attribute:
-                    # сперва удаляем атрибуты таблицы источника
-                    i_source_attribute.delete_metadata()
-                    i_source_attribute.create_metadata()
-        # idmap и его атрибуты
-        if p_idmap:
-            p_idmap.create_metadata()
-            for i_idmap_attribute in p_idmap.idmap_attribute:
-                i_idmap_attribute.create_metadata()
-        # якорь и его атрибуты
-        if p_anchor:
-            p_anchor.create_metadata()
-            for i_anchor_attribute in p_anchor.anchor_attribute:
-                i_anchor_attribute.create_metadata()
-        # таблицы атрибуты и их атрибуты
-        if p_attribute_table:
-            for i_attribute_table in p_attribute_table:
-                i_attribute_table.create_metadata()
-                for i_attribute_table_attribute in i_attribute_table.attribute_table_attribute:
-                    i_attribute_table_attribute.create_metadata()
-        # таблицы связи и их атрибуты
-        if p_tie:
-            for i_tie in p_tie:
-                i_tie.create_metadata()
-                for i_tie_attribute in i_tie.tie_attribute:
-                    i_tie_attribute.create_metadata()
+        for i_obj in p_objects:
+            i_obj.create_metadata()
 
-    def __update_metadata(self,
-                          p_entity: object =None,
-                          p_source_table: list =None,
-                          p_idmap: object =None,
-                          p_anchor: object =None,
-                          p_attribute_table: list =None,
-                          p_tie: list =None):
+    def __update_metadata(self,p_objects: list):
         """
         Обновляет метаданные
 
-        :param p_entity: сущность
-        :param p_source_table: таблицы источники
-        :param p_idmap: idmap таблица
-        :param p_anchor: якорь сущности
-        :param p_attribute_table: таблицы атрибуты
-        :param p_tie: таблицы связи
+        :param p_objects: лист объектов, для которых требуется перезаписать метаданные
         """
         # метаданные сущности и ее атрибутов
-        if p_entity:
-            p_entity.update_metadata()
-            for i_entity_attribute in p_entity.entity_attribute:
-                i_entity_attribute.update_metadata()
-        if p_source_table:
-            # таблицы источники и их атрибуты
-            for i_source_table in p_source_table:
-                # сперва удаляем таблицу источник из метеданных (так как она могла существовать ранее)
-                i_source_table.update_metadata()
-                for i_source_attribute in i_source_table.source_attribute:
-                    # сперва удаляем атрибуты таблицы источника
-                    i_source_attribute.update_metadata()
-        # idmap и его атрибуты
-        if p_idmap:
-            p_idmap.update_metadata()
-            for i_idmap_attribute in p_idmap.idmap_attribute:
-                i_idmap_attribute.update_metadata()
-        # якорь и его атрибуты
-        if p_anchor:
-            p_anchor.update_metadata()
-            for i_anchor_attribute in p_anchor.anchor_attribute:
-                i_anchor_attribute.update_metadata()
-        # таблицы атрибуты и их атрибуты
-        if p_attribute_table:
-            for i_attribute_table in p_attribute_table:
-                i_attribute_table.update_metadata()
-                for i_attribute_table_attribute in i_attribute_table.attribute_table_attribute:
-                    i_attribute_table_attribute.update_metadata()
-        # таблицы связи и их атрибуты
-        if p_tie:
-            for i_tie in p_tie:
-                i_tie.update_metadata()
-                for i_tie_attribute in i_tie.tie_attribute:
-                    i_tie_attribute.update_metadata()
+        for i_obj in p_objects:
+            i_obj.update_metadata()
+
+    def __delete_metadata(self,p_objects: list):
+        """
+        Удаляет метаданные
+
+        :param p_objects: лист объектов, для которых требуется удалить метаданные
+        """
+        # метаданные сущности и ее атрибутов
+        for i_obj in p_objects:
+            i_obj.delete_metadata()
 
     def __create_ddl(self, p_ddl: str):
         """
