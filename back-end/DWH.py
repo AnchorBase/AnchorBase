@@ -818,6 +818,7 @@ class _DWHObject:
     def __init__(self,
                  p_type: str,
                  p_id: str =None,
+                 p_name: str =None,
                  p_source_table =None,
                  p_source_attribute =None,
                  p_entity =None,
@@ -858,6 +859,7 @@ class _DWHObject:
         self._tie_attribute=p_tie_attribute
         self._desc=p_desc
         self._source=p_source
+        self._name=p_name
 
         # проверяем, есть ли указанный id и определяем атрибуты из метаданных
         self.object_attrs_meta=self.__object_attrs_meta()
@@ -1227,31 +1229,32 @@ class _DWHObject:
             )
         # атрибуты объекта Attribute
         if type(self).__name__=="Attribute":
-            l_json.update(
-                {
-                    C_TYPE_VALUE:self.attribute_type,
-                    C_DATATYPE:self.datatype.data_type_name,
-                    C_LENGTH:self.datatype.data_type_length,
-                    C_SCALE:self.datatype.data_type_scale
-                }
-            )
+            if self.attribute_type:
+                l_json.update({C_TYPE_VALUE:self.attribute_type})
+            if self.datatype:
+                l_json.update(
+                    {
+                        C_DATATYPE:self.datatype.data_type_name,
+                        C_LENGTH:self.datatype.data_type_length,
+                        C_SCALE:self.datatype.data_type_scale
+                    }
+                )
             if self.type==C_ENTITY_COLUMN: # если атрибут сущности
                 l_json.update(
                     {
-                        C_PK:self.pk,
+                        C_PK:self.pk
                     }
                 )
-                l_json.pop(C_TYPE_VALUE) # убираем атрибут type
+
 
         # атрибуты queue таблицы
         if self.type==C_QUEUE:
-            l_json.update(
-                {
-                    C_SCHEMA:self.schema,
-                    C_SOURCE_NAME:self.name,
-                    C_NAME:self.queue_name # переопределяем наименование
-                }
-            )
+            if self.schema:
+                l_json.update({C_SCHEMA:self.schema})
+            if self.name:
+                 l_json.update({C_SOURCE_NAME:self.name})
+            if self.queue_name:
+                l_json.update({C_NAME:self.queue_name})
         # если указана связанная queue таблица
         if self.source_table:
             l_json.update(
@@ -1281,7 +1284,7 @@ class _DWHObject:
                 }
             )
         # если указаны натуральные ключи
-        if self.type==C_IDMAP:
+        if self.type==C_IDMAP and self.source_attribute_nk:
             l_json.update(
                 {
                     C_ATTRIBUTE_NK:self.__get_property_id(p_property=self.source_attribute_nk)
@@ -1430,15 +1433,14 @@ class _DWHObject:
                 )
         return l_json
 
-    @property
-    def metadata_object(self) -> object:
+    def metadata_object(self, p_id: str =None, p_attrs: dict =None) -> object:
         """
         Объект метаданных
         """
         return meta.MetaObject(
             p_type=self.type,
-            p_uuid=str(self.id),
-            p_attrs=self.metadata_json
+            p_uuid=str(p_id) if p_id else None,
+            p_attrs=p_attrs
 
         )
 
@@ -1446,16 +1448,22 @@ class _DWHObject:
         """
         Записывает метаданные объекта
         """
-        meta.create_object(
-            p_object=self.metadata_object
-        )
+        l_obj_meta=meta.search_object(p_uuid=[str(self.id)], p_type=self.type)
+        if l_obj_meta.__len__()>0: # если объект уже существует в метаданных - обновляем его атрибуты
+            meta.update_object(
+                p_object=self.metadata_object(p_id=self.id, p_attrs=self.metadata_json)
+            )
+        else:
+            meta.create_object(
+                p_object=self.metadata_object(p_id=self.id, p_attrs=self.metadata_json)
+            )
 
     def update_metadata(self):
         """
         Обновляет метаданные объекта
         """
         meta.update_object(
-            p_object=self.metadata_object
+            p_object=self.metadata_object(p_id=self.id, p_attrs=self.metadata_json)
         )
 
     def delete_metadata(self):
@@ -1463,7 +1471,7 @@ class _DWHObject:
         Удаляет метаданные объекта
         """
         meta.delete_object(
-            p_object=self.metadata_object
+            p_object=self.metadata_object(p_id=self.id)
         )
 
 
@@ -1598,9 +1606,9 @@ class Entity(_DWHObject):
             p_anchor=p_anchor,
             p_attribute_table=p_attribute_table,
             p_tie=p_tie,
-            p_desc=p_desc
+            p_desc=p_desc,
+            p_name=p_name
         )
-        self._name=p_name
 
     @property
     def name(self):

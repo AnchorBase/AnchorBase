@@ -189,7 +189,7 @@ class MetaObject:
     """
     def __init__(self,
                  p_type: str,
-                 p_attrs: dict,
+                 p_attrs: dict =None,
                  p_uuid: str =None
     ):
         """
@@ -255,7 +255,7 @@ class MetaObject:
                 sys.exit("Некорректный атрибут "+str(i_attr))
             # проверка, что тип данных у атрибутов указан верно
             if type(self._attrs.get(i_attr,None)).__name__!=l_all_attrs_dict.get(i_attr,None).get(C_TYPE_VALUE) and self._attrs.get(i_attr,None) is not None:
-                sys.exit("Значение атрибута "+str(i_attr)+" некорректное")
+                sys.exit("Значение атрибута "+str(i_attr)+" у "+str(self.uuid)+" некорректное")
             # проверка на дубль значения атрибута (только у ключевых атрибутов метаданных)
             if l_all_attrs_dict.get(i_attr, None).get(C_PK)==1: # если атрибут ключевой
                 # достаем в объекты метаданных с таким же значением атрибута
