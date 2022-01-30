@@ -889,6 +889,7 @@ class _DWHObject:
     @name.setter
     def name(self, p_new_name: str):
         self._name=p_new_name
+        self.object_attrs_meta.pop(C_NAME, None)
 
     def __object_attrs_meta(self):
         """
@@ -932,6 +933,7 @@ class _DWHObject:
     def source(self, p_new_source):
 
         self._source=p_new_source
+        self.object_attrs_meta.pop(C_SOURCE, None)
 
     @property
     def source_table(self):
@@ -951,6 +953,7 @@ class _DWHObject:
     def source_table(self, p_new_source_table):
 
         self._source_table=p_new_source_table
+        self.object_attrs_meta.pop(C_QUEUE, None)
 
     @property
     def source_attribute(self):
@@ -970,6 +973,7 @@ class _DWHObject:
     def source_attribute(self, p_new_source_attribute):
 
         self._source_attribute=p_new_source_attribute
+        self.object_attrs_meta.pop(C_QUEUE_COLUMN, None)
 
     @property
     def entity(self):
@@ -989,6 +993,7 @@ class _DWHObject:
     def entity(self, p_new_entity):
 
         self._entity=p_new_entity
+        self.object_attrs_meta.pop(C_ENTITY, None)
 
     @property
     def link_entity(self):
@@ -1008,6 +1013,7 @@ class _DWHObject:
     def link_entity(self, p_new_link_entity):
 
         self._link_entity=p_new_link_entity
+        self.object_attrs_meta.pop(C_LINK_ENTITY, None)
 
     @property
     def entity_attribute(self):
@@ -1027,6 +1033,7 @@ class _DWHObject:
     def entity_attribute(self, p_new_entity_attribute):
 
         self._entity_attribute=p_new_entity_attribute
+        self.object_attrs_meta.pop(C_ENTITY_COLUMN, None)
 
     @property
     def idmap(self):
@@ -1046,6 +1053,7 @@ class _DWHObject:
     def idmap(self, p_new_idmap):
 
         self._idmap=p_new_idmap
+        self.object_attrs_meta.pop(C_IDMAP, None)
 
     @property
     def idmap_attribute(self):
@@ -1065,6 +1073,7 @@ class _DWHObject:
     def idmap_attribute(self, p_new_idmap_attribute):
 
         self._idmap_attribute=p_new_idmap_attribute
+        self.object_attrs_meta.pop(C_IDMAP_COLUMN, None)
 
     @property
     def anchor(self):
@@ -1084,6 +1093,7 @@ class _DWHObject:
     def anchor(self, p_new_anchor):
 
         self._anchor=p_new_anchor
+        self.object_attrs_meta.pop(C_ANCHOR, None)
 
     @property
     def anchor_attribute(self):
@@ -1103,6 +1113,7 @@ class _DWHObject:
     def anchor_attribute(self, p_new_anchor_attribute):
 
         self._anchor_attribute=p_new_anchor_attribute
+        self.object_attrs_meta.pop(C_ANCHOR_COLUMN, None)
 
     @property
     def attribute_table(self):
@@ -1122,6 +1133,7 @@ class _DWHObject:
     def attribute_table(self, p_new_attribute_table):
 
         self._attribute_table=p_new_attribute_table
+        self.object_attrs_meta.pop(C_ATTRIBUTE_TABLE, None)
 
     @property
     def attribute_table_attribute(self):
@@ -1141,6 +1153,7 @@ class _DWHObject:
     def attribute_table_attribute(self, p_new_attribute_table_attribute):
 
         self._attribute_table_attribute=p_new_attribute_table_attribute
+        self.object_attrs_meta.pop(C_ATTRIBUTE_COLUMN, None)
 
     @property
     def tie(self):
@@ -1160,6 +1173,7 @@ class _DWHObject:
     def tie(self, p_new_tie):
 
         self._tie=p_new_tie
+        self.object_attrs_meta.pop(C_TIE, None)
 
     @property
     def tie_attribute(self):
@@ -1179,6 +1193,7 @@ class _DWHObject:
     def tie_attribute(self, p_new_tie_attribute):
 
         self._tie_attribute=p_new_tie_attribute
+        self.object_attrs_meta.pop(C_TIE_COLUMN, None)
 
     @property
     def desc(self):
@@ -1191,6 +1206,7 @@ class _DWHObject:
     def desc(self, p_new_desc):
 
         self._desc=p_new_desc
+        self.object_attrs_meta.pop(C_DESC, None)
 
     def __get_property_id(self,p_property):
         """
