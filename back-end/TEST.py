@@ -312,14 +312,17 @@ l_json2="""
 #     l_entity.get_entity_function()
 # )
 
-l_job=DWH.Job(
-    p_id='b7968b8e-19dc-4851-955f-c799b5ea0e49'
-)
+# l_job=DWH.Job(
+#     p_id='b7968b8e-19dc-4851-955f-c799b5ea0e49'
+# )
+#
+# l_package=DWH.Package(p_id='86274565-bcc1-48b1-bbfe-b23e81150b15', p_type='queue_etl')
+#
+# print(l_job.status)
 
-l_package=DWH.Package(p_id='86274565-bcc1-48b1-bbfe-b23e81150b15', p_type='queue_etl')
 
-print(l_job.status)
-
+l_table=DWH.AttributeTable(p_id='dd522776-f90f-4c16-a2f2-53fa3e13c2b7')
+print(DWH.drop_view_ddl(p_table=l_table))
 
 
 
