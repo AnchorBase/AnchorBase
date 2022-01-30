@@ -508,6 +508,7 @@ C_GET_LAST_ETL="get_last_etl" # получение информации о по�
 C_GET_ETL_HIST="get_etl_hist" # получение логов etl-процессов
 C_GET_ETL_DETAIL="get_etl_detail" # получение детализации по etl-процессу
 C_ADD_ENTITY="add_entity" # добавление сущности в ХД
+C_RENAME_ENTITY="rename_entity" # переименование сущности в ХД
 C_EXIT="exit"
 C_HELP="help"
 C_CONSOLE_COMMAND_LIST=[
@@ -524,6 +525,7 @@ C_CONSOLE_COMMAND_LIST=[
     C_GET_ETL_HIST,
     C_GET_ETL_DETAIL,
     C_ADD_ENTITY,
+    C_RENAME_ENTITY,
     C_EXIT,
     C_HELP
 ]
@@ -602,6 +604,10 @@ C_CONSOLE_ARGS={
     C_GET_ETL_DETAIL:{
         C_ID_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"дата выполнения etl-процесса в формате YYYY-MM-DD (необязательный)"},
         C_ETL_ID_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"дата выполнения etl-процесса в формате YYYY-MM-DD (необязательный)"}
+    },
+    C_RENAME_ENTITY:{
+        C_ID_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"id сущности (обязательный)"},
+        C_NAME_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"наименование сущности (обязательный)"}
     }
 }
 # описание команд консоли
@@ -664,6 +670,11 @@ C_CONSOLE_COMMAND_DESC={
                         C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tДобавляет сущность в ХД на основе заданных параметров. Генерирует таблицы и ETL.\n"+
                         C_COLOR_BOLD+"Аргументы:"+C_COLOR_ENDC+"\n\t"+
                         C_COLOR_OKCYAN+C_ID_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ADD_ENTITY).get(C_FILE_CONSOLE_ARG).get(C_DESC),
+    C_RENAME_ENTITY:"\n"+C_COLOR_HEADER+C_RENAME_ENTITY+C_COLOR_ENDC+"\n"+
+                    C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tПереименовывает заданную сущность в ХД, а также все связанные таблицы и атрибуты\n"+
+                    C_COLOR_BOLD+"Аргументы:"+C_COLOR_ENDC+"\n\t"+
+                    C_COLOR_OKCYAN+C_ID_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_RENAME_ENTITY).get(C_ID_CONSOLE_ARG).get(C_DESC)+"\n\t"+
+                    C_COLOR_OKCYAN+C_NAME_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_RENAME_ENTITY).get(C_NAME_CONSOLE_ARG).get(C_DESC),
     C_START_JOB:"\n"+C_COLOR_HEADER+C_START_JOB+C_COLOR_ENDC+"\n"+
                 C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tЗапускает загрузку данных в ХД\n"+
                 C_COLOR_BOLD+"Аргументы:"+C_COLOR_ENDC+"\n\t"+

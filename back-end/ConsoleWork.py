@@ -160,7 +160,6 @@ def __command_exec(p_command: str, p_arg: dict =None, p_help_command: str =None)
         )
     elif p_command==C_ADD_ENTITY:
         # считываем содержимое файла
-        l_json=None
         if p_arg.get(C_FILE_CONSOLE_ARG): # если пользователь указал файл с параметрами сущности
             l_file=File(p_file_path=p_arg.get(C_FILE_CONSOLE_ARG))
             l_entity_param=l_file.file_body
@@ -170,6 +169,14 @@ def __command_exec(p_command: str, p_arg: dict =None, p_help_command: str =None)
             input()
             l_entity_param=File(p_file_path=C_ENTITY_PARAM_TEMPLATE_FILE_PATH)
             l_json=add_entity(p_json=l_entity_param.file_body)
+    elif p_command==C_RENAME_ENTITY:
+        # формируем json
+        l_input_json={
+            C_ID:p_arg.get(C_ID_CONSOLE_ARG),
+            C_ENTITY:p_arg.get(C_NAME_CONSOLE_ARG)
+        }
+        l_input_json=json.dumps(l_input_json)
+        l_json=rename_entity(p_json=l_input_json)
     elif p_command==C_EXIT:
         sys.exit()
     elif p_command==C_HELP:
