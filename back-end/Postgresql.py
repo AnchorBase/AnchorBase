@@ -476,6 +476,15 @@ def get_table_partition_etl(
 
     return l_etl
 
+def get_drop_entity_function_sql(p_entity_name: str) -> str:
+    """
+    Генерация скрипта удаления функции-конструктора запросов
+
+    :param p_entity_name: наименование сущности
+    """
+    l_sql="DROP FUNCTION IF EXISTS "+p_entity_name+"(TIMESTAMP, VARCHAR(1000));"
+    return l_sql
+
 def get_entity_function_sql(
     p_entity_name: str,
     p_entity_attribute_dict: dict
@@ -510,7 +519,7 @@ def get_entity_function_sql(
     # удаляем лишние символы (последние запятые и тд)
     l_entity_attribute_name_param=l_entity_attribute_name_param[:-1]
     l_entity_attribute_select_sql=l_entity_attribute_select_sql[:-2]
-    l_sql="DROP FUNCTION IF EXISTS "+p_entity_name+"(TIMESTAMP, VARCHAR(1000));\n" \
+    l_sql=get_drop_entity_function_sql(p_entity_name=p_entity_name)+"\n" \
           "CREATE OR REPLACE FUNCTION "+'"'+p_entity_name+'"'+"(\n\t"\
           "dt TIMESTAMP DEFAULT '5999-12-31'::TIMESTAMP,\n\t"\
           "col VARCHAR(1000) DEFAULT '"+l_entity_attribute_name_param+"'\n) RETURNS\n"\
