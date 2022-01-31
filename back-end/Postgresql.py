@@ -482,7 +482,7 @@ def get_drop_entity_function_sql(p_entity_name: str) -> str:
 
     :param p_entity_name: наименование сущности
     """
-    l_sql="DROP FUNCTION IF EXISTS "+p_entity_name+"(TIMESTAMP, VARCHAR(1000));"
+    l_sql="DROP FUNCTION IF EXISTS "+'"'+p_entity_name+'"'+"(TIMESTAMP, VARCHAR(1000));"
     return l_sql
 
 def get_entity_function_sql(

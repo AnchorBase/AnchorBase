@@ -160,16 +160,33 @@ def __command_exec(p_command: str, p_arg: dict =None, p_help_command: str =None)
         )
     elif p_command==C_ADD_ENTITY:
         # считываем содержимое файла
-        l_json=None
         if p_arg.get(C_FILE_CONSOLE_ARG): # если пользователь указал файл с параметрами сущности
             l_file=File(p_file_path=p_arg.get(C_FILE_CONSOLE_ARG))
             l_entity_param=l_file.file_body
-            l_json=add_entity(p_json=l_entity_param)
+            l_json=create_entity(p_json=l_entity_param)
         else: #  если пользователь не указал конкретный файл - передаем шаблон в json
             print(C_ENTITY_PARAM_TEMPLATE+"\n"+C_COLOR_WARNING+"Вставьте параметры сущности в соответствии с шаблоном выше в файл '..\Entity param.json' и нажмите в консоли любую кнопку"+C_COLOR_ENDC)
             input()
             l_entity_param=File(p_file_path=C_ENTITY_PARAM_TEMPLATE_FILE_PATH)
-            l_json=add_entity(p_json=l_entity_param.file_body)
+            l_json=create_entity(p_json=l_entity_param.file_body)
+    elif p_command==C_ALTER_ENTITY:
+        # формируем json
+        l_input_json={
+            C_ID:p_arg.get(C_ID_CONSOLE_ARG)
+        }
+        if p_arg.get(C_NAME_CONSOLE_ARG):
+                l_input_json.update({C_ENTITY:p_arg.get(C_NAME_CONSOLE_ARG)})
+        if p_arg.get(C_DESC_CONSOLE_ARG):
+            l_input_json.update({C_DESC:p_arg.get(C_DESC_CONSOLE_ARG)})
+        l_input_json=json.dumps(l_input_json)
+        l_json=alter_entity(p_json=l_input_json)
+    elif p_command==C_DROP_ENTITY:
+        # формируем json
+        l_input_json={
+            C_ID:p_arg.get(C_ID_CONSOLE_ARG)
+        }
+        l_input_json=json.dumps(l_input_json)
+        l_json=drop_entity(p_json=l_input_json)
     elif p_command==C_EXIT:
         sys.exit()
     elif p_command==C_HELP:

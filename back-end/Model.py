@@ -56,7 +56,7 @@ class Model:
         return l_entity
 
 
-    def create_model(self):
+    def create_entity(self):
         """
         Создает модель данных
         """
