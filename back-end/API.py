@@ -562,15 +562,26 @@ def add_entity(p_json: json):
     l_model.create_model()
     return _JsonOutput(p_json_object=None, p_message="Сущность успешно создана").body
 
-def rename_entity(p_json: json):
+def alter_entity(p_json: json):
     """
-    Переименовывает сущность в ХД
+    Изменяет созданную ранее сущность
 
-    :param p_json: json с указанием id и новым именем сущности
+    :param p_json: json с указанием id и новыми параметрами сущности
     """
+    l_message=""
+    l_json=json.loads(p_json)
     l_model=Model(p_json=p_json)
-    l_model.rename_entity()
-    return _JsonOutput(p_json_object=None, p_message="Сущность успешно переименована").body
+    #  хотя бы один параметр для изменения должен быть задан
+    if list(l_json.keys()).__len__()<2: # указан только id
+        return _JsonOutput(p_json_object=None, p_error="Не указано что должно поменяться в сущности").body
+    if l_json.get(C_ENTITY):
+        l_model.rename_entity()
+        l_message+="\nСущность успешно переименована"
+    if l_json.get(C_DESC):
+        l_model.alter_desc()
+        l_message+="\nОписание сущности успешно изменено"
+    l_message=l_message[1:]
+    return _JsonOutput(p_json_object=None, p_message=l_message).body
 
 
 class _JsonObject:
