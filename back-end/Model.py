@@ -439,6 +439,24 @@ class Model:
         l_anchor=Anchor(
             p_entity=p_entity
         )
+
+        # вытаскиваем rk
+        l_rk=None
+        for i_attr in l_anchor.anchor_attribute:
+            if i_attr.attribute_type==C_RK:
+                l_rk=i_attr
+
+        l_entity_rk=Attribute( # атрибут rk для добавления в метаданные сущности
+            p_name=l_rk.name,
+            p_desc=C_RK_DESC,
+            p_datatype=l_rk.datatype.data_type_name,
+            p_length=l_rk.datatype.data_type_length,
+            p_scale=l_rk.datatype.data_type_scale,
+            p_type=C_ENTITY_COLUMN,
+            p_rk=1
+        )
+        add_attribute(p_table=p_entity, p_attribute=l_entity_rk) # добавляем в сущность
+
         return l_anchor
 
     def __create_attribute_table(self, p_entity: object, p_entity_attribute: object) -> object:
@@ -479,6 +497,22 @@ class Model:
             p_link_entity=l_link_entity,
             p_source_table=p_source_table
         )
+        l_link_rk=None
+        # вытаскиваем link_rk атрибут
+        for i_attr in l_tie.tie_attribute:
+            if i_attr.attribute_type==C_LINK_RK:
+                l_link_rk=i_attr
+
+        l_entity_link_rk=Attribute( # создаем атрибут для добавления в метаданные сущности
+            p_name=l_link_rk.name,
+            p_desc=C_LINK_RK_DESC,
+            p_datatype=l_link_rk.datatype.data_type_name,
+            p_length=l_link_rk.datatype.data_type_length,
+            p_scale=l_link_rk.datatype.data_type_scale,
+            p_type=C_ENTITY_COLUMN
+        )
+        add_attribute(p_table=p_entity_attribute.entity, p_attribute=l_entity_link_rk)
+
         return l_tie
 
     def __create_idmap(self, p_entity: object, p_source_attribute: list) -> object:

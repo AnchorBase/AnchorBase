@@ -213,7 +213,6 @@ def get_entity_attr(p_id: str =None, p_name: str =None, p_entity: str =None):
                 C_NAME:l_ent_attr.name,
                 C_DESC:l_ent_attr.desc,
                 C_DATATYPE:l_ent_attr.datatype.data_type_sql,
-                C_PK:l_ent_attr.pk,
                 C_ENTITY:l_ent_attr.entity.name
             }
             l_json_object.append(
