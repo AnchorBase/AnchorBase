@@ -180,6 +180,13 @@ def __command_exec(p_command: str, p_arg: dict =None, p_help_command: str =None)
             l_input_json.update({C_DESC:p_arg.get(C_DESC_CONSOLE_ARG)})
         l_input_json=json.dumps(l_input_json)
         l_json=alter_entity(p_json=l_input_json)
+    elif p_command==C_DROP_ENTITY:
+        # формируем json
+        l_input_json={
+            C_ID:p_arg.get(C_ID_CONSOLE_ARG)
+        }
+        l_input_json=json.dumps(l_input_json)
+        l_json=drop_entity(p_json=l_input_json)
     elif p_command==C_EXIT:
         sys.exit()
     elif p_command==C_HELP:

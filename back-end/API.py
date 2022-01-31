@@ -583,6 +583,16 @@ def alter_entity(p_json: json):
     l_message=l_message[1:]
     return _JsonOutput(p_json_object=None, p_message=l_message).body
 
+def drop_entity(p_json: json):
+    """
+    Удаляет сущность
+
+    :param p_json: json с указанием id сущности, которую нужно удалить
+    """
+    l_model=Model(p_json=p_json)
+    l_model.drop_entity()
+    return _JsonOutput(p_json_object=None, p_message="Сущность успешно удалена").body
+
 
 class _JsonObject:
     """

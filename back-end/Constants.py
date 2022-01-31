@@ -509,6 +509,7 @@ C_GET_ETL_HIST="get_etl_hist" # получение логов etl-процесс
 C_GET_ETL_DETAIL="get_etl_detail" # получение детализации по etl-процессу
 C_ADD_ENTITY="add_entity" # добавление сущности в ХД
 C_ALTER_ENTITY="alter_entity" # изменение сущности в ХД
+C_DROP_ENTITY="drop_entity" # удаляет указанную сущность
 C_EXIT="exit"
 C_HELP="help"
 C_CONSOLE_COMMAND_LIST=[
@@ -526,6 +527,7 @@ C_CONSOLE_COMMAND_LIST=[
     C_GET_ETL_DETAIL,
     C_ADD_ENTITY,
     C_ALTER_ENTITY,
+    C_DROP_ENTITY,
     C_EXIT,
     C_HELP
 ]
@@ -609,6 +611,9 @@ C_CONSOLE_ARGS={
         C_ID_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"id сущности (обязательный)"},
         C_NAME_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"наименование сущности (необязательный)"},
         C_DESC_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"наименование сущности (необязательный)"}
+    },
+    C_DROP_ENTITY:{
+        C_ID_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"id сущности (обязательный)"}
     }
 }
 # описание команд консоли
@@ -677,6 +682,10 @@ C_CONSOLE_COMMAND_DESC={
                     C_COLOR_OKCYAN+C_ID_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ALTER_ENTITY).get(C_ID_CONSOLE_ARG).get(C_DESC)+"\n\t"+
                     C_COLOR_OKCYAN+C_NAME_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ALTER_ENTITY).get(C_NAME_CONSOLE_ARG).get(C_DESC)+"\n\t"+
                     C_COLOR_OKCYAN+C_DESC_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ALTER_ENTITY).get(C_DESC_CONSOLE_ARG).get(C_DESC),
+    C_DROP_ENTITY:"\n"+C_COLOR_HEADER+C_DROP_ENTITY+C_COLOR_ENDC+"\n"+
+                   C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tУдаляет сущность.\n"+
+                   C_COLOR_BOLD+"Аргументы:"+C_COLOR_ENDC+"\n\t"+
+                   C_COLOR_OKCYAN+C_ID_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_DROP_ENTITY).get(C_ID_CONSOLE_ARG).get(C_DESC),
     C_START_JOB:"\n"+C_COLOR_HEADER+C_START_JOB+C_COLOR_ENDC+"\n"+
                 C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tЗапускает загрузку данных в ХД\n"+
                 C_COLOR_BOLD+"Аргументы:"+C_COLOR_ENDC+"\n\t"+
