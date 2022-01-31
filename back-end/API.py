@@ -551,7 +551,7 @@ def get_etl_detail(p_etl: str =None, p_etl_id: str =None):
             )
     return _JsonOutput(p_json_object=l_json_object, p_error=l_error).body
 
-def add_entity(p_json: json):
+def create_entity(p_json: json):
     """
     Создает сущность в ХД
 
@@ -559,7 +559,7 @@ def add_entity(p_json: json):
     """
 
     l_model=Model(p_json=p_json)
-    l_model.create_model()
+    l_model.create_entity()
     return _JsonOutput(p_json_object=None, p_message="Сущность успешно создана").body
 
 def alter_entity(p_json: json):
