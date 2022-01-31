@@ -177,6 +177,8 @@ C_ANCHOR_ETL="anchor_etl" # логи etl таблицы якоря
 C_ATTRIBUTE_ETL="attribute_etl" # логи etl таблицы атрибут
 C_TIE_ETL="tie_etl" # логи etl таблицы связи
 C_QUEUE_INCREMENT = C_QUEUE+"_"+C_INCREMENT
+C_RK_DESC="Суррогат сущности" # описание суррогата для метаданных
+C_LINK_RK_DESC="Суррогат связанной сущности" # описание суррогата связанной сущности для метаданных
 C_META_TABLES = [ # список таблиц метаданных (для проверки корректности)
     C_SOURCE_META,
     C_ENTITY,
@@ -234,14 +236,15 @@ C_ENTITY_META_ATTRIBUTES = { # необходимые атрибуты сущн�
 }
 C_ENTITY_COLUMN_META_ATTRIBUTES = { # необходимые атрибуты атрибутов сущности
     C_NAME:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:0},
-    C_PK:{C_NOT_NULL:1,C_TYPE_VALUE:"int",C_PK:0},
+    C_PK:{C_NOT_NULL:0,C_TYPE_VALUE:"int",C_PK:0},
+    C_RK:{C_NOT_NULL:0,C_TYPE_VALUE:"int",C_PK:0},
     C_DESC:{C_NOT_NULL:0,C_TYPE_VALUE:"str",C_PK:0},
     C_ENTITY:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:0},
     C_DATATYPE:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:0},
     C_LENGTH:{C_NOT_NULL:0,C_TYPE_VALUE:"int",C_PK:0},
     C_SCALE:{C_NOT_NULL:0,C_TYPE_VALUE:"int",C_PK:0},
     C_LINK_ENTITY:{C_NOT_NULL:0,C_TYPE_VALUE:"str",C_PK:0},
-    C_QUEUE_COLUMN:{C_NOT_NULL:1,C_TYPE_VALUE:"list",C_PK:0}
+    C_QUEUE_COLUMN:{C_NOT_NULL:0,C_TYPE_VALUE:"list",C_PK:0}
 }
 C_QUEUE_META_ATTRIBUTES = { # необходимые атрибуты таблицы очереди
     C_NAME:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:1},

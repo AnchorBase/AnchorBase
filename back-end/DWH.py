@@ -1256,11 +1256,18 @@ class _DWHObject:
                     }
                 )
             if self.type==C_ENTITY_COLUMN: # если атрибут сущности
-                l_json.update(
-                    {
-                        C_PK:self.pk
-                    }
-                )
+                if self.pk:
+                    l_json.update(
+                        {
+                            C_PK:self.pk
+                        }
+                    )
+                if self.rk:
+                    l_json.update(
+                        {
+                            C_RK:self.rk
+                        }
+                    )
 
 
         # атрибуты queue таблицы
@@ -1506,6 +1513,7 @@ class Attribute(_DWHObject):
                  p_scale: int =None,
                  p_attribute_type: str =None,
                  p_pk: int =None,
+                 p_rk: int =None,
                  p_desc: str =None,
                  p_source_table =None,
                  p_source_attribute =None,
@@ -1537,6 +1545,7 @@ class Attribute(_DWHObject):
         self._scale=p_scale
         self._attribute_type=p_attribute_type
         self._pk=p_pk
+        self._rk=p_rk
 
 
     @property
@@ -1578,6 +1587,16 @@ class Attribute(_DWHObject):
             return self._pk
         else:
             return self.object_attrs_meta.get(C_PK,None)
+
+    @property
+    def rk(self):
+        """
+        Признак суррогата
+        """
+        if self._rk is not None:
+            return self._rk
+        else:
+            return self.object_attrs_meta.get(C_RK,None)
 
     def __source_attribute_exist_checker(self):
         """
@@ -1669,11 +1688,12 @@ class Entity(_DWHObject):
         # формируем словарь из атрибутов сущности и их типов данных
         l_entity_attr_dict={}
         for i_entity_attribute in self.entity_attribute:
-            l_entity_attr_dict.update(
-                {
-                    i_entity_attribute.name:i_entity_attribute.datatype.data_type_sql
-                }
-            )
+            if i_entity_attribute.rk!=1: # не добавляем RK сущности, так как он и так добавляется всегда
+                l_entity_attr_dict.update(
+                    {
+                        i_entity_attribute.name:i_entity_attribute.datatype.data_type_sql
+                    }
+                )
         return Connection().dbms.get_entity_function_sql(
             p_entity_name=self.name,
             p_entity_attribute_dict=l_entity_attr_dict
