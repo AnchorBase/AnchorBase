@@ -126,7 +126,7 @@ def get_idmap_etl(
           +'"'+C_IDMAP_SCHEMA+'"'+"."+'"'+str(p_idmap_id)+'"'+"\n\t) as mx_rk\n\t"\
           "WHERE 1=1\n\t\t"\
           "AND idmp."+'"'+str(p_idmap_rk_id)+'"'+" IS NULL\n);\n"\
-          "INSERT INTO idmap."+'"'+str(p_idmap_id)+'"'+"\n"\
+          "INSERT INTO "+'"'+C_IDMAP_SCHEMA+'"'+"."+'"'+str(p_idmap_id)+'"'+"\n"\
           "(\n\t"+'"'+str(p_idmap_rk_id)+'"\n\t'+","+'"'+str(p_idmap_nk_id)+'"\n\t'+","+'"'+str(p_etl_id)+'"\n'+")\n\t"\
           "SELECT\n\t"\
           "idmap_rk,\n\t"\
@@ -216,15 +216,15 @@ def get_attribute_etl(
     )
     l_etl="DROP TABLE IF EXISTS "+'"'+C_WRK_SCHEMA+'"'+"."+'"'+str(p_attribute_id)+"_1"+'"'+";\n"\
           "CREATE TABLE "+'"'+C_WRK_SCHEMA+'"'+"."+'"'+str(p_attribute_id)+"_1"+'"'+" AS (\n\t"\
-          "SELECT\n\t"\
-          "idmap."+'"'+str(p_idmap_rk_id)+'"'+" AS idmap_rk\n\t"\
+          "SELECT\n\t" \
+          '"'+C_IDMAP_SCHEMA+'"'+"."+'"'+str(p_idmap_rk_id)+'"'+" AS idmap_rk\n\t"\
           ",qe."+'"'+str(p_stg_attribute_id)+'"'+" AS attribute_name\n\t"\
           ",qe."+'"'+str(p_update_timestamp_id)+'"'+" AS from_dttm\n\t"\
-          ",ROW_NUMBER() OVER (PARTITION BY idmap."+'"'+str(p_idmap_rk_id)+'"'+" ORDER BY qe."+'"'+str(p_update_timestamp_id)+'"'+") AS rnum\n\t"\
+          ",ROW_NUMBER() OVER (PARTITION BY "+'"'+C_IDMAP_SCHEMA+'"'+"."+'"'+str(p_idmap_rk_id)+'"'+" ORDER BY qe."+'"'+str(p_update_timestamp_id)+'"'+") AS rnum\n\t"\
           "FROM "+'"'+C_STG_SCHEMA+'"'+"."+'"'+str(p_stg_table_id)+'"'+" AS qe\n\t"\
           "INNER JOIN "+'"'+C_IDMAP_SCHEMA+'"'+"."+'"'+str(p_idmap_id)+'"'+" AS idmap\n\t\t"\
           "ON 1=1\n\t\t"\
-          "AND CAST(\n\t\t\t"+p_attribute_concat_nk+"\n\t\t\t||'@@'||\n\t\t\tCAST('"+str(p_source_id)+"' AS VARCHAR(1000)) \n\t\tAS VARCHAR(1000))=idmap."+'"'+str(p_idmap_nk_id)+'"\n);\n'\
+          "AND CAST(\n\t\t\t"+p_attribute_concat_nk+"\n\t\t\t||'@@'||\n\t\t\tCAST('"+str(p_source_id)+"' AS VARCHAR(1000)) \n\t\tAS VARCHAR(1000))="+'"'+C_IDMAP_SCHEMA+'"'+"."+'"'+str(p_idmap_nk_id)+'"\n);\n'\
           "DROP TABLE IF EXISTS "+'"'+C_WRK_SCHEMA+'"'+"."+'"'+str(p_attribute_id)+"_2"+'"'+";\n" \
           "CREATE TABLE "+'"'+C_WRK_SCHEMA+'"'+"."+'"'+str(p_attribute_id)+"_2"+'"'+" AS (\n\t"\
           "SELECT\n\t"\
@@ -341,11 +341,11 @@ def get_tie_etl(
     )
     l_etl="DROP TABLE IF EXISTS "+'"'+C_WRK_SCHEMA+'"'+"."+'"'+str(p_tie_id)+"_1"+'"'+";\n"\
           "CREATE TABLE "+'"'+C_WRK_SCHEMA+'"'+"."+'"'+str(p_tie_id)+"_1"+'"'+" AS (\n\t"\
-          "SELECT\n\t"\
-          "idmap."+'"'+str(p_idmap_rk_id)+'"'+" AS idmap_rk\n\t"\
+          "SELECT\n\t" \
+          '"'+C_IDMAP_SCHEMA+'"'+"."+'"'+str(p_idmap_rk_id)+'"'+" AS idmap_rk\n\t"\
           ",l_idmap."+'"'+str(p_link_idmap_rk_id)+'"'+" AS link_idmap_rk\n\t"\
           ",qe."+'"'+str(p_update_timestamp_id)+'"'+" AS from_dttm\n\t"\
-          ",ROW_NUMBER() OVER (PARTITION BY idmap."+'"'+str(p_idmap_rk_id)+'"'+" ORDER BY qe."+'"'+str(p_update_timestamp_id)+'"'+") AS rnum\n\t"\
+          ",ROW_NUMBER() OVER (PARTITION BY "+'"'+C_IDMAP_SCHEMA+'"'+"."+'"'+str(p_idmap_rk_id)+'"'+" ORDER BY qe."+'"'+str(p_update_timestamp_id)+'"'+") AS rnum\n\t"\
           "FROM "+'"'+C_STG_SCHEMA+'"'+"."+'"'+str(p_stg_table_id)+'"'+" AS qe\n\t"\
           "INNER JOIN "+'"'+C_IDMAP_SCHEMA+'"'+"."+'"'+str(p_idmap_id)+'"'+" AS idmap\n\t\t"\
           "ON 1=1\n\t\t"\
@@ -482,7 +482,7 @@ def get_drop_entity_function_sql(p_entity_name: str) -> str:
 
     :param p_entity_name: наименование сущности
     """
-    l_sql="DROP FUNCTION IF EXISTS "+'"'+p_entity_name+'"'+"(TIMESTAMP, VARCHAR(1000));"
+    l_sql="DROP FUNCTION IF EXISTS "+'"'+C_AM_SCHEMA+'"'+"."+'"'+p_entity_name+'"'+"(TIMESTAMP, VARCHAR(1000));"
     return l_sql
 
 def get_entity_function_sql(
@@ -520,7 +520,7 @@ def get_entity_function_sql(
     l_entity_attribute_name_param=l_entity_attribute_name_param[:-1]
     l_entity_attribute_select_sql=l_entity_attribute_select_sql[:-2]
     l_sql=get_drop_entity_function_sql(p_entity_name=p_entity_name)+"\n" \
-          "CREATE OR REPLACE FUNCTION "+'"'+p_entity_name+'"'+"(\n\t"\
+          "CREATE OR REPLACE FUNCTION "+'"'+C_AM_SCHEMA+'"'+"."+'"'+p_entity_name+'"'+"(\n\t"\
           "dt TIMESTAMP DEFAULT '5999-12-31'::TIMESTAMP,\n\t"\
           "col VARCHAR(1000) DEFAULT '"+l_entity_attribute_name_param+"'\n) RETURNS\n"\
           "TABLE(\n\t"+'"'+p_entity_name+"_"+C_RK+'"'+" "+C_BIGINT+",\n\t"+l_entity_attribute_name_datatype+'"'+C_SOURCE_ATTRIBUTE_NAME+'"'+" "+C_INT+"\n) AS\n"\

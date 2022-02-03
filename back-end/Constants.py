@@ -112,7 +112,7 @@ C_TABLE_NAME_POSTFIX={ # постфиксы таблиц
 #================================
 C_STG_SCHEMA="stg"
 C_IDMAP_SCHEMA="idmap"
-C_AM_SCHEMA="am"
+C_AM_SCHEMA="dds"
 C_WRK_SCHEMA="wrk"
 C_SCHEMA_TABLE_TYPE = { # наименование схемы в соответствии с типом таблицы
     C_QUEUE:C_STG_SCHEMA,
