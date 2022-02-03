@@ -453,7 +453,8 @@ class Model:
             p_length=l_rk.datatype.data_type_length,
             p_scale=l_rk.datatype.data_type_scale,
             p_type=C_ENTITY_COLUMN,
-            p_rk=1
+            p_rk=1,
+            p_anchor=l_anchor
         )
         add_attribute(p_table=p_entity, p_attribute=l_entity_rk) # добавляем в сущность
 
@@ -471,6 +472,7 @@ class Model:
             p_entity=p_entity,
             p_entity_attribute=p_entity_attribute
         )
+        p_entity_attribute.attribute_table=l_attribute_table
         return l_attribute_table
 
     def __create_tie(self,
@@ -509,7 +511,8 @@ class Model:
             p_datatype=l_link_rk.datatype.data_type_name,
             p_length=l_link_rk.datatype.data_type_length,
             p_scale=l_link_rk.datatype.data_type_scale,
-            p_type=C_ENTITY_COLUMN
+            p_type=C_ENTITY_COLUMN,
+            p_tie=l_tie
         )
         add_attribute(p_table=p_entity_attribute.entity, p_attribute=l_entity_link_rk)
 
