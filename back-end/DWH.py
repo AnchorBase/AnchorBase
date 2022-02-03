@@ -1689,9 +1689,10 @@ class Entity(_DWHObject):
         l_entity_attr_dict={}
         for i_entity_attribute in self.entity_attribute:
             if i_entity_attribute.rk!=1: # не добавляем RK сущности, так как он и так добавляется всегда
+                l_table=i_entity_attribute.tie or i_entity_attribute.attribute_table
                 l_entity_attr_dict.update(
                     {
-                        i_entity_attribute.name:i_entity_attribute.datatype.data_type_sql
+                        i_entity_attribute.name:{C_DATATYPE:i_entity_attribute.datatype.data_type_sql, C_TABLE:l_table.name}
                     }
                 )
         return Connection().dbms.get_entity_function_sql(
