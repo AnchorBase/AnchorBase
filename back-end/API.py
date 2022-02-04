@@ -2,11 +2,12 @@
 Взаимодействие с приложением
 """
 
-from DWH import *
-from Source import *
 from Model import *
 from Metadata import *
 from Constants import *
+from FileWorker import File as fl
+import metadata_config as meta_cnfg
+from Postgresql import connection_checker as cnct_chck
 import json
 
 
@@ -591,6 +592,55 @@ def drop_entity(p_json: json):
     l_model=Model(p_json=p_json)
     l_model.drop_entity()
     return _JsonOutput(p_json_object=None, p_message="Сущность успешно удалена").body
+
+def get_meta_config():
+    """
+    Показывает конфиги подключения к метаданным
+    """
+    l_meta_dict={
+        C_SERVER:meta_cnfg.server,
+        C_DATABASE:meta_cnfg.database,
+        C_USER:meta_cnfg.user,
+        C_PASSWORD:meta_cnfg.password,
+        C_PORT:meta_cnfg.port
+    }
+    return _JsonOutput(
+        p_json_object=[_JsonObject(p_type="metadata", p_attribute=l_meta_dict, p_id="")]
+    ).body
+
+def update_meta_config(
+            p_database: str,
+            p_server: str,
+            p_user: str,
+            p_password: str,
+            p_port: int
+):
+    """
+    Изменяет параметры подключения к метаданным ХД
+
+    :param p_database: бд
+    :param p_server: сервер
+    :param p_user: пользователь
+    :param p_password: логин
+    :param p_port: порт
+    """
+    # проверка подключения
+    cnct_chck(
+        p_database=p_database,
+        p_server=p_server,
+        p_user=p_user,
+        p_password=p_password,
+        p_port=p_port
+    )
+
+    l_cnfg=C_SERVER+"="+'"'+p_server+'"'+"\n"+\
+           C_DATABASE+"="+'"'+p_database+'"'+"\n"+\
+           C_USER+"="+'"'+p_user+'"'+"\n"+\
+           C_PASSWORD+"="+'"'+p_password+'"'+"\n"+\
+           C_PORT+"="+'"'+str(p_port)+'"'+"\n"+\
+           C_DBMS_TYPE+"="+'"'+C_POSTGRESQL+'"'
+    fl(p_file_path=C_META_CONFIG, p_file_body=l_cnfg).write_file()
+    return _JsonOutput(p_json_object=None, p_message="Параметры подключения к метаданным успешно изменены").body
 
 
 class _JsonObject:
