@@ -642,6 +642,12 @@ def update_meta_config(
     fl(p_file_path=C_META_CONFIG, p_file_body=l_cnfg).write_file()
     return _JsonOutput(p_json_object=None, p_message="Параметры подключения к метаданным успешно изменены").body
 
+def create_meta():
+    """
+    Создает схему и таблицы метаданных
+    """
+    create_meta_tables()
+    return _JsonOutput(p_json_object=None, p_message="Таблицы метаданных успешно созданы").body
 
 class _JsonObject:
     """
