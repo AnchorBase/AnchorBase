@@ -6,6 +6,7 @@ from Model import *
 from Metadata import *
 from Constants import *
 from FileWorker import File as fl
+import DWH as dwh
 import metadata_config as meta_cnfg
 import dwh_config as dwh_cnfg
 from Postgresql import connection_checker as cnct_chck
@@ -696,8 +697,15 @@ def update_dwh_config(
            C_PASSWORD+"="+'"'+p_password+'"'+"\n"+ \
            C_PORT+"="+'"'+str(p_port)+'"'+"\n"+ \
            C_DBMS_TYPE+"="+'"'+C_POSTGRESQL+'"'
-    fl(p_file_path=C_DWH_CONFIG, p_file_body=l_cnfg).write_file()
+    fl(p_file_path=C_CONFIG_FILE_PATH, p_file_body=l_cnfg).write_file()
     return _JsonOutput(p_json_object=None, p_message="Параметры подключения к ХД успешно изменены").body
+
+def create_dwh_ddl():
+    """
+    Создает схемы и расширения ХД
+    """
+    dwh.create_dwh_ddl()
+    return _JsonOutput(p_json_object=None, p_message="ХД успешно установлено").body
 
 class _JsonObject:
     """

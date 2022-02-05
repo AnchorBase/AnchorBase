@@ -65,6 +65,8 @@ def sql_exec(
 
 C_CURRENT_TIMESTAMP_SQL="CURRENT_TIMESTAMP"
 
+C_UUID_EXTENSION='CREATE EXTENSION "uuid-ossp";'
+
 def connection_checker(
         p_database: str,
         p_server: str,

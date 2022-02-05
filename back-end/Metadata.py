@@ -32,7 +32,9 @@ def __create_ddl_metadata():
     Генерирует скрипт создания таблиц метаданных
 
     """
-    l_sql="CREATE SCHEMA "+'"'+C_META_SCHEMA+'";\n'
+
+    l_sql=pgsql.C_UUID_EXTENSION+"\n"
+    l_sql+="CREATE SCHEMA "+'"'+C_META_SCHEMA+'";\n'
     for i in C_META_TABLES:
         l_sql+='CREATE TABLE '+'"'+C_META_SCHEMA+'"."'+i+'"'+'(\n \tid '+C_UUID+' PRIMARY KEY,\n \tvalue '+ C_JSON+' NOT NULL\n);\n'
     return l_sql
@@ -42,7 +44,10 @@ def create_meta_tables():
     Создает таблицы метаданных
     """
     l_sql=__create_ddl_metadata()
-    sql_exec(p_sql=l_sql, p_result=0)
+    l_result=sql_exec(p_sql=l_sql, p_result=0)
+    if l_result[1]:
+        sys.exit(l_result[1])
+    
 
 def __search_uuid_sql(p_uuid_list: list):
     """

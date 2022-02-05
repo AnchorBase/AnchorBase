@@ -155,6 +155,21 @@ class Connection:
             p_file_body=l_config
         ).write_file()
 
+
+def create_dwh_ddl():
+    """
+    Создает схемы и расширения ХД
+    """
+    l_dwh=Connection()
+    l_sql=""
+    for i_schema in C_SCHEMA_LIST:
+        l_sql+="CREATE SCHEMA "+'"'+i_schema+'";'+"\n"
+    l_result=l_dwh.sql_exec(p_sql=l_sql, p_result=0)
+    if l_result[1]:
+        sys.exit(l_result[1])
+
+
+
 def _class_define(p_class_name: str, p_id: str, p_type: str =None):
     """
     Инициализирует определенный класс

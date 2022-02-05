@@ -115,6 +115,12 @@ C_IDMAP_SCHEMA="idmap"
 C_AM_SCHEMA="dds"
 C_WRK_SCHEMA="wrk"
 C_META_SCHEMA="abase_meta"
+C_SCHEMA_LIST=[
+    C_STG_SCHEMA,
+    C_IDMAP_SCHEMA,
+    C_AM_SCHEMA,
+    C_WRK_SCHEMA
+]
 C_SCHEMA_TABLE_TYPE = { # наименование схемы в соответствии с типом таблицы
     C_QUEUE:C_STG_SCHEMA,
     C_IDMAP:C_IDMAP_SCHEMA,
@@ -162,7 +168,6 @@ C_CONFIG_FILE_PATH = "dwh_config.py" # путь до файла с конфиг�
 C_MSSQL_DRIVER_MACOS_PATH = "/usr/local/lib/libtdsodbc.so" # расположение драйвера в MacOS
 C_TDS_VERSION = '7.3' # версия TDS для pyodbc
 C_META_CONFIG="metadata_config.py" # наименование файла с параметрами подключения к метеданным
-C_DWH_CONFIG="dwh_config.py" # наименование файла с параметрами подключения к ХД
 C_DBMS_TYPE="dbms_type" # тип СУБД
 #================================
 #  Метаданные

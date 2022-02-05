@@ -209,6 +209,8 @@ def __command_exec(p_command: str, p_arg: dict =None, p_help_command: str =None)
             p_password=p_arg.get(C_PASSWORD_CONSOLE_ARG),
             p_port=p_arg.get(C_PORT_CONSOLE_ARG)
         )
+    elif p_command==C_CREATE_DWH:
+        l_json=create_dwh_ddl()
     elif p_command==C_EXIT:
         sys.exit()
     elif p_command==C_HELP:
