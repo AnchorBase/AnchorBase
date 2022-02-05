@@ -120,6 +120,8 @@ class Connection:
             p_result=p_result,
             p_rollback=p_rollback
         )
+        if l_sql_result[1]:
+            sys.exit(l_sql_result[1])
         return l_sql_result
 
 
@@ -163,10 +165,8 @@ def create_dwh_ddl():
     l_dwh=Connection()
     l_sql=""
     for i_schema in C_SCHEMA_LIST:
-        l_sql+="CREATE SCHEMA "+'"'+i_schema+'";'+"\n"
-    l_result=l_dwh.sql_exec(p_sql=l_sql, p_result=0)
-    if l_result[1]:
-        sys.exit(l_result[1])
+        l_sql+="DROP SCHEMA IF EXISTS "+'"'+i_schema+'" CASCADE;\n'+"CREATE SCHEMA "+'"'+i_schema+'";'+"\n"
+    l_dwh.sql_exec(p_sql=l_sql, p_result=0)
 
 
 

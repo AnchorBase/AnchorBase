@@ -198,7 +198,11 @@ def __command_exec(p_command: str, p_arg: dict =None, p_help_command: str =None)
             p_port=p_arg.get(C_PORT_CONSOLE_ARG)
         )
     elif p_command==C_CREATE_META:
-        l_json=create_meta()
+        l_input=input("Все существующие метаданные будут удалены. Продолжить? (y|n):")
+        if l_input=='y':
+            l_json=create_meta()
+        else:
+            return None
     elif p_command==C_GET_DWH_CONFIG:
         l_json=get_dwh_config()
     elif p_command==C_UPDATE_DWH_CONFIG:
@@ -210,7 +214,11 @@ def __command_exec(p_command: str, p_arg: dict =None, p_help_command: str =None)
             p_port=p_arg.get(C_PORT_CONSOLE_ARG)
         )
     elif p_command==C_CREATE_DWH:
-        l_json=create_dwh_ddl()
+        l_input=input("Все существующие таблицы ХД будут удалены. Продолжить? (y|n):")
+        if l_input=='y':
+            l_json=create_dwh_ddl()
+        else:
+            return None
     elif p_command==C_EXIT:
         sys.exit()
     elif p_command==C_HELP:
