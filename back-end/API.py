@@ -7,6 +7,7 @@ from Metadata import *
 from Constants import *
 from FileWorker import File as fl
 import metadata_config as meta_cnfg
+import dwh_config as dwh_cnfg
 from Postgresql import connection_checker as cnct_chck
 import json
 
@@ -648,6 +649,55 @@ def create_meta():
     """
     create_meta_tables()
     return _JsonOutput(p_json_object=None, p_message="Таблицы метаданных успешно созданы").body
+
+def get_dwh_config():
+    """
+    Показывает конфиги подключения к ХД
+    """
+    l_dwh_dict={
+        C_SERVER:dwh_cnfg.server,
+        C_DATABASE:dwh_cnfg.database,
+        C_USER:dwh_cnfg.user,
+        C_PASSWORD:dwh_cnfg.password,
+        C_PORT:dwh_cnfg.port
+    }
+    return _JsonOutput(
+        p_json_object=[_JsonObject(p_type="dwh", p_attribute=l_dwh_dict, p_id="")]
+    ).body
+
+def update_dwh_config(
+        p_database: str,
+        p_server: str,
+        p_user: str,
+        p_password: str,
+        p_port: int
+):
+    """
+    Изменяет параметры подключения к ХД
+
+    :param p_database: бд
+    :param p_server: сервер
+    :param p_user: пользователь
+    :param p_password: логин
+    :param p_port: порт
+    """
+    # проверка подключения
+    cnct_chck(
+        p_database=p_database,
+        p_server=p_server,
+        p_user=p_user,
+        p_password=p_password,
+        p_port=p_port
+    )
+
+    l_cnfg=C_SERVER+"="+'"'+p_server+'"'+"\n"+ \
+           C_DATABASE+"="+'"'+p_database+'"'+"\n"+ \
+           C_USER+"="+'"'+p_user+'"'+"\n"+ \
+           C_PASSWORD+"="+'"'+p_password+'"'+"\n"+ \
+           C_PORT+"="+'"'+str(p_port)+'"'+"\n"+ \
+           C_DBMS_TYPE+"="+'"'+C_POSTGRESQL+'"'
+    fl(p_file_path=C_DWH_CONFIG, p_file_body=l_cnfg).write_file()
+    return _JsonOutput(p_json_object=None, p_message="Параметры подключения к ХД успешно изменены").body
 
 class _JsonObject:
     """

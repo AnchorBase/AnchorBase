@@ -162,6 +162,7 @@ C_CONFIG_FILE_PATH = "dwh_config.py" # путь до файла с конфиг�
 C_MSSQL_DRIVER_MACOS_PATH = "/usr/local/lib/libtdsodbc.so" # расположение драйвера в MacOS
 C_TDS_VERSION = '7.3' # версия TDS для pyodbc
 C_META_CONFIG="metadata_config.py" # наименование файла с параметрами подключения к метеданным
+C_DWH_CONFIG="dwh_config.py" # наименование файла с параметрами подключения к ХД
 C_DBMS_TYPE="dbms_type" # тип СУБД
 #================================
 #  Метаданные
@@ -520,7 +521,10 @@ C_ALTER_ENTITY="alter_entity" # изменение сущности в ХД
 C_DROP_ENTITY="drop_entity" # удаляет указанную сущность
 C_GET_META_CONFIG="get_meta_config" # возвращает параметры подключения к метаданным
 C_UPDATE_META_CONFIG="update_meta_config" # изменяет параметры подключения к метаданным
-C_CREATE_META="create_meta" # создает схему и таблицы метаданных
+C_CREATE_META="install_meta" # создает схему и таблицы метаданных
+C_GET_DWH_CONFIG="get_dwh_config" # возвращает параметры подключения к ХД
+C_UPDATE_DWH_CONFIG="update_dwh_config" # изменяет параметры подключения к ХД
+C_CREATE_DWH="install_dwh" # создает схемы для ХД
 C_EXIT="exit"
 C_HELP="help"
 C_CONSOLE_COMMAND_LIST=[
@@ -542,6 +546,9 @@ C_CONSOLE_COMMAND_LIST=[
     C_GET_META_CONFIG,
     C_UPDATE_META_CONFIG,
     C_CREATE_META,
+    C_GET_DWH_CONFIG,
+    C_UPDATE_DWH_CONFIG,
+    C_CREATE_DWH,
     C_EXIT,
     C_HELP
 ]
@@ -588,11 +595,18 @@ C_CONSOLE_ARGS={
         C_TYPE_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"новый тип источника (необязательный)"}
     },
     C_UPDATE_META_CONFIG:{
-        C_SERVER_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"новый сервер/хост (обязательный)"},
-        C_DATABASE_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"новая база данных (обязательный)"},
-        C_USER_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"новый логин (обязательный)"},
-        C_PASSWORD_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"новый пароль (обязательный)"},
-        C_PORT_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"новый порт (обязательный)"}
+        C_SERVER_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"сервер/хост (обязательный)"},
+        C_DATABASE_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"база данных (обязательный)"},
+        C_USER_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"логин (обязательный)"},
+        C_PASSWORD_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"пароль (обязательный)"},
+        C_PORT_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"порт (обязательный)"}
+    },
+    C_UPDATE_DWH_CONFIG:{
+        C_SERVER_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"сервер/хост (обязательный)"},
+        C_DATABASE_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"база данных (обязательный)"},
+        C_USER_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"логин (обязательный)"},
+        C_PASSWORD_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"пароль (обязательный)"},
+        C_PORT_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"порт (обязательный)"}
     },
     C_GET_ENTITY:{
         C_NAME_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"наименование сущности (необязательный)"},
@@ -651,6 +665,18 @@ C_CONSOLE_COMMAND_DESC={
                          C_COLOR_OKCYAN+C_PORT_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_UPDATE_META_CONFIG).get(C_PORT_CONSOLE_ARG).get(C_DESC),
     C_CREATE_META:"\n"+C_COLOR_HEADER+C_UPDATE_META_CONFIG+C_COLOR_ENDC+"\n"+
                   C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tСоздает таблицы метаданных\n",
+    C_GET_DWH_CONFIG:"\n"+C_COLOR_HEADER+C_GET_SOURCE+C_COLOR_ENDC+"\n"+
+                      C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tВозвращает параметры подключения к ХД",
+    C_UPDATE_DWH_CONFIG:"\n"+C_COLOR_HEADER+C_UPDATE_META_CONFIG+C_COLOR_ENDC+"\n"+
+                         C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tИзменяет параметры подключения к ХД\n"+
+                         C_COLOR_BOLD+"Аргументы:"+C_COLOR_ENDC+"\n\t"+
+                         C_COLOR_OKCYAN+C_SERVER_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_UPDATE_META_CONFIG).get(C_SERVER_CONSOLE_ARG).get(C_DESC)+"\n\t"+
+                         C_COLOR_OKCYAN+C_DATABASE_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_UPDATE_META_CONFIG).get(C_DATABASE_CONSOLE_ARG).get(C_DESC)+"\n\t"+
+                         C_COLOR_OKCYAN+C_USER_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_UPDATE_META_CONFIG).get(C_USER_CONSOLE_ARG).get(C_DESC)+"\n\t"+
+                         C_COLOR_OKCYAN+C_PASSWORD_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_UPDATE_META_CONFIG).get(C_PASSWORD_CONSOLE_ARG).get(C_DESC)+"\n\t"+
+                         C_COLOR_OKCYAN+C_PORT_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_UPDATE_META_CONFIG).get(C_PORT_CONSOLE_ARG).get(C_DESC),
+    C_CREATE_DWH:"\n"+C_COLOR_HEADER+C_UPDATE_META_CONFIG+C_COLOR_ENDC+"\n"+
+                  C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tСоздает таблицы ХД\n",
     C_GET_SOURCE:"\n"+C_COLOR_HEADER+C_GET_SOURCE+C_COLOR_ENDC+"\n"+
                  C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tВозвращает источники и их свойства\n"+
                  C_COLOR_BOLD+"Аргументы:"+C_COLOR_ENDC+"\n\t"+

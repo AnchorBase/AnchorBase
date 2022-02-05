@@ -29,7 +29,7 @@ def __get_command(p_input: str):
     l_arg_list=[] # список аргументов
     i=0
     for i_arg in l_word:
-        if i_arg[0]=="-": # если слово начинается на "-" значит аргумент команды
+        if i_arg.__len__()>0 and i_arg[0]=="-": # если слово начинается на "-" значит аргумент команды
             __arg_checker(p_command=l_command, p_arg=i_arg)
             l_arg.update(
                 {
@@ -199,6 +199,16 @@ def __command_exec(p_command: str, p_arg: dict =None, p_help_command: str =None)
         )
     elif p_command==C_CREATE_META:
         l_json=create_meta()
+    elif p_command==C_GET_DWH_CONFIG:
+        l_json=get_dwh_config()
+    elif p_command==C_UPDATE_DWH_CONFIG:
+        l_json=update_dwh_config(
+            p_server=p_arg.get(C_SERVER_CONSOLE_ARG),
+            p_database=p_arg.get(C_DATABASE_CONSOLE_ARG),
+            p_user=p_arg.get(C_USER_CONSOLE_ARG),
+            p_password=p_arg.get(C_PASSWORD_CONSOLE_ARG),
+            p_port=p_arg.get(C_PORT_CONSOLE_ARG)
+        )
     elif p_command==C_EXIT:
         sys.exit()
     elif p_command==C_HELP:
