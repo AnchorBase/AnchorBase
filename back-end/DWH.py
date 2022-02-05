@@ -120,6 +120,8 @@ class Connection:
             p_result=p_result,
             p_rollback=p_rollback
         )
+        if l_sql_result[1]:
+            sys.exit(l_sql_result[1])
         return l_sql_result
 
 
@@ -154,6 +156,19 @@ class Connection:
             p_file_path=C_CONFIG_FILE_PATH,
             p_file_body=l_config
         ).write_file()
+
+
+def create_dwh_ddl():
+    """
+    Создает схемы и расширения ХД
+    """
+    l_dwh=Connection()
+    l_sql=""
+    for i_schema in C_SCHEMA_LIST:
+        l_sql+="DROP SCHEMA IF EXISTS "+'"'+i_schema+'" CASCADE;\n'+"CREATE SCHEMA "+'"'+i_schema+'";'+"\n"
+    l_dwh.sql_exec(p_sql=l_sql, p_result=0)
+
+
 
 def _class_define(p_class_name: str, p_id: str, p_type: str =None):
     """

@@ -32,10 +32,20 @@ def __create_ddl_metadata():
     Генерирует скрипт создания таблиц метаданных
 
     """
-    l_sql=""
+
+    l_sql=pgsql.C_UUID_EXTENSION+"\n"
+    l_sql+="DROP SCHEMA IF EXISTS "+'"'+C_META_SCHEMA+'" CASCADE;\nCREATE SCHEMA '+'"'+C_META_SCHEMA+'";\n'
     for i in C_META_TABLES:
-        l_sql+='CREATE TABLE '+i+'(\n \tid '+C_UUID+' PRIMARY KEY,\n \tvalue '+ C_JSON+' NOT NULL\n);\n'
+        l_sql+='CREATE TABLE '+'"'+C_META_SCHEMA+'"."'+i+'"'+'(\n \tid '+C_UUID+' PRIMARY KEY,\n \tvalue '+ C_JSON+' NOT NULL\n);\n'
     return l_sql
+
+def create_meta_tables():
+    """
+    Создает таблицы метаданных
+    """
+    l_sql=__create_ddl_metadata()
+    sql_exec(p_sql=l_sql, p_result=0)
+
 
 def __search_uuid_sql(p_uuid_list: list):
     """
@@ -70,7 +80,7 @@ def __insert_object_sql(p_type: str, p_uuid: str, p_attrs: dict):
     :param p_attrs: атрибуты объекта метаданных
     """
     l_attrs=json.dumps(p_attrs) # преобразуем в json строку
-    l_sql='INSERT INTO "'+p_type+'"'+" (id, value) VALUES \n('"+str(p_uuid)+"','"+l_attrs+"');"
+    l_sql='INSERT INTO "'+C_META_SCHEMA+'"."'+p_type+'"'+" (id, value) VALUES \n('"+str(p_uuid)+"','"+l_attrs+"');"
     return l_sql
 
 def __update_object_sql(p_type: str, p_uuid: str, p_attrs: dict):
@@ -81,7 +91,7 @@ def __update_object_sql(p_type: str, p_uuid: str, p_attrs: dict):
     :param p_attrs: атрибуты объекта метаданных
     """
     l_attrs=json.dumps(p_attrs) # преобразуем в json строку
-    l_sql='UPDATE "'+p_type+'"'+"\nSET value='"+l_attrs+"'\nWHERE id='"+str(p_uuid)+"';"
+    l_sql='UPDATE "'+C_META_SCHEMA+'"."'+p_type+'"'+"\nSET value='"+l_attrs+"'\nWHERE id='"+str(p_uuid)+"';"
     return l_sql
 
 def __delete_object_sql(p_type: str, p_uuid: str):
@@ -91,7 +101,7 @@ def __delete_object_sql(p_type: str, p_uuid: str):
     :param p_type: тип объекта метаданных
     :param p_uuid: uuid объекта
     """
-    l_sql='DELETE FROM "'+p_type+'"'+" WHERE ID='"+str(p_uuid)+"';"
+    l_sql='DELETE FROM "'+C_META_SCHEMA+'"."'+p_type+'"'+" WHERE ID='"+str(p_uuid)+"';"
     return l_sql
 
 
@@ -108,7 +118,7 @@ def search_object(p_type: str, p_uuid: list =None, p_attrs: dict =None) -> list:
     if l_type not in C_META_TABLES:
         sys.exit("Нет объекта метаданных "+l_type) #TODO: переделать
     # фомируем SELECT
-    l_sql='SELECT * FROM "'+l_type+'"'+" WHERE 1=1"
+    l_sql='SELECT * FROM "'+C_META_SCHEMA+'"."'+l_type+'"'+" WHERE 1=1"
     # добавляем условия фильтрации
     l_where=""
     # фильтрация по id
