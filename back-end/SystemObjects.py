@@ -2,7 +2,7 @@
 Системные объекты (Константы, ошибки и т.д.)
 """
 
-class Error(Exception):
+class AbaseError(Exception):
     """
       Errors
     """
