@@ -2,7 +2,7 @@
 Системные объекты (Константы, ошибки и т.д.)
 """
 
-class Error(Exception):
+class Error(Exception): #TODO - AbaseError
     """
       Errors
     """
@@ -28,7 +28,7 @@ class Error(Exception):
         """
         # checks
         if self._error_text.__len__()==0:
-            print("Text is empty")
+            print("Text is empty") #TODO: В методах не должно быть print-ов, это только для тестирования
         return self._error_text
 #разобраться с хешированием
     # @property
