@@ -658,7 +658,7 @@ C_CONSOLE_ARGS={
 }
 # описание команд консоли
 C_CONSOLE_COMMAND_DESC={
-    C_GET_META_CONFIG:"\n"+C_COLOR_HEADER+C_GET_SOURCE+C_COLOR_ENDC+"\n"+
+    C_GET_META_CONFIG:"\n"+C_COLOR_HEADER+C_GET_META_CONFIG+C_COLOR_ENDC+"\n"+
                        C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tВозвращает параметры подключения к метаданным ХД",
     C_UPDATE_META_CONFIG:"\n"+C_COLOR_HEADER+C_UPDATE_META_CONFIG+C_COLOR_ENDC+"\n"+
                          C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tИзменяет параметры подключения к метаданным\n"+
@@ -668,19 +668,19 @@ C_CONSOLE_COMMAND_DESC={
                          C_COLOR_OKCYAN+C_USER_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_UPDATE_META_CONFIG).get(C_USER_CONSOLE_ARG).get(C_DESC)+"\n\t"+
                          C_COLOR_OKCYAN+C_PASSWORD_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_UPDATE_META_CONFIG).get(C_PASSWORD_CONSOLE_ARG).get(C_DESC)+"\n\t"+
                          C_COLOR_OKCYAN+C_PORT_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_UPDATE_META_CONFIG).get(C_PORT_CONSOLE_ARG).get(C_DESC),
-    C_CREATE_META:"\n"+C_COLOR_HEADER+C_UPDATE_META_CONFIG+C_COLOR_ENDC+"\n"+
+    C_CREATE_META:"\n"+C_COLOR_HEADER+C_CREATE_META+C_COLOR_ENDC+"\n"+
                   C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tСоздает таблицы метаданных\n",
-    C_GET_DWH_CONFIG:"\n"+C_COLOR_HEADER+C_GET_SOURCE+C_COLOR_ENDC+"\n"+
+    C_GET_DWH_CONFIG:"\n"+C_COLOR_HEADER+C_GET_DWH_CONFIG+C_COLOR_ENDC+"\n"+
                       C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tВозвращает параметры подключения к ХД",
-    C_UPDATE_DWH_CONFIG:"\n"+C_COLOR_HEADER+C_UPDATE_META_CONFIG+C_COLOR_ENDC+"\n"+
+    C_UPDATE_DWH_CONFIG:"\n"+C_COLOR_HEADER+C_UPDATE_DWH_CONFIG+C_COLOR_ENDC+"\n"+
                          C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tИзменяет параметры подключения к ХД\n"+
                          C_COLOR_BOLD+"Аргументы:"+C_COLOR_ENDC+"\n\t"+
-                         C_COLOR_OKCYAN+C_SERVER_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_UPDATE_META_CONFIG).get(C_SERVER_CONSOLE_ARG).get(C_DESC)+"\n\t"+
-                         C_COLOR_OKCYAN+C_DATABASE_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_UPDATE_META_CONFIG).get(C_DATABASE_CONSOLE_ARG).get(C_DESC)+"\n\t"+
-                         C_COLOR_OKCYAN+C_USER_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_UPDATE_META_CONFIG).get(C_USER_CONSOLE_ARG).get(C_DESC)+"\n\t"+
-                         C_COLOR_OKCYAN+C_PASSWORD_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_UPDATE_META_CONFIG).get(C_PASSWORD_CONSOLE_ARG).get(C_DESC)+"\n\t"+
-                         C_COLOR_OKCYAN+C_PORT_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_UPDATE_META_CONFIG).get(C_PORT_CONSOLE_ARG).get(C_DESC),
-    C_CREATE_DWH:"\n"+C_COLOR_HEADER+C_UPDATE_META_CONFIG+C_COLOR_ENDC+"\n"+
+                         C_COLOR_OKCYAN+C_SERVER_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_UPDATE_DWH_CONFIG).get(C_SERVER_CONSOLE_ARG).get(C_DESC)+"\n\t"+
+                         C_COLOR_OKCYAN+C_DATABASE_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_UPDATE_DWH_CONFIG).get(C_DATABASE_CONSOLE_ARG).get(C_DESC)+"\n\t"+
+                         C_COLOR_OKCYAN+C_USER_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_UPDATE_DWH_CONFIG).get(C_USER_CONSOLE_ARG).get(C_DESC)+"\n\t"+
+                         C_COLOR_OKCYAN+C_PASSWORD_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_UPDATE_DWH_CONFIG).get(C_PASSWORD_CONSOLE_ARG).get(C_DESC)+"\n\t"+
+                         C_COLOR_OKCYAN+C_PORT_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_UPDATE_DWH_CONFIG).get(C_PORT_CONSOLE_ARG).get(C_DESC),
+    C_CREATE_DWH:"\n"+C_COLOR_HEADER+C_CREATE_DWH+C_COLOR_ENDC+"\n"+
                   C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tСоздает таблицы ХД\n",
     C_GET_SOURCE:"\n"+C_COLOR_HEADER+C_GET_SOURCE+C_COLOR_ENDC+"\n"+
                  C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tВозвращает источники и их свойства\n"+
