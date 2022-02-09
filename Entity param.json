@@ -1,42 +1,26 @@
 {
-    "entity":"orders",
-    "description":"order entity",
-    "attribute":[
-            {
-            "name":"order_id",
-            "pk":1,
-            "datatype":"int",
-            "length":null,
-            "scale":null,
-            "link_entity":null,
-            "description":"client id",
-            "source":[
-                    {
-                    "source":"7a41e6d2-0d44-4345-86fc-3d273b1e7973",
-                    "schema":"crm",
-                    "table":"orders",
-                    "column":"order_id"
-                    }
-                ]
-        }
-    ,
+    "entity":"description: name of the entity, type: str",
+    "description":"description: description of the entity, type: str",
+    "attribute":
+    [
         {
-            "name":"client_id",
-            "pk":0,
-            "datatype":"int",
-            "length":null,
-            "scale":null,
-            "link_entity":"491458b0-b38a-46ba-99f9-492aebd54761",
-            "description":"client id",
-            "source":[
-                    {
-                    "source":"7a41e6d2-0d44-4345-86fc-3d273b1e7973",
-                    "schema":"crm",
-                    "table":"orders",
-                    "column":"client_id"
-                    }
-                ]
+            "name":"description: name of the attribute, type: str",
+            "description":"description: description of the attribute, type: str",
+            "pk":"description: the attribute is the entity's primary key (0 or 1 or null), type: int",
+            "datatype":"description: datatype of the attribute, type: str",
+            "length":"description: length of the attribute (number or null), type: int",
+            "scale":"description: scale of the attribute (number or null), type: int",
+            "link_entity":"description: id of the linked entity, type: str",
+            "source":
+            [
+                {
+                    "source":"description: id of the source, type: str",
+                    "schema":"description: the source schema, type: str",
+                    "table":"description: the source table, type: str",
+                    "column":"the source column"
+                }
+            ]
         }
-        ]
+    ]
 
 }
