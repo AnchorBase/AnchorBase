@@ -2,6 +2,7 @@
 import psycopg2
 import psycopg2.extensions
 from Constants import *
+import sys
 
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
 
@@ -40,8 +41,8 @@ def sql_exec(
             port=p_port
         )
     except psycopg2.OperationalError as e:
-        # sys.exit(e) #TODO: реализовать вывод ошибок, как сделал Рустем
         l_error=e
+        return l_query_output, l_error
     cnct.autocommit = False
     crsr = cnct.cursor()
     try:

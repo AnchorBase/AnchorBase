@@ -45,6 +45,7 @@ def sql_exec(
             )
     except pyodbc.Error as e:
         l_error=e
+        return query_output, l_error
     crsr =mssql_cnct.cursor()
     try:
         crsr.execute(p_sql)
