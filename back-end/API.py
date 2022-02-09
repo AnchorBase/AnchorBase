@@ -216,7 +216,8 @@ def get_entity_attr(p_id: str =None, p_name: str =None, p_entity: str =None):
                 C_NAME:l_ent_attr.name,
                 C_DESC:l_ent_attr.desc,
                 C_DATATYPE:l_ent_attr.datatype.data_type_sql,
-                C_ENTITY:l_ent_attr.entity.name
+                C_ENTITY:l_ent_attr.entity.name,
+                C_LINK_ENTITY:l_ent_attr.link_entity.name if l_ent_attr.fk==1 else None
             }
             l_json_object.append(
                 _JsonObject(p_type=C_ENTITY_COLUMN,p_id=str(l_ent_attr.id), p_attribute=l_ent_attr_dict)
@@ -260,20 +261,21 @@ def get_attr_source(p_id: str =None, p_name: str =None, p_entity: str =None, p_s
                 p_type=C_ENTITY_COLUMN,
                 p_id=str(i_ent_attr.uuid)
             )
-            for i_queue_column in l_ent_attr.source_attribute:
-                if not p_source_id or i_queue_column.source_table.source.id==p_source_id: # если заданный id источника совпадает с id источника атрибута источника
-                    l_ent_attr_dict={
-                        C_ID:l_ent_attr.id,
-                        C_NAME:l_ent_attr.name,
-                        C_ENTITY:l_ent_attr.entity.name,
-                        C_SOURCE_COLUMN:i_queue_column.name,
-                        C_SOURCE_TABLE:i_queue_column.source_table.name,
-                        C_SOURCE_NAME:i_queue_column.source_table.source.name,
-                        C_SOURCE_ID:i_queue_column.source_table.source.id
-                    }
-                    l_json_object.append(
-                        _JsonObject(p_type=C_ENTITY_COLUMN,p_id=str(l_ent_attr.id), p_attribute=l_ent_attr_dict)
-                    )
+            if l_ent_attr.source_attribute:
+                for i_queue_column in l_ent_attr.source_attribute:
+                    if not p_source_id or i_queue_column.source_table.source.id==p_source_id: # если заданный id источника совпадает с id источника атрибута источника
+                        l_ent_attr_dict={
+                            C_ID:l_ent_attr.id,
+                            C_NAME:l_ent_attr.name,
+                            C_ENTITY:l_ent_attr.entity.name,
+                            C_SOURCE_COLUMN:i_queue_column.name,
+                            C_SOURCE_TABLE:i_queue_column.source_table.name,
+                            C_SOURCE_NAME:i_queue_column.source_table.source.name,
+                            C_SOURCE_ID:i_queue_column.source_table.source.id
+                        }
+                        l_json_object.append(
+                            _JsonObject(p_type=C_ENTITY_COLUMN,p_id=str(l_ent_attr.id), p_attribute=l_ent_attr_dict)
+                        )
     return _JsonOutput(p_json_object=l_json_object, p_error=l_error).body
 
 def get_entity_source(p_id: str =None, p_name: str =None, p_source_id: str =None):

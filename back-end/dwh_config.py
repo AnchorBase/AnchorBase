@@ -1,5 +1,5 @@
 server="localhost"
-database="budget"
+database="test"
 user="pavelhamrin"
 password=""
 port="5433"

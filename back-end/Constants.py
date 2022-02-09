@@ -52,6 +52,7 @@ C_SCALE = "scale" # количество знаков после запятой
 C_DWH = "dwh" # ХД
 C_INCREMENT = "increment" # инкремент
 C_PK = "pk" # ключ
+C_FK="fk" # внешний ключ
 C_DESC="description" # описание
 C_ID="id" # идентификатор
 C_DATA="data" # данные
@@ -246,6 +247,7 @@ C_ENTITY_COLUMN_META_ATTRIBUTES = { # необходимые атрибуты а
     C_NAME:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:0},
     C_PK:{C_NOT_NULL:0,C_TYPE_VALUE:"int",C_PK:0},
     C_RK:{C_NOT_NULL:0,C_TYPE_VALUE:"int",C_PK:0},
+    C_FK:{C_NOT_NULL:0,C_TYPE_VALUE:"int",C_PK:0},
     C_DESC:{C_NOT_NULL:0,C_TYPE_VALUE:"str",C_PK:0},
     C_ENTITY:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:0},
     C_DATATYPE:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:0},
