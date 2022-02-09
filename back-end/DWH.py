@@ -1283,6 +1283,12 @@ class _DWHObject:
                             C_RK:self.rk
                         }
                     )
+                if self.fk:
+                    l_json.update(
+                        {
+                            C_FK:self.fk
+                        }
+                    )
 
 
         # атрибуты queue таблицы
@@ -1529,6 +1535,7 @@ class Attribute(_DWHObject):
                  p_attribute_type: str =None,
                  p_pk: int =None,
                  p_rk: int =None,
+                 p_fk: int =None,
                  p_desc: str =None,
                  p_source_table =None,
                  p_source_attribute =None,
@@ -1561,6 +1568,7 @@ class Attribute(_DWHObject):
         self._attribute_type=p_attribute_type
         self._pk=p_pk
         self._rk=p_rk
+        self._fk=p_fk
 
 
     @property
@@ -1612,6 +1620,16 @@ class Attribute(_DWHObject):
             return self._rk
         else:
             return self.object_attrs_meta.get(C_RK,None)
+
+    @property
+    def fk(self):
+        """
+        Признак внешнего ключа
+        """
+        if self._fk is not None:
+            return self._fk
+        else:
+            return self.object_attrs_meta.get(C_FK,None)
 
     def __source_attribute_exist_checker(self):
         """

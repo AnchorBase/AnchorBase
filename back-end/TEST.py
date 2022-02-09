@@ -321,8 +321,15 @@ l_json2="""
 # print(l_job.status)
 
 
-l_table=DWH.AttributeTable(p_id='dd522776-f90f-4c16-a2f2-53fa3e13c2b7')
-print(DWH.drop_view_ddl(p_table=l_table))
+# l_table=DWH.AttributeTable(p_id='dd522776-f90f-4c16-a2f2-53fa3e13c2b7')
+# print(DWH.drop_view_ddl(p_table=l_table))
+
+l_attr = DWH.Attribute(
+    p_id='0d4224af-d5f7-4716-a58d-58644ce3bb68',
+    p_type="entity_column"
+)
+
+print(l_attr.fk)
 
 
 
