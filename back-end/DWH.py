@@ -588,7 +588,10 @@ def get_idmap_etl(
         if l_source_table_id and l_source_table_id!=i_source_table.id: # пропускаем таблицу источник, если не она указана
             continue
         l_column_nk_sql=""
-        for i_column_nk in p_idmap.source_attribute_nk:
+        # формируем скрипт для конкатенации натуральных ключей
+        # сортируем список натуральных ключей по наименованию
+        l_source_attribute_nk=sorted(p_idmap.source_attribute_nk, key=lambda nk: nk.name)
+        for i_column_nk in l_source_attribute_nk:
             if i_source_table.id==i_column_nk.source_table.id:
                 l_column_nk_sql=l_column_nk_sql+"CAST("+'"'+str(i_column_nk.id)+'"'+" AS VARCHAR(4000))\n\t\t||'@@'||\n\t\t"
         l_column_nk_sql=l_column_nk_sql[:-14]
@@ -2019,6 +2022,7 @@ class Idmap(_DWHObject):
     @source_attribute_nk.setter
     def source_attribute_nk(self, p_new_source_attribute_nk):
         self._source_attribute_nk=p_new_source_attribute_nk
+        self.object_attrs_meta.pop(C_ATTRIBUTE_NK, None)
 
 
 
