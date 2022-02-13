@@ -29,7 +29,7 @@ class AbaseError(Exception):
         """
         # checks
         if self._error_text.__len__()==0:
-        return self._error_text
+            return self._error_text
 #разобраться с хешированием
     # @property
     # def error_code(self):
