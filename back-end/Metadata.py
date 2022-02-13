@@ -25,7 +25,7 @@ def sql_exec(p_sql: str, p_result: int =1):
         p_result=p_result
     )
     if l_result[1]:
-        Error(p_error_text="DBMS Error: "+l_result[1], p_module="Metadata", p_class="", p_def="sql_exec").raise_error()    ##if error - raise error
+        AbaseError(p_error_text="DBMS Error: "+l_result[1], p_module="Metadata", p_class="", p_def="sql_exec").raise_error()    ##if error - raise error
     else:
         return l_result[0]
 
@@ -108,7 +108,7 @@ def search_object(p_type: str, p_uuid: list =None, p_attrs: dict =None) -> list:
     # проверка заданного типа объекта метаданных
     l_type=p_type.lower()
     if l_type not in C_META_TABLES:
-        Error(p_error_text="There's no object "+l_type+" in metadata", p_module="Metadata", p_class="", p_def="search_object").raise_error()   ##Raises error if there's no object of metadata
+        AbaseError(p_error_text="There's no object "+l_type+" in metadata", p_module="Metadata", p_class="", p_def="search_object").raise_error()   ##Raises error if there's no object of metadata
     # фомируем SELECT
     l_sql='SELECT * FROM "'+l_type+'"'+" WHERE 1=1"
     # добавляем условия фильтрации
@@ -117,7 +117,7 @@ def search_object(p_type: str, p_uuid: list =None, p_attrs: dict =None) -> list:
     if p_uuid is not None and p_uuid.count(None)==0:
         l_where = l_where + __search_uuid_sql(p_uuid)
     elif p_uuid is not None and p_uuid.count(None)>0:
-        Error(p_error_text="Empty value uuid", p_module="Metadata", p_class="", p_def="search_object").raise_error()
+        AbaseError(p_error_text="Empty value uuid", p_module="Metadata", p_class="", p_def="search_object").raise_error()
         # filtering by attr фильтрация по attr
     if p_attrs is not None:
         l_where= l_where + __search_attr_sql(p_attrs)
@@ -143,7 +143,7 @@ def create_object(p_object: object):
     """
     # проверка, что передаваемый объект - объект класса MetaObject
     if type(p_object).__name__!="MetaObject":
-        Error(p_error_text="Object doesn't belong to MetaObject class", p_module="Metadata", p_class="", p_def="create_object").raise_error()
+        AbaseError(p_error_text="Object doesn't belong to MetaObject class", p_module="Metadata", p_class="", p_def="create_object").raise_error()
     # формируем SQL-запрос
     l_sql=__insert_object_sql(
         p_type=p_object.type,
@@ -160,7 +160,7 @@ def update_object(p_object: object):
     :param p_object: объект класса MetaObject
     """
     if type(p_object).__name__!="MetaObject":
-        Error(p_error_text="Object doesn't belong to MetaObject class", p_module="Metadata", p_class="", p_def="update_object").raise_error()
+        AbaseError(p_error_text="Object doesn't belong to MetaObject class", p_module="Metadata", p_class="", p_def="update_object").raise_error()
     # формируем SQL-запрос
     l_sql=__update_object_sql(
         p_type=p_object.type,
@@ -180,7 +180,7 @@ def delete_object(p_object: object):
     :param p_object: объект метаданных
     """
     if type(p_object).__name__!="MetaObject":
-        Error(p_error_text="Object doesn't belong to MetaObject class", p_module="Metadata", p_class="", p_def="delete_object").raise_error()
+        AbaseError(p_error_text="Object doesn't belong to MetaObject class", p_module="Metadata", p_class="", p_def="delete_object").raise_error()
     # формируем SQL-запрос
     l_sql=__delete_object_sql(
         p_type=p_object.type,
@@ -224,7 +224,7 @@ class MetaObject:
         """
         l_meta_object=self._type.lower()
         if l_meta_object not in C_META_TABLES:
-            Error(p_error_text="There's no object " + l_meta_object + " in metadata", p_module="Metadata",
+            AbaseError(p_error_text="There's no object " + l_meta_object + " in metadata", p_module="Metadata",
                   p_class="MetaObject", p_def="type").raise_error()
         return l_meta_object
 
@@ -261,16 +261,16 @@ class MetaObject:
                 l_necessary_attrs_list.append(i_attr)
         for i_attr in l_necessary_attrs_list:
             if i_attr not in l_attr_list or self._attrs.get(i_attr,None) is None:
-                Error(p_error_text="Attribute "+i_attr+" is missed", p_module="Metadata", p_class="MetaObject",
+                AbaseError(p_error_text="Attribute "+i_attr+" is missed", p_module="Metadata", p_class="MetaObject",
                       p_def="attrs_checker").raise_error()
         for i_attr in l_attr_list:
             # проверка, что атрибут указан верно
             if i_attr not in l_all_attrs_list:
-                Error(p_error_text="Attribute " + str(i_attr) + " is incorrect", p_module="Metadata", p_class="MetaObject",
+                AbaseError(p_error_text="Attribute " + str(i_attr) + " is incorrect", p_module="Metadata", p_class="MetaObject",
                       p_def="attrs_checker").raise_error()
             # проверка, что тип данных у атрибутов указан верно
             if type(self._attrs.get(i_attr,None)).__name__!=l_all_attrs_dict.get(i_attr,None).get(C_TYPE_VALUE) and self._attrs.get(i_attr,None) is not None:
-                Error(p_error_text="Attribute value" + str(i_attr) + " " + str(self.uuid) + " is incorrect", p_module="Metadata",
+                AbaseError(p_error_text="Attribute value" + str(i_attr) + " " + str(self.uuid) + " is incorrect", p_module="Metadata",
                       p_class="MetaObject", p_def="attrs_checker").raise_error()
             # проверка на дубль значения атрибута (только у ключевых атрибутов метаданных)
             if l_all_attrs_dict.get(i_attr, None).get(C_PK)==1: # если атрибут ключевой
@@ -286,5 +286,5 @@ class MetaObject:
                     l_meta_attr_objs_uuid_list.append(i_meta_attr_obj.uuid)
                 # если уже есть объекты метаданных с таким значением ключевого атрибута и их uuid отличаются от self.uuid (объект не он сам)
                 if l_meta_attr_objs.__len__()>0 and self.uuid not in l_meta_attr_objs_uuid_list:
-                    Error(p_error_text="Object" + self.type + " с "+i_attr+"="+str(self._attrs.get(i_attr, None)) + " already exists",
+                    AbaseError(p_error_text="Object" + self.type + " с "+i_attr+"="+str(self._attrs.get(i_attr, None)) + " already exists",
                           p_module="Metadata", p_class="MetaObject", p_def="attrs_checker").raise_error()
