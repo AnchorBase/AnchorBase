@@ -25,7 +25,7 @@ def sql_exec(p_sql: str, p_result: int =1):
         p_result=p_result
     )
     if l_result[1]:
-        Error(p_error_text=l_result[1], p_module="Metadata", p_class="", p_def="sql_exec").raise_error()    ##if error - raise error
+        Error(p_error_text="DBMS Error: "+l_result[1], p_module="Metadata", p_class="", p_def="sql_exec").raise_error()    ##if error - raise error
     else:
         return l_result[0]
 
@@ -108,7 +108,7 @@ def search_object(p_type: str, p_uuid: list =None, p_attrs: dict =None) -> list:
     # проверка заданного типа объекта метаданных
     l_type=p_type.lower()
     if l_type not in C_META_TABLES:
-        Error(p_error_text="There's no object "+l_type+" of metadata in C_META_TABLES", p_module="Metadata", p_class="", p_def="search_object").raise_error()   ##Raises error if there's no object of metadata
+        Error(p_error_text="There's no object "+l_type+" in metadata", p_module="Metadata", p_class="", p_def="search_object").raise_error()   ##Raises error if there's no object of metadata
     # фомируем SELECT
     l_sql='SELECT * FROM "'+l_type+'"'+" WHERE 1=1"
     # добавляем условия фильтрации
@@ -224,7 +224,7 @@ class MetaObject:
         """
         l_meta_object=self._type.lower()
         if l_meta_object not in C_META_TABLES:
-            Error(p_error_text="There's no object " + l_meta_object + " of metadata in C_META_TABLES", p_module="Metadata",
+            Error(p_error_text="There's no object " + l_meta_object + " in metadata", p_module="Metadata",
                   p_class="MetaObject", p_def="type").raise_error()
         return l_meta_object
 
