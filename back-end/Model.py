@@ -4,6 +4,8 @@ import json
 from DWH import *
 from collections import Counter
 from Constants import *
+import SystemObjects
+from SystemObjects import *
 
 class Model:
     """
@@ -40,7 +42,8 @@ class Model:
         Проверяет json на заполненность
         """
         if not self._json:
-            sys.exit("Json пуст")
+            AbaseError(p_error_text="JSON is empty", p_module="Model", p_class="Model",
+                       p_def="__json_checker").raise_error()
 
     @property
     def entity_param(self) -> object:
@@ -669,7 +672,8 @@ class Model:
         # конкретный текст ошибки
         l_result=Connection().sql_exec(p_sql=p_ddl, p_rollback=1, p_result=0) # запускаем ddl с обязательным откатом
         if l_result[1]:
-            sys.exit("В сформированном DDL ошибка \n"+str(l_result[1]))
+            AbaseError(p_error_text="Created DDL is not correct \n"+str(l_result[1]), p_module="Model", p_class="Model",
+                       p_def="__ddl_checker").raise_error()
 
 
     def __metadata_checker(self,p_objects: list):
@@ -794,12 +798,14 @@ class _SourceParam:
         Проверяет id источника
         """
         if not self.source_id:
-            sys.exit("Источник не заполнен") #TODO переделать
+            AbaseError(p_error_text="Source value is empty", p_module="Model", p_class="Model",
+                       p_def="__source_id_checker").raise_error()
         # проверка на корректное заполнение - uuid
         try:
             uuid.UUID(self.source_id)
         except ValueError as e:
-            sys.exit("Некорректное id источника")
+            AbaseError(p_error_text="ID of source is incorrect", p_module="Model", p_class="Model",
+                       p_def="__source_id_checker").raise_error()
         # проверка на существование в метаданных источника (просто инициализируем объект)
         l_source_meta=Source(p_id=self.source_id)
 
@@ -808,7 +814,8 @@ class _SourceParam:
         Проверяет таблицу источника
         """
         if not self.table:
-            sys.exit("Таблица источника не заполнена")
+            AbaseError(p_error_text="Table of source is empty", p_module="Model", p_class="Model",
+                       p_def="__table_checker").raise_error()
 
     def __column_checker(self):
         """
@@ -816,7 +823,8 @@ class _SourceParam:
         :return:
         """
         if not self.column:
-            sys.exit("Столбец источника не заполнен")
+            AbaseError(p_error_text="Column of source is empty", p_module="Model", p_class="Model",
+                       p_def="__column_checker").raise_error()
 
 class _AttributeParam:
     """
@@ -927,14 +935,16 @@ class _AttributeParam:
         Проверяет правильность наименования атрибута
         """
         if not self.name:
-            sys.exit("Не задано наименование атрибута")
+            AbaseError(p_error_text="Name of attribute is empty", p_module="Model", p_class="_AttributeParam",
+                       p_def="__name_checker").raise_error()
 
     def __datatype_checker(self):
         """
         Проверяет правильность типа данных
         """
         if not self.datatype:
-            sys.exit("Не указан тип данных у атрибута")
+            AbaseError(p_error_text="Type of attribute is missed", p_module="Model", p_class="_AttributeParam",
+                       p_def="__datatype_checker").raise_error()
 
     def __link_entity_checker(self):
         """
@@ -944,7 +954,8 @@ class _AttributeParam:
             try:
                 uuid.UUID(self.link_entity_id)
             except ValueError as e:
-                sys.exit("Некорректное id связанной сущности")
+                AbaseError(p_error_text="ID of linked entity is incorrect", p_module="Model", p_class="_AttributeParam",
+                           p_def="__link_entity_checker").raise_error()
             # проверка на существование сущности в метаданных источника (просто инициализируем объект)
             l_entity_meta=Entity(p_id=self.link_entity_id)
 
@@ -953,7 +964,8 @@ class _AttributeParam:
         Проверяет корректность источника атрибута
         """
         if not self._source_param:
-            sys.exit("У атрибута не указан ни один источник")
+            AbaseError(p_error_text="Attribute doesn't have any source", p_module="Model", p_class="_AttributeParam",
+                       p_def="__source_checker").raise_error()
         else:
             l_source_table_name_list=[] # список уникальных наименований таблиц источников
             l_source=[]
@@ -967,7 +979,8 @@ class _AttributeParam:
                                            +str(l_source_schema)+"_"\
                                            +str(l_source_table)
                 if l_unique_source_table_name in l_source_table_name_list:
-                    sys.exit("Таблица источник "+str(l_source_table)+" указана два раза у атрибута "+self._name)
+                    AbaseError(p_error_text="Source "+str(l_source_table)+" is mentioned two times "+self._name, p_module="Model",
+                               p_class="_AttributeParam", p_def="__source_checker").raise_error()
                 l_source.append(
                     _SourceParam(
                         p_source_id=l_source_id,
@@ -984,9 +997,11 @@ class _AttributeParam:
         Проверка на целое число
         """
         if type(self._pk).__name__!="int":
-            sys.exit("Некорректное значение признака первичного ключа")
+            AbaseError(p_error_text="Incorrect value of PK", p_module="Model",
+                       p_class="_AttributeParam", p_def="__pk_checker").raise_error()
         elif self._pk>1:
-            sys.exit("Некорректное значение признака первичного ключа")
+            AbaseError(p_error_text="Incorrect value of PK", p_module="Model",
+                       p_class="_AttributeParam", p_def="__pk_checker").raise_error()
 
 class _EntityParam:
     """
@@ -1058,7 +1073,8 @@ class _EntityParam:
         Проверяет корректность наименования сущности
         """
         if not self._name:
-            sys.exit("У сущности не указано наименование")
+            AbaseError(p_error_text="Name of entity is missed", p_module="Model",
+                       p_class="_EntityParam", p_def="name_checker").raise_error()
 
     def attribute_checker(self):
         """
@@ -1066,7 +1082,8 @@ class _EntityParam:
         """
         l_attribute=[]
         if not self._attribute_param:
-            sys.exit("У сущности нет ни одного атрибута")
+            AbaseError(p_error_text="Entity doesn't have any attribute", p_module="Model",
+                       p_class="_EntityParam", p_def="attribute_checker").raise_error()
         else:
             l_pk_cnt=0
             for i_attribute in self._attribute_param:
@@ -1084,7 +1101,8 @@ class _EntityParam:
                 )
                 l_pk_cnt=l_pk_cnt+i_attribute.get(C_PK)
             if l_pk_cnt==0:
-                sys.exit("Не указано ни одного первичного ключа у сущности")
+                AbaseError(p_error_text="PK of entity wasn't mentioned", p_module="Model",
+                           p_class="_EntityParam", p_def="attribute_checker").raise_error()
 
         return l_attribute
 
@@ -1101,7 +1119,8 @@ class _EntityParam:
                     l_source_table_pk.append(str(i_source.source_id)+"_"+str(i_source.schema)+"_"+str(i_source.table))
         for i_source_table in l_source_table:
             if i_source_table not in l_source_table_pk:
-                sys.exit("Таблица источник не указана в качестве источника у первичного ключа")
+                AbaseError(p_error_text="Source table isn't mentioned like source of PK", p_module="Model",
+                           p_class="_EntityParam", p_def="source_table_pk_checker").raise_error()
 
     def attribute_double_checker(self):
             """
@@ -1112,7 +1131,8 @@ class _EntityParam:
                 l_attribute_list.append(i_attribute.name)
                 l_attribute_cnt=Counter(l_attribute_list).get(i_attribute.name)
                 if l_attribute_cnt>1:
-                    sys.exit("Атрибут "+i_attribute.name+" указан больше одного раза")
+                    AbaseError(p_error_text="Attribute "+i_attribute.name+" is mentioned more than one time", p_module="Model",
+                               p_class="_EntityParam", p_def="attribute_double_checker").raise_error()
 
     def entity_name_double_checker(self):
         """
@@ -1125,7 +1145,8 @@ class _EntityParam:
             }
         )
         if l_entity_meta_obj.__len__()>0:
-            sys.exit("Сущность с таким наименование уже существует")
+            AbaseError(p_error_text="Entity with the name already exists",
+                       p_module="Model", p_class="_EntityParam", p_def="entity_name_double_checker").raise_error()
 
     def source_attribute_double_checker(self):
         """
@@ -1139,10 +1160,12 @@ class _EntityParam:
                                         +i_source_attribute.table+"_" \
                                         +i_source_attribute.column
                 if l_source_attribute_name in l_source_attribute_name_list:
-                    sys.exit("Атрибут источника "+str(i_source_attribute.source_id)+" "
+                    AbaseError(p_error_text="Attribute of source "+str(i_source_attribute.source_id)+" "
                              +i_source_attribute.schema+"."
                              +i_source_attribute.table+"."
-                             +i_source_attribute.column+" указан дважды")
+                             +i_source_attribute.column+" is mentioned twice",
+                               p_module="Model", p_class="_EntityParam",
+                               p_def="source_attribute_double_checker").raise_error()
                 else:
                     l_source_attribute_name_list.append(l_source_attribute_name)
 
@@ -1153,7 +1176,9 @@ class _EntityParam:
         l_link_entity_id_list=[]
         for i_attribute in self.attribute_param:
             if i_attribute.link_entity_id in l_link_entity_id_list:
-                sys.exit("Атрибуты сущности несколько раз ссылаются на сущность "+str(i_attribute.link_entity_id))
+                AbaseError(p_error_text=str(i_attribute.link_entity_id)+" is mentioned by attributes of entity more than one time" ,
+                           p_module="Model", p_class="_EntityParam",
+                           p_def="link_entity_double_checker").raise_error()
             elif i_attribute.link_entity_id:
                 l_link_entity_id_list.append(i_attribute.link_entity_id)
 

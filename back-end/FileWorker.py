@@ -1,5 +1,6 @@
 import sys
-
+import SystemObjects
+from SystemObjects import *
 class File:
     """
     Класс по работе с файлами
@@ -71,8 +72,8 @@ class File:
             l_params_key_value = p_params_dict.get(i_params_dict_keys,None)
             # проверяем, что значение ключа не множественное
             if type(l_params_key_value) is list:
-                sys.exit("У переменной несколько значений") #TODO: реализовать вывод ошибок, как сделал Рустем
-            # заменяем все места с указанием переменной значением
+                AbaseError(p_error_text="Variable has a few meanings", p_module="FileWorker", p_class="File",
+                           p_def="replace_in_body").raise_error()
             l_file_body_modify = l_file_body_modify.replace(i_params_dict_keys,l_params_key_value)
         return l_file_body_modify
 
