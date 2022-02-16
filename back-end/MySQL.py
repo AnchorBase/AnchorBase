@@ -48,3 +48,5 @@ def sql_exec(
         cnct.close()
 
     return query_output, l_error
+
+C_CURRENT_TIMESTAMP_SQL="CURRENT_TIMESTAMP"

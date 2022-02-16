@@ -419,7 +419,12 @@ C_META_ATTRIBUTES = { # таблица метаданных и необходи�
 #================================
 C_MSSQL = "mssql"  # MSSQL
 C_POSTGRESQL = "postgresql" # PostgreSQL
-C_AVAILABLE_SOURCE_LIST = [C_MSSQL, C_POSTGRESQL] # фиксированный список СУБД, с которым AnchorBase умеет работать как с источником
+C_MYSQL ="mysql" # MySQL
+C_AVAILABLE_SOURCE_LIST = [
+    C_MSSQL,
+    C_POSTGRESQL,
+    C_MYSQL
+] # фиксированный список СУБД, с которым AnchorBase умеет работать как с источником
 C_AVAILABLE_DWH_LIST = [C_POSTGRESQL] # фиксированный список СУБД, с которым AnchorBase умеет работать как с DWH
 C_CNCT_PARAMS = [  # фиксированный список параметров подключения
     C_SERVER,
@@ -487,7 +492,8 @@ C_POSTGRESQL_DATA_TYPE_LIST = [ # фиксированный список тип
 ]
 C_TIMESTAMP_DBMS={ #тип данных даты и времени в разных СУБД
     C_MSSQL:C_DATETIME,
-    C_POSTGRESQL:C_TIMESTAMP
+    C_POSTGRESQL:C_TIMESTAMP,
+    C_MYSQL:C_DATETIME
 }
 # компоненты СУБД: типы данных и т.д.
 C_DBMS_COMPONENTS = {
