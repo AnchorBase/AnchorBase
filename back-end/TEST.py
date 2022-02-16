@@ -12,6 +12,7 @@ import shlex
 import ConsoleWork
 import uuid
 import datetime
+import MySQL
 # source = DWH.Source(
 #     p_id='0a884f59-48b6-4afe-838e-57bdbbb9ec7c'
 # )
@@ -324,12 +325,16 @@ l_json2="""
 # l_table=DWH.AttributeTable(p_id='dd522776-f90f-4c16-a2f2-53fa3e13c2b7')
 # print(DWH.drop_view_ddl(p_table=l_table))
 
-l_attr = DWH.Attribute(
-    p_id='0d4224af-d5f7-4716-a58d-58644ce3bb68',
-    p_type="entity_column"
+print(
+    MySQL.sql_exec(
+        p_server="localhost",
+        p_database="",
+        p_user="root",
+        p_password="Netwik44!",
+        p_port=3306,
+        p_sql="select * from source.client"
+    )
 )
-
-print(l_attr.fk)
 
 
 
