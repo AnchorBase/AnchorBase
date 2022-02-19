@@ -517,29 +517,29 @@ C_COLOR_UNDERLINE = '\033[4m' #  подчеркивание
 #  Команды консоли
 #================================
 # не забыть добавить новые команды в список C_CONSOLE_COMMAND_LIST
-C_GET_SOURCE="get_source" # получение источника/источников
-C_ADD_SOURCE="add_source" # добавление нового источника
-C_ALTER_SOURCE="alter_source" # изменение параметров источника
-C_GET_SOURCE_TYPE="get_source_type" # показывается все типы источников, с которыми AnchorBase умеет работать
-C_GET_ENTITY="get_entity" # получение сущности
-C_GET_ENTITY_ATTR="get_attr" # получение атрибута сущности
-C_GET_ENTITY_SOURCE="get_entity_source" # получение источников сущности
-C_GET_ATTR_SOURCE="get_attr_source" # получение источников атрибутов сущности
-C_START_JOB="load_data" # загрузка данных в ХД
-C_GET_LAST_ETL="get_last_etl" # получение информации о последнем etl
-C_GET_ETL_HIST="get_etl_hist" # получение логов etl-процессов
-C_GET_ETL_DETAIL="get_etl_detail" # получение детализации по etl-процессу
-C_ADD_ENTITY="create_entity" # добавление сущности в ХД
-C_ALTER_ENTITY="alter_entity" # изменение сущности в ХД
-C_DROP_ENTITY="drop_entity" # удаляет указанную сущность
-C_GET_META_CONFIG="get_meta_config" # возвращает параметры подключения к метаданным
-C_UPDATE_META_CONFIG="update_meta_config" # изменяет параметры подключения к метаданным
-C_CREATE_META="install_meta" # создает схему и таблицы метаданных
-C_GET_DWH_CONFIG="get_dwh_config" # возвращает параметры подключения к ХД
-C_UPDATE_DWH_CONFIG="update_dwh_config" # изменяет параметры подключения к ХД
-C_CREATE_DWH="install_dwh" # создает схемы для ХД
+C_GET_SOURCE="show source" # получение источника/источников
+C_ADD_SOURCE="create source" # добавление нового источника
+C_ALTER_SOURCE="alter source" # изменение параметров источника
+C_GET_SOURCE_TYPE="show source type" # показывается все типы источников, с которыми AnchorBase умеет работать
+C_GET_ENTITY="show entity" # получение сущности
+C_GET_ENTITY_ATTR="show columns" # получение атрибута сущности
+C_GET_ENTITY_SOURCE="show entity source" # получение источников сущности
+C_GET_ATTR_SOURCE="show column source" # получение источников атрибутов сущности
+C_START_JOB="load data" # загрузка данных в ХД
+C_GET_LAST_ETL="show log" # получение информации о последнем etl
+C_GET_ETL_HIST="show log hist" # получение логов etl-процессов
+C_GET_ETL_DETAIL="show log detail" # получение детализации по etl-процессу
+C_ADD_ENTITY="create entity" # добавление сущности в ХД
+C_ALTER_ENTITY="alter entity" # изменение сущности в ХД
+C_DROP_ENTITY="drop entity" # удаляет указанную сущность
+C_GET_META_CONFIG="show meta config" # возвращает параметры подключения к метаданным
+C_UPDATE_META_CONFIG="alter meta config" # изменяет параметры подключения к метаданным
+C_CREATE_META="install meta" # создает схему и таблицы метаданных
+C_GET_DWH_CONFIG="show dwh config" # возвращает параметры подключения к ХД
+C_UPDATE_DWH_CONFIG="alter dwh config" # изменяет параметры подключения к ХД
+C_CREATE_DWH="install dwh" # создает схемы для ХД
 C_EXIT="exit"
-C_HELP="help"
+C_HELP="-help"
 C_CONSOLE_COMMAND_LIST=[
     C_GET_SOURCE,
     C_ADD_SOURCE,
@@ -562,8 +562,7 @@ C_CONSOLE_COMMAND_LIST=[
     C_GET_DWH_CONFIG,
     C_UPDATE_DWH_CONFIG,
     C_CREATE_DWH,
-    C_EXIT,
-    C_HELP
+    C_EXIT
 ]
 # АРГУМЕНТЫ КОМАНД КОНСОЛИ
 C_NAME_CONSOLE_ARG="-name"
