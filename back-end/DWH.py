@@ -1854,6 +1854,10 @@ class SourceTable(_DWHObject):
         """
         SQL-запрос захвата данных с источника
         """
+        if self.source.type in [C_MYSQL]: # double quotes with name of database objects are unacceptable in these DBMS
+            l_dbl_qts=''
+        else:
+            l_dbl_qts='"'
         l_attribute_sql=""
         l_attribute_name_list=[]
         for i_attribute in self.source_attribute:
@@ -1861,17 +1865,17 @@ class SourceTable(_DWHObject):
                 l_attribute_name_list.append(i_attribute.name)
         l_attribute_name_list.sort() # сортируем по наименоваию
         for i_attribute in l_attribute_name_list:
-            l_attribute_sql=l_attribute_sql+"\n"+'"'+i_attribute+'"'+","
+            l_attribute_sql=l_attribute_sql+"\n"+l_dbl_qts+i_attribute+l_dbl_qts+","
         l_attribute_sql=l_attribute_sql[1:] # убираем первый перенос строки
         l_increment_sql=""
         l_timestamp_type=C_TIMESTAMP_DBMS.get(self.source.type)
         if self.increment:
-            l_increment_attr_sql='"'+self.increment.name+'"'+" AS update_timestamp"
+            l_increment_attr_sql=l_dbl_qts+self.increment.name+l_dbl_qts+" AS update_timestamp"
         else:
             l_increment_attr_sql=self.source.current_timestamp_sql+" AS update_timestamp"
         if self.last_increment:
-            l_increment_sql="\nWHERE "+'"'+self.increment.name+'"'+">CAST('"+self.last_increment+"' AS "+l_timestamp_type+")"
-        l_sql="SELECT\n"+l_attribute_sql+"\n"+l_increment_attr_sql+"\nFROM "+'"'+self.schema+'"'+"."+'"'+self.name+'"'\
+            l_increment_sql="\nWHERE "+l_dbl_qts+self.increment.name+l_dbl_qts+">CAST('"+self.last_increment+"' AS "+l_timestamp_type+")"
+        l_sql="SELECT\n"+l_attribute_sql+"\n"+l_increment_attr_sql+"\nFROM "+l_dbl_qts+self.schema+l_dbl_qts+"."+l_dbl_qts+self.name+l_dbl_qts\
               +l_increment_sql+";"
         return l_sql
 

@@ -18,25 +18,41 @@ def __get_command(p_input: str):
     """
     # разбиваем строку по пробелам (если в кавычках слово - не разбиваем) и получаем лист слов
     l_word=[]
-    for i_word in shlex.split(p_input):
+    l_cmnd_num=0 # порядковый номер последнего слова в команде
+    for i, i_word in enumerate(shlex.split(p_input)):
+        if i_word[0]=="-": # если слово начинается на "-" значит аргумент команды
+            l_cmnd_num=i
+            if l_cmnd_num==0:
+                print(C_COLOR_FAIL+"Неверно заданная команда"+C_COLOR_ENDC)
+                console_input()
         l_word.append(i_word)
-    l_command = l_word[0] # первое слово - команда
+    l_command=""
+    if l_cmnd_num==0: # если нет аргументов
+        l_cmnd_num=l_word.__len__()
+    # определяем команду
+    for i_word_num in range(l_cmnd_num):
+        l_command+=" "+l_word[i_word_num]
+    l_command=l_command[1:]
     __command_checker(l_command)
     l_help_command=None
-    if l_command==C_HELP and l_word.__len__()>1:
-        l_help_command=l_word[1] # если команда help - второе слово будет наименование команды, по которой нужно выдать справку
+    # if l_command==C_HELP and l_word.__len__()>1:
+    #     l_help_command=l_word[1] # если команда help - второе слово будет наименование команды, по которой нужно выдать справку
     l_arg={} # словарь аргументов
     l_arg_list=[] # список аргументов
     i=0
     for i_arg in l_word:
         if i_arg.__len__()>0 and i_arg[0]=="-": # если слово начинается на "-" значит аргумент команды
             __arg_checker(p_command=l_command, p_arg=i_arg)
+            if i_arg==C_HELP:
+                l_help_command=l_command
+                break
             l_arg.update(
                 {
                     i_arg:l_word[i+1]
                 }
             )
             l_arg_list.append(i_arg)
+
         i+=1
     __neccessary_args_checker(p_command=l_command, p_arg=l_arg_list)
 
@@ -62,7 +78,7 @@ def __arg_checker(p_command: str, p_arg: str):
     :param p_command: команда
     :param p_arg: аргумент команды
     """
-    if p_arg not in list(C_CONSOLE_ARGS.get(p_command).keys()):
+    if p_arg not in list(C_CONSOLE_ARGS.get(p_command).keys()) and p_arg!=C_HELP:
         print(C_COLOR_FAIL+"У команды "+p_command+" не существует аргумента "+p_arg+C_COLOR_ENDC)
         console_input()
 
