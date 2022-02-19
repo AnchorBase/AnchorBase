@@ -106,7 +106,9 @@ def __command_exec(p_command: str, p_arg: dict =None, p_help_command: str =None)
     :param p_help_command: команда, по которой требуется выдать справку
     """
     l_json=None
-    if p_command==C_GET_SOURCE:
+    if p_help_command:
+        __help(p_command=p_help_command)
+    elif p_command==C_GET_SOURCE:
         l_json=get_source(
             p_source_name=p_arg.get(C_NAME_CONSOLE_ARG),
             p_source_id=p_arg.get(C_ID_CONSOLE_ARG)
@@ -237,8 +239,6 @@ def __command_exec(p_command: str, p_arg: dict =None, p_help_command: str =None)
             return None
     elif p_command==C_EXIT:
         sys.exit()
-    elif p_command==C_HELP:
-        __help(p_command=p_help_command)
     else:
         return None
     return __print_result(p_json=l_json)
