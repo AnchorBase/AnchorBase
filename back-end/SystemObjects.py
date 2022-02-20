@@ -28,7 +28,7 @@ class AbaseError(Exception):
         Text of errors
         """
         # checks
-        if self._error_text.__len__()==0:
+        if self._error_text.__len__()>0:
             return self._error_text
 #разобраться с хешированием
     # @property
@@ -39,7 +39,8 @@ class AbaseError(Exception):
         """
         Raises error message, that have been given in p_error_text param
         """
-        self.args=[self.error_text]
+        l_arg=(self.error_text, None)
+        self.args=l_arg
         raise self
 
 

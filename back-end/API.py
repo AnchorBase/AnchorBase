@@ -8,6 +8,7 @@ from Model import *
 from Metadata import *
 from Constants import *
 import json
+from SystemObjects import AbaseError as aerror
 
 
 def get_source(p_source_name: str =None, p_source_id: str =None):
@@ -17,40 +18,43 @@ def get_source(p_source_name: str =None, p_source_id: str =None):
     :param p_source_name: наименование источника (если требуется конкретный источник)
     :param p_source_id: id источника (если требуется конкретный источник)
     """
-    l_source=[] # лист источников
-    if p_source_id: # если указан id
-        l_source.append(Source(p_id=p_source_id))
-    elif p_source_name:
-        l_source_meta=search_object(p_type=C_SOURCE, p_attrs={C_NAME:p_source_name})
-        if l_source_meta.__len__()>0:
-            l_source.append(Source(p_id=l_source_meta[0].uuid))
-    else:  # если ничего не указано, выдает все существующие источники
-        l_source_meta=search_object(p_type=C_SOURCE)
-        if l_source_meta.__len__()>0:
-            for i_source_meta in l_source_meta:
-                l_source.append(Source(p_id=i_source_meta.uuid))
-    l_json_object=[] # лист с объектами в формате json
-    for i_source in l_source:
-        l_attribute_dict={
-            C_TYPE_VALUE:i_source.type,
-            C_ID:str(i_source.id),
-            C_NAME:i_source.name,
-            C_DESC:i_source.description,
-            C_SERVER:i_source.server,
-            C_DATABASE:i_source.database,
-            C_PORT:i_source.port,
-            C_USER:i_source.user,
-            C_PASSWORD:i_source.password,
-            C_SOURCE_ID:i_source.source_id
-        }
-        l_json_object.append(
-            _JsonObject(p_id=i_source.id, p_type=C_SOURCE, p_attribute=l_attribute_dict)
-        )
-    l_error=None
-    if l_json_object.__len__()==0:
-        l_json_object=None
-        l_error="Ничего не найдено"
-    return _JsonOutput(p_json_object=l_json_object, p_error=l_error).body
+    try:
+        l_source=[] # лист источников
+        if p_source_id: # если указан id
+            l_source.append(Source(p_id=p_source_id))
+        elif p_source_name:
+            l_source_meta=search_object(p_type=C_SOURCE, p_attrs={C_NAME:p_source_name})
+            if l_source_meta.__len__()>0:
+                l_source.append(Source(p_id=l_source_meta[0].uuid))
+        else:  # если ничего не указано, выдает все существующие источники
+            l_source_meta=search_object(p_type=C_SOURCE)
+            if l_source_meta.__len__()>0:
+                for i_source_meta in l_source_meta:
+                    l_source.append(Source(p_id=i_source_meta.uuid))
+        l_json_object=[] # лист с объектами в формате json
+        for i_source in l_source:
+            l_attribute_dict={
+                C_TYPE_VALUE:i_source.type,
+                C_ID:str(i_source.id),
+                C_NAME:i_source.name,
+                C_DESC:i_source.description,
+                C_SERVER:i_source.server,
+                C_DATABASE:i_source.database,
+                C_PORT:i_source.port,
+                C_USER:i_source.user,
+                C_PASSWORD:i_source.password,
+                C_SOURCE_ID:i_source.source_id
+            }
+            l_json_object.append(
+                _JsonObject(p_id=i_source.id, p_type=C_SOURCE, p_attribute=l_attribute_dict)
+            )
+        l_error=None
+        if l_json_object.__len__()==0:
+            l_json_object=None
+            l_error="Ничего не найдено"
+        return _JsonOutput(p_json_object=l_json_object, p_error=l_error).body
+    except Exception as e:
+        return _JsonOutput(p_json_object=None, p_error=e.args[0]).body
 
 def add_source(p_type: str, p_name: str, p_server: str, p_database: str, p_user: str, p_password: str, p_port: int, p_desc: str =None):
     """
@@ -556,10 +560,15 @@ def create_entity(p_json: json):
 
     :param p_json: json с параметрами сущности
     """
-
-    l_model=Model(p_json=p_json)
-    l_model.create_entity()
-    return _JsonOutput(p_json_object=None, p_message="Сущность успешно создана").body
+    try:
+        l_model=Model(p_json=p_json)
+        l_model.create_entity()
+        return _JsonOutput(p_json_object=None, p_message="Сущность успешно создана").body
+    except Exception as e:
+        return _JsonOutput(p_json_object=None, p_error=e.args[0]).body
+    # l_model=Model(p_json=p_json)
+    # l_model.create_entity()
+    # return _JsonOutput(p_json_object=None, p_message="Сущность успешно создана").body
 
 def alter_entity(p_json: json):
     """
