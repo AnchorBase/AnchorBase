@@ -30,16 +30,16 @@ class AbaseError(Exception):
         # checks
         if self._error_text.__len__()>0:
             return self._error_text
-#разобраться с хешированием
-    # @property
-    # def error_code(self):
-    #     return hashlib.md5(self._module+"."+self._class+"."+self._def)
+#returns hash value of module, class and function
+    @property
+    def error_code(self):
+        return str(hash(self._module))+'.'+str(hash(self._class))+'.'+str(hash(self._def))
 
     def raise_error(self):
         """
         Raises error message, that have been given in p_error_text param
         """
-        l_arg=(self.error_text, None)
+        l_arg=(self.error_code+'\n'+self.error_text, None)
         self.args=l_arg
         raise self
 
