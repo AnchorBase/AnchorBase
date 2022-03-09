@@ -253,49 +253,49 @@ def get_attr_source(p_id: str =None, p_name: str =None, p_entity: str =None, p_s
     :param p_source_id: id источника
     """
     try:
-      l_error=None
-      l_json_object=None
-      l_id=None
-      if p_id:
-          l_id=[str(p_id)]
-      l_attr=None
-      if p_name or p_entity:
-          l_attr={}
-          if p_name:
-              l_attr={C_NAME:p_name}
-          if p_entity:
+        l_error=None
+        l_json_object=None
+        l_id=None
+        if p_id:
+            l_id=[str(p_id)]
+        l_attr=None
+        if p_name or p_entity:
+            l_attr={}
+            if p_name:
+                l_attr={C_NAME:p_name}
+            if p_entity:
               # вытаскиваем id сущности
-              l_entity_meta=search_object(p_type=C_ENTITY,p_attrs={C_NAME:p_entity})
-              if l_entity_meta:
-                  l_entity=Entity(p_id=str(l_entity_meta[0].uuid))
-                  l_attr.update({C_ENTITY:l_entity.id})
-              else:
-                  l_attr.update({C_ENTITY:C_DUMMY_UUID}) # если указано неправильное имя сущности - ничего не найдется
-      l_ent_attr_meta=search_object(p_type=C_ENTITY_COLUMN, p_uuid=l_id, p_attrs=l_attr)
-      if l_ent_attr_meta.__len__()==0:
-          l_error="Ничего не найдено"
-      else:
-          l_json_object=[]
-          for i_ent_attr in l_ent_attr_meta:
-              l_ent_attr=Attribute(
-                  p_type=C_ENTITY_COLUMN,
-                  p_id=str(i_ent_attr.uuid)
-              )
-              if l_ent_attr.source_attribute:
-                  for i_queue_column in l_ent_attr.source_attribute:
-                      if not p_source_id or i_queue_column.source_table.source.id==p_source_id: # если заданный id источника совпадает с id источника атрибута источника
-                          l_ent_attr_dict={
-                              C_ID:l_ent_attr.id,
-                              C_NAME:l_ent_attr.name,
-                              C_ENTITY:l_ent_attr.entity.name,
-                              C_SOURCE_COLUMN:i_queue_column.name,
-                              C_SOURCE_TABLE:i_queue_column.source_table.name,
-                              C_SOURCE_NAME:i_queue_column.source_table.source.name,
-                              C_SOURCE_ID:i_queue_column.source_table.source.id
-                          }
-                          l_json_object.append(
-                              _JsonObject(p_type=C_ENTITY_COLUMN,p_id=str(l_ent_attr.id), p_attribute=l_ent_attr_dict)
-                          )
+                l_entity_meta=search_object(p_type=C_ENTITY,p_attrs={C_NAME:p_entity})
+                if l_entity_meta:
+                    l_entity=Entity(p_id=str(l_entity_meta[0].uuid))
+                    l_attr.update({C_ENTITY:l_entity.id})
+                else:
+                    l_attr.update({C_ENTITY:C_DUMMY_UUID}) # если указано неправильное имя сущности - ничего не найдется
+        l_ent_attr_meta=search_object(p_type=C_ENTITY_COLUMN, p_uuid=l_id, p_attrs=l_attr)
+        if l_ent_attr_meta.__len__()==0:
+            l_error="Ничего не найдено"
+        else:
+            l_json_object=[]
+            for i_ent_attr in l_ent_attr_meta:
+                l_ent_attr=Attribute(
+                    p_type=C_ENTITY_COLUMN,
+                    p_id=str(i_ent_attr.uuid)
+                )
+                if l_ent_attr.source_attribute:
+                    for i_queue_column in l_ent_attr.source_attribute:
+                        if not p_source_id or i_queue_column.source_table.source.id==p_source_id: # если заданный id источника совпадает с id источника атрибута источника
+                            l_ent_attr_dict={
+                                C_ID:l_ent_attr.id,
+                                C_NAME:l_ent_attr.name,
+                                C_ENTITY:l_ent_attr.entity.name,
+                                C_SOURCE_COLUMN:i_queue_column.name,
+                                C_SOURCE_TABLE:i_queue_column.source_table.name,
+                                C_SOURCE_NAME:i_queue_column.source_table.source.name,
+                                C_SOURCE_ID:i_queue_column.source_table.source.id
+                            }
+                            l_json_object.append(
+                                _JsonObject(p_type=C_ENTITY_COLUMN,p_id=str(l_ent_attr.id), p_attribute=l_ent_attr_dict)
+                            )
         return _JsonOutput(p_json_object=l_json_object, p_error=l_error).body
     except Exception as e:
         return _JsonOutput(p_json_object=None, p_error=e.args[0]).body
@@ -604,9 +604,6 @@ def create_entity(p_json: json):
         return _JsonOutput(p_json_object=None, p_message="Сущность успешно создана").body
     except Exception as e:
         return _JsonOutput(p_json_object=None, p_error=e.args[0]).body
-    # l_model=Model(p_json=p_json)
-    # l_model.create_entity()
-    # return _JsonOutput(p_json_object=None, p_message="Сущность успешно создана").body
 
 def alter_entity(p_json: json):
     """
@@ -649,16 +646,19 @@ def get_meta_config():
     """
     Показывает конфиги подключения к метаданным
     """
-    l_meta_dict={
-        C_SERVER:meta_cnfg.server,
-        C_DATABASE:meta_cnfg.database,
-        C_USER:meta_cnfg.user,
-        C_PASSWORD:meta_cnfg.password,
-        C_PORT:meta_cnfg.port
-    }
-    return _JsonOutput(
-        p_json_object=[_JsonObject(p_type="metadata", p_attribute=l_meta_dict, p_id="")]
-    ).body
+    try:
+        l_meta_dict={
+            C_SERVER:meta_cnfg.server,
+            C_DATABASE:meta_cnfg.database,
+            C_USER:meta_cnfg.user,
+            C_PASSWORD:meta_cnfg.password,
+            C_PORT:meta_cnfg.port
+        }
+        return _JsonOutput(
+            p_json_object=[_JsonObject(p_type="metadata", p_attribute=l_meta_dict, p_id="")]
+        ).body
+    except Exception as e:
+        return _JsonOutput(p_json_object=None, p_error=e.args[0]).body
 
 def update_meta_config(
             p_database: str,
@@ -677,44 +677,53 @@ def update_meta_config(
     :param p_port: порт
     """
     # проверка подключения
-    cnct_chck(
-        p_database=p_database,
-        p_server=p_server,
-        p_user=p_user,
-        p_password=p_password,
-        p_port=p_port
-    )
+    try:
+        cnct_chck(
+            p_database=p_database,
+            p_server=p_server,
+            p_user=p_user,
+            p_password=p_password,
+            p_port=p_port
+        )
 
-    l_cnfg=C_SERVER+"="+'"'+p_server+'"'+"\n"+\
-           C_DATABASE+"="+'"'+p_database+'"'+"\n"+\
-           C_USER+"="+'"'+p_user+'"'+"\n"+\
-           C_PASSWORD+"="+'"'+p_password+'"'+"\n"+\
-           C_PORT+"="+'"'+str(p_port)+'"'+"\n"+\
-           C_DBMS_TYPE+"="+'"'+C_POSTGRESQL+'"'
-    fl(p_file_path=C_META_CONFIG, p_file_body=l_cnfg).write_file()
-    return _JsonOutput(p_json_object=None, p_message="Параметры подключения к метаданным успешно изменены").body
+        l_cnfg=C_SERVER+"="+'"'+p_server+'"'+"\n"+\
+               C_DATABASE+"="+'"'+p_database+'"'+"\n"+\
+               C_USER+"="+'"'+p_user+'"'+"\n"+\
+               C_PASSWORD+"="+'"'+p_password+'"'+"\n"+\
+               C_PORT+"="+'"'+str(p_port)+'"'+"\n"+\
+               C_DBMS_TYPE+"="+'"'+C_POSTGRESQL+'"'
+        fl(p_file_path=C_META_CONFIG, p_file_body=l_cnfg).write_file()
+        return _JsonOutput(p_json_object=None, p_message="Параметры подключения к метаданным успешно изменены").body
+    except Exception as e:
+        return _JsonOutput(p_json_object=None, p_error=e.args[0]).body
 
 def create_meta():
     """
     Создает схему и таблицы метаданных
     """
-    create_meta_tables()
-    return _JsonOutput(p_json_object=None, p_message="Таблицы метаданных успешно созданы").body
+    try:
+        create_meta_tables()
+        return _JsonOutput(p_json_object=None, p_message="Таблицы метаданных успешно созданы").body
+    except Exception as e:
+        return _JsonOutput(p_json_object=None, p_error=e.args[0]).body
 
 def get_dwh_config():
     """
     Показывает конфиги подключения к ХД
     """
-    l_dwh_dict={
-        C_SERVER:dwh_cnfg.server,
-        C_DATABASE:dwh_cnfg.database,
-        C_USER:dwh_cnfg.user,
-        C_PASSWORD:dwh_cnfg.password,
-        C_PORT:dwh_cnfg.port
-    }
-    return _JsonOutput(
-        p_json_object=[_JsonObject(p_type="dwh", p_attribute=l_dwh_dict, p_id="")]
-    ).body
+    try:
+        l_dwh_dict={
+            C_SERVER:dwh_cnfg.server,
+            C_DATABASE:dwh_cnfg.database,
+            C_USER:dwh_cnfg.user,
+            C_PASSWORD:dwh_cnfg.password,
+            C_PORT:dwh_cnfg.port
+        }
+        return _JsonOutput(
+            p_json_object=[_JsonObject(p_type="dwh", p_attribute=l_dwh_dict, p_id="")]
+        ).body
+    except Exception as e:
+        return _JsonOutput(p_json_object=None, p_error=e.args[0]).body
 
 def update_dwh_config(
         p_database: str,
@@ -733,29 +742,35 @@ def update_dwh_config(
     :param p_port: порт
     """
     # проверка подключения
-    cnct_chck(
-        p_database=p_database,
-        p_server=p_server,
-        p_user=p_user,
-        p_password=p_password,
-        p_port=p_port
-    )
+    try:
+        cnct_chck(
+            p_database=p_database,
+            p_server=p_server,
+            p_user=p_user,
+            p_password=p_password,
+            p_port=p_port
+        )
 
-    l_cnfg=C_SERVER+"="+'"'+p_server+'"'+"\n"+ \
-           C_DATABASE+"="+'"'+p_database+'"'+"\n"+ \
-           C_USER+"="+'"'+p_user+'"'+"\n"+ \
-           C_PASSWORD+"="+'"'+p_password+'"'+"\n"+ \
-           C_PORT+"="+'"'+str(p_port)+'"'+"\n"+ \
-           C_DBMS_TYPE+"="+'"'+C_POSTGRESQL+'"'
-    fl(p_file_path=C_CONFIG_FILE_PATH, p_file_body=l_cnfg).write_file()
-    return _JsonOutput(p_json_object=None, p_message="Параметры подключения к ХД успешно изменены").body
+        l_cnfg=C_SERVER+"="+'"'+p_server+'"'+"\n"+ \
+               C_DATABASE+"="+'"'+p_database+'"'+"\n"+ \
+               C_USER+"="+'"'+p_user+'"'+"\n"+ \
+               C_PASSWORD+"="+'"'+p_password+'"'+"\n"+ \
+               C_PORT+"="+'"'+str(p_port)+'"'+"\n"+ \
+               C_DBMS_TYPE+"="+'"'+C_POSTGRESQL+'"'
+        fl(p_file_path=C_CONFIG_FILE_PATH, p_file_body=l_cnfg).write_file()
+        return _JsonOutput(p_json_object=None, p_message="Параметры подключения к ХД успешно изменены").body
+    except Exception as e:
+        return _JsonOutput(p_json_object=None, p_error=e.args[0]).body
 
 def create_dwh_ddl():
     """
     Создает схемы и расширения ХД
     """
-    dwh.create_dwh_ddl()
-    return _JsonOutput(p_json_object=None, p_message="ХД успешно установлено").body
+    try:
+        dwh.create_dwh_ddl()
+        return _JsonOutput(p_json_object=None, p_message="ХД успешно установлено").body
+    except Exception as e:
+        return _JsonOutput(p_json_object=None, p_error=e.args[0]).body
 
 class _JsonObject:
     """
