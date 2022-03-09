@@ -20,8 +20,12 @@ def __get_command(p_input: str):
     l_word=[]
     l_cmnd_num=0 # порядковый номер последнего слова в команде
     for i, i_word in enumerate(shlex.split(p_input)):
+        if i_word.__len__()==0: # слово пустое
+            l_word.append(i_word)
+            continue
         if i_word[0]=="-": # если слово начинается на "-" значит аргумент команды
-            l_cmnd_num=i
+            if l_cmnd_num==0:
+                l_cmnd_num=i
             if l_cmnd_num==0:
                 print(C_COLOR_FAIL+"Неверно заданная команда"+C_COLOR_ENDC)
                 console_input()
@@ -52,9 +56,9 @@ def __get_command(p_input: str):
                 }
             )
             l_arg_list.append(i_arg)
-
         i+=1
-    __neccessary_args_checker(p_command=l_command, p_arg=l_arg_list)
+    if not l_help_command: # проверяем наличие необходимых аргументов, если help не указан
+        __neccessary_args_checker(p_command=l_command, p_arg=l_arg_list)
 
     return l_command, l_arg, l_help_command
 
@@ -78,7 +82,7 @@ def __arg_checker(p_command: str, p_arg: str):
     :param p_command: команда
     :param p_arg: аргумент команды
     """
-    if p_arg not in list(C_CONSOLE_ARGS.get(p_command).keys()) and p_arg!=C_HELP:
+    if C_CONSOLE_ARGS.get(p_command) and p_arg not in list(C_CONSOLE_ARGS.get(p_command).keys()) and p_arg!=C_HELP:
         print(C_COLOR_FAIL+"У команды "+p_command+" не существует аргумента "+p_arg+C_COLOR_ENDC)
         console_input()
 
@@ -288,17 +292,24 @@ def __print_result(p_json: json):
                 l_row.append(i_object.get(i_col))
             # добавляем строку в таблицу
             l_table.add_row(l_row)
+        l_table.align='l' #выравниваем по левому краю
         print(l_table)
 
 def console_input():
     """
     Выполняет команду переданную через консоль
     """
-    l_input=input(
-        "anchorbase: "
-    )
-    l_command=__get_command(l_input)
+    try:
+        l_input=input(
+            "anchorbase: "
+        )
+        l_command=__get_command(l_input)
 
-    __command_exec(p_command=l_command[0], p_arg=l_command[1], p_help_command=l_command[2])
+        __command_exec(p_command=l_command[0], p_arg=l_command[1], p_help_command=l_command[2])
+    except Exception as e:
+        print(C_COLOR_FAIL+str(e.args[0])+C_COLOR_ENDC)
+
 
     console_input()
+
+

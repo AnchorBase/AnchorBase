@@ -462,7 +462,7 @@ def get_etl_detail(p_etl: str =None, p_etl_id: str =None):
         l_json_object=[]
         l_attr={}
         if not p_etl and not p_etl_id: # хоть одно должен быть заполнено
-            l_error="Либо id, либо etl_id должны быть заполнены"
+            l_error="Либо "+C_ID_CONSOLE_ARG+", либо "+C_ETL_ID_CONSOLE_ARG+" должны быть заполнены"
             return _JsonOutput(p_json_object=l_json_object, p_error=l_error).body
         elif p_etl:
             l_attr.update(
@@ -475,6 +475,9 @@ def get_etl_detail(p_etl: str =None, p_etl_id: str =None):
                 l_attr.update(
                     {C_ETL:str(l_etl_id[0].uuid)}
                 )
+            else:
+                l_error="Не найдено логов по указанному "+C_ETL_ID_CONSOLE_ARG
+                return _JsonOutput(p_json_object=l_json_object, p_error=l_error).body
         else:
             l_attr=None
         # ищем логи в метаданных

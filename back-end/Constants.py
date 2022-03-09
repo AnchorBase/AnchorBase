@@ -225,7 +225,7 @@ C_SOURCE_META_ATTRIBUTES = { # необходимые атрибуты исто�
     C_SERVER:{C_NOT_NULL:1,C_TYPE_VALUE:"str", C_PK:0},
     C_DATABASE:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:0},
     C_USER:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:0},
-    C_PASSWORD:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:0},
+    C_PASSWORD:{C_NOT_NULL:0,C_TYPE_VALUE:"str",C_PK:0},
     C_PORT:{C_NOT_NULL:1,C_TYPE_VALUE:"int",C_PK:0},
     C_TYPE_VALUE:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:0},
     C_NAME:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:1},
@@ -578,7 +578,7 @@ C_ENTITY_CONSOLE_ARG="-entity"
 C_ENTITY_ATTR_CONSOLE_ARG="-attr"
 C_SOURCE_ID_CONSOLE_ARG="-source_id"
 C_DATE_CONSOLE_ARG="-date"
-C_ETL_ID_CONSOLE_ARG="-etl_id"
+C_ETL_ID_CONSOLE_ARG="-etl"
 C_FILE_CONSOLE_ARG="-file"
 C_CONSOLE_ARGS={
     C_GET_SOURCE:{
@@ -591,7 +591,7 @@ C_CONSOLE_ARGS={
         C_SERVER_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"сервер/хост (обязательный)"},
         C_DATABASE_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"база данных (обязательный)"},
         C_USER_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"логин (обязательный)"},
-        C_PASSWORD_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"пароль (обязательный)"},
+        C_PASSWORD_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"пароль (необязательный)"},
         C_PORT_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"порт (обязательный)"},
         C_TYPE_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"тип источника (обязательный)"}
     },
@@ -651,8 +651,8 @@ C_CONSOLE_ARGS={
         C_DATE_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"дата выполнения etl-процесса в формате YYYY-MM-DD (необязательный)"}
     },
     C_GET_ETL_DETAIL:{
-        C_ID_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"дата выполнения etl-процесса в формате YYYY-MM-DD (необязательный)"},
-        C_ETL_ID_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"дата выполнения etl-процесса в формате YYYY-MM-DD (необязательный)"}
+        C_ID_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"id (uuid) etl процесса (необязательный)"},
+        C_ETL_ID_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"etl_id (необязательный)"}
     },
     C_ALTER_ENTITY:{
         C_ID_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"id сущности (обязательный)"},

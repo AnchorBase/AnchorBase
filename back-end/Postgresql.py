@@ -41,7 +41,7 @@ def sql_exec(
             port=p_port
         )
     except psycopg2.OperationalError as e:
-        l_error=e
+        l_error=e.args[0]
         return l_query_output, l_error
     cnct.autocommit = False
     crsr = cnct.cursor()
@@ -58,7 +58,7 @@ def sql_exec(
     except psycopg2.Error as e:
         cnct.rollback() # при возникновении ошибки - откат транзакции
         # sys.exit(e) #TODO: реализовать вывод ошибок, как сделал Рустем
-        l_error=e
+        l_error=e.args[0]
     finally:
         crsr.close()
         cnct.close()
