@@ -515,6 +515,8 @@ class Model:
             p_length=l_link_rk.datatype.data_type_length,
             p_scale=l_link_rk.datatype.data_type_scale,
             p_type=C_ENTITY_COLUMN,
+            p_link_entity=l_link_entity,
+            p_fk=1,
             p_tie=l_tie
         )
         add_attribute(p_table=p_entity_attribute.entity, p_attribute=l_entity_link_rk)

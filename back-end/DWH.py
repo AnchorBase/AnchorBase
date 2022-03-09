@@ -123,6 +123,8 @@ class Connection:
             p_result=p_result,
             p_rollback=p_rollback
         )
+        if l_sql_result[1]:
+            sys.exit(l_sql_result[1])
         return l_sql_result
 
 
@@ -157,6 +159,19 @@ class Connection:
             p_file_path=C_CONFIG_FILE_PATH,
             p_file_body=l_config
         ).write_file()
+
+
+def create_dwh_ddl():
+    """
+    Создает схемы и расширения ХД
+    """
+    l_dwh=Connection()
+    l_sql=""
+    for i_schema in C_SCHEMA_LIST:
+        l_sql+="DROP SCHEMA IF EXISTS "+'"'+i_schema+'" CASCADE;\n'+"CREATE SCHEMA "+'"'+i_schema+'";'+"\n"
+    l_dwh.sql_exec(p_sql=l_sql, p_result=0)
+
+
 
 def _class_define(p_class_name: str, p_id: str, p_type: str =None):
     """
@@ -582,7 +597,10 @@ def get_idmap_etl(
         if l_source_table_id and l_source_table_id!=i_source_table.id: # пропускаем таблицу источник, если не она указана
             continue
         l_column_nk_sql=""
-        for i_column_nk in p_idmap.source_attribute_nk:
+        # формируем скрипт для конкатенации натуральных ключей
+        # сортируем список натуральных ключей по наименованию
+        l_source_attribute_nk=sorted(p_idmap.source_attribute_nk, key=lambda nk: nk.name)
+        for i_column_nk in l_source_attribute_nk:
             if i_source_table.id==i_column_nk.source_table.id:
                 l_column_nk_sql=l_column_nk_sql+"CAST("+'"'+str(i_column_nk.id)+'"'+" AS VARCHAR(4000))\n\t\t||'@@'||\n\t\t"
         l_column_nk_sql=l_column_nk_sql[:-14]
@@ -1278,6 +1296,12 @@ class _DWHObject:
                             C_RK:self.rk
                         }
                     )
+                if self.fk:
+                    l_json.update(
+                        {
+                            C_FK:self.fk
+                        }
+                    )
 
 
         # атрибуты queue таблицы
@@ -1524,6 +1548,7 @@ class Attribute(_DWHObject):
                  p_attribute_type: str =None,
                  p_pk: int =None,
                  p_rk: int =None,
+                 p_fk: int =None,
                  p_desc: str =None,
                  p_source_table =None,
                  p_source_attribute =None,
@@ -1556,6 +1581,7 @@ class Attribute(_DWHObject):
         self._attribute_type=p_attribute_type
         self._pk=p_pk
         self._rk=p_rk
+        self._fk=p_fk
 
 
     @property
@@ -1608,6 +1634,16 @@ class Attribute(_DWHObject):
             return self._rk
         else:
             return self.object_attrs_meta.get(C_RK,None)
+
+    @property
+    def fk(self):
+        """
+        Признак внешнего ключа
+        """
+        if self._fk is not None:
+            return self._fk
+        else:
+            return self.object_attrs_meta.get(C_FK,None)
 
     def __source_attribute_exist_checker(self):
         """
@@ -1831,6 +1867,10 @@ class SourceTable(_DWHObject):
         """
         SQL-запрос захвата данных с источника
         """
+        if self.source.type in [C_MYSQL]: # double quotes with name of database objects are unacceptable in these DBMS
+            l_dbl_qts=''
+        else:
+            l_dbl_qts='"'
         l_attribute_sql=""
         l_attribute_name_list=[]
         for i_attribute in self.source_attribute:
@@ -1838,17 +1878,17 @@ class SourceTable(_DWHObject):
                 l_attribute_name_list.append(i_attribute.name)
         l_attribute_name_list.sort() # сортируем по наименоваию
         for i_attribute in l_attribute_name_list:
-            l_attribute_sql=l_attribute_sql+"\n"+'"'+i_attribute+'"'+","
+            l_attribute_sql=l_attribute_sql+"\n"+l_dbl_qts+i_attribute+l_dbl_qts+","
         l_attribute_sql=l_attribute_sql[1:] # убираем первый перенос строки
         l_increment_sql=""
         l_timestamp_type=C_TIMESTAMP_DBMS.get(self.source.type)
         if self.increment:
-            l_increment_attr_sql='"'+self.increment.name+'"'+" AS update_timestamp"
+            l_increment_attr_sql=l_dbl_qts+self.increment.name+l_dbl_qts+" AS update_timestamp"
         else:
             l_increment_attr_sql=self.source.current_timestamp_sql+" AS update_timestamp"
         if self.last_increment:
-            l_increment_sql="\nWHERE "+'"'+self.increment.name+'"'+">CAST('"+self.last_increment+"' AS "+l_timestamp_type+")"
-        l_sql="SELECT\n"+l_attribute_sql+"\n"+l_increment_attr_sql+"\nFROM "+'"'+self.schema+'"'+"."+'"'+self.name+'"'\
+            l_increment_sql="\nWHERE "+l_dbl_qts+self.increment.name+l_dbl_qts+">CAST('"+self.last_increment+"' AS "+l_timestamp_type+")"
+        l_sql="SELECT\n"+l_attribute_sql+"\n"+l_increment_attr_sql+"\nFROM "+l_dbl_qts+self.schema+l_dbl_qts+"."+l_dbl_qts+self.name+l_dbl_qts\
               +l_increment_sql+";"
         return l_sql
 
@@ -1999,6 +2039,7 @@ class Idmap(_DWHObject):
     @source_attribute_nk.setter
     def source_attribute_nk(self, p_new_source_attribute_nk):
         self._source_attribute_nk=p_new_source_attribute_nk
+        self.object_attrs_meta.pop(C_ATTRIBUTE_NK, None)
 
 
 

@@ -2,6 +2,7 @@
 import Metadata
 import MSSQL as mssql
 import Postgresql as pgsql
+import MySQL as mysql
 import sys
 from Constants import *
 import SystemObjects
@@ -211,6 +212,8 @@ class Source:
             return mssql
         elif self.type==C_POSTGRESQL:
             return pgsql
+        elif self.type==C_MYSQL:
+            return mysql
 
     def sql_exec(self, p_sql: str):
         """

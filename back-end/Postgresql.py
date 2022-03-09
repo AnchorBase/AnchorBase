@@ -2,10 +2,11 @@
 import psycopg2
 import psycopg2.extensions
 from Constants import *
-
-#TODO: проблема со вставкой русских символов
+import sys
 
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
+
+
 
 def sql_exec(
         p_database: str,
@@ -40,8 +41,8 @@ def sql_exec(
             port=p_port
         )
     except psycopg2.OperationalError as e:
-        # sys.exit(e) #TODO: реализовать вывод ошибок, как сделал Рустем
         l_error=e
+        return l_query_output, l_error
     cnct.autocommit = False
     crsr = cnct.cursor()
     try:
@@ -64,6 +65,28 @@ def sql_exec(
     return l_query_output, l_error
 
 C_CURRENT_TIMESTAMP_SQL="CURRENT_TIMESTAMP"
+
+C_UUID_EXTENSION='DROP EXTENSION IF EXISTS "uuid-ossp"; \nCREATE EXTENSION "uuid-ossp";'
+
+def connection_checker(
+        p_database: str,
+        p_server: str,
+        p_user: str,
+        p_password: str,
+        p_port: int
+):
+    """
+    Проверяет подключение к метаданным
+    """
+    # выполняет простой запрос на источнике
+    sql_exec(
+        p_database=p_database,
+        p_server=p_server,
+        p_user=p_user,
+        p_password=p_password,
+        p_port=p_port,
+        p_sql="SELECT 1;"
+    )
 
 def get_source_table_etl(
         p_source_table_id: str,
