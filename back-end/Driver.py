@@ -1,6 +1,8 @@
 import dwh_config
 import sys
 from Constants import *
+import SystemObjects
+from SystemObjects import *
 
 C_DWH_TYPE=dwh_config.dbms_type
 
@@ -28,7 +30,8 @@ class DBMS:
         Назначение СУБД. Приводит к нижнему регистру и проверяет на корректность значения
         """
         if self._dbms_purpose not in C_DBMS_PURPOSE_LIST:
-            sys.exit("Некорректное назначение СУБД") #TODO: реализовать вывод ошибок, как сделал Рустем
+            AbaseError(p_error_text="Incorrect purpose of DBMS", p_module="Driver", p_class="DBMS",
+                       p_def="dbms_purpose").raise_error()
         else:
             return self._dbms_purpose.lower()
 
@@ -39,10 +42,10 @@ class DBMS:
         """
         if self.dbms_purpose==C_SOURCE:
             if self._dbms_type not in C_AVAILABLE_SOURCE_LIST:
-                sys.exit("AnchorBase не умеет работать с указанным СУБД") #TODO: реализовать вывод ошибок, как сделал Рустем
+                AbaseError(p_error_text="DBMS is not supported by AnchorBase", p_module="Driver", p_class="DBMS", p_def="dbms_type").raise_error()
         if self.dbms_purpose==C_DWH:
             if self._dbms_type not in C_AVAILABLE_DWH_LIST:
-                sys.exit("AnchorBase не умеет работать с указанным СУБД") #TODO: реализовать вывод ошибок, как сделал Рустем
+                AbaseError(p_error_text="DBMS is not supported by AnchorBase", p_module="Driver", p_class="DBMS", p_def="dbms_type").raise_error()
 
         return self._dbms_type.lower()
 
@@ -60,11 +63,13 @@ class DBMS:
         # проверяем, что все ключи указаны корректно
         for i_cnct_attr_keys_list in l_cnct_attr_keys_list:
             if i_cnct_attr_keys_list not in l_cnct_params:
-                sys.exit("Некорректно указан параметр подключения") #TODO: реализовать вывод ошибок, как сделал Рустем
+                AbaseError(p_error_text="Parametr of connection is incorrect", p_module="Driver", p_class="DBMS",
+                           p_def="dbms_cnct_attr").raise_error()
         # проверка, что все необходимые параметры указаны
         for i_cnct_params in l_cnct_params:
             if i_cnct_params not in l_cnct_attr_keys_list:
-                sys.exit("Не указан параметр подключения"+i_cnct_params) #TODO: реализовать вывод ошибок, как сделал Рустем
+                AbaseError(p_error_text="Parametr of connection "+i_cnct_params+" is empty", p_module="Driver", p_class="DBMS",
+                           p_def="dbms_cnct_attr").raise_error()
         return self._dbms_cnct_attr
 
 
@@ -103,7 +108,8 @@ class DataType(DBMS):
         self._data_type_name=self._data_type_name.lower()
         l_datatype_list=C_DBMS_COMPONENTS.get(self.dbms_type,None).get(C_DATATYPE,None)
         if self._data_type_name not in l_datatype_list:
-            sys.exit("Некорректно указан тип данных") #TODO: реализовать вывод ошибок, как сделал Рустем
+            AbaseError(p_error_text="Data type is incorrect", p_module="Driver",
+                       p_class="DataType", p_def="data_type_name").raise_error()
         return self._data_type_name.upper()
 
     @property
@@ -115,7 +121,8 @@ class DataType(DBMS):
         if self._data_type_length is None:
             return self._data_type_length
         elif type(self._data_type_length) is not int:
-            sys.exit("Некорректно указана длина типа данных") #TODO: реализовать вывод ошибок, как сделал Рустем
+            AbaseError(p_error_text="Data type is incorrect (length)", p_module="Driver",
+                       p_class="DataType", p_def="data_type_length").raise_error()
         else:
             return self._data_type_length
 
@@ -128,7 +135,8 @@ class DataType(DBMS):
         if self._data_type_scale is None:
             return self._data_type_scale
         elif type(self._data_type_scale) is not int:
-            sys.exit("Некорректно указано количество знаков после запятой") #TODO: реализовать вывод ошибок, как сделал Рустем
+            AbaseError(p_error_text="Data format is incorrect (quantity of numbers after spot)", p_module="Driver",
+                       p_class="DataType", p_def="data_type_scale").raise_error()
         else:
             return self._data_type_scale
     @property

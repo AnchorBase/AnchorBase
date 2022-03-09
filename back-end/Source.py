@@ -5,6 +5,9 @@ import Postgresql as pgsql
 import MySQL as mysql
 import sys
 from Constants import *
+import SystemObjects
+from SystemObjects import *
+
 
 class Source:
     """
@@ -62,7 +65,8 @@ class Source:
             ) # достаем метаданные источника
             # проверяет на наличие источника в метаданных
             if l_source_meta_objs.__len__()==0:
-                sys.exit("Нет источника с указанным id "+self._id)
+                AbaseError(p_error_text="There's no source with ID mentioned "+self._id, p_module="Source", p_class="Source",
+                           p_def="__source_meta_attrs").raise_error()
             else:
                 l_attr_dict=l_source_meta_objs[0].attrs
         return l_attr_dict
@@ -161,7 +165,8 @@ class Source:
         Тип источника
         """
         if self._type is not None and self._type not in C_AVAILABLE_SOURCE_LIST:
-            sys.exit("Некорректный источник "+self._type)
+            AbaseError(p_error_text="The source is incorrect: " + self._type, p_module="Source",
+                       p_class="Source", p_def="type").raise_error()
         return self._type or self.source_meta_attrs.get(C_TYPE_VALUE, None)
 
     @property

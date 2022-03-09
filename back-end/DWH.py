@@ -12,6 +12,8 @@ import Metadata as meta
 from Source import Source as Source
 import datetime
 from Constants import *
+import SystemObjects
+from SystemObjects import *
 
 class Connection:
     """
@@ -90,7 +92,8 @@ class Connection:
         """
         l_dbms_type=self._dbms_type.lower()
         if l_dbms_type not in C_AVAILABLE_DWH_LIST:
-            sys.exit("AnchorBase не умеет работать с СУБД "+l_dbms_type) #TODO: реализовать вывод ошибок, как сделал Рустем
+            AbaseError(p_error_text="AnchorBase doesn't support DBMS "+l_dbms_type, p_module="DWH", p_class="Connection",
+                       p_def="dbms_type").raise_error()
         return l_dbms_type
 
     @property
@@ -234,7 +237,8 @@ def get_values_sql(p_data_frame: list, p_cast_dict: dict, p_etl_id: int):
         l_sql=l_sql+"(\n\t"
         for i_column in i_row:
             if p_cast_dict.get(i,None) is None:
-                sys.exit("Нет указания cast для атрибута "+str(i)) #TODO: реализовать вывод ошибок, как сделал Рустем
+                AbaseError(p_error_text="cast is necessary for " + l_dbms_type, p_module="DWH", p_class="",
+                           p_def="get_values_sql").raise_error()
             if not i_column: # преобразуем none в null, если значение пустое
                 i_column="NULL "
             else:
@@ -251,7 +255,8 @@ def _object_class_checker(p_object: object, p_class_name: str):
     :param p_object: объект класса
     """
     if type(p_object).__name__.lower()!=p_class_name.lower():
-        sys.exit("Объект не является объектом класса "+p_class_name) # TODO переделать
+        AbaseError(p_error_text="Object doesn't belong to class " + p_class_name, p_module="DWH", p_class="",
+                   p_def="_object_class_checker").raise_error()
 
 
 def _class_checker(p_object, p_class_name: str):
@@ -266,7 +271,8 @@ def _class_checker(p_object, p_class_name: str):
     if type(p_object).__name__.lower()=="list": # если передан лист - проверяем каждый объект отдельно
         for i_object in p_object:
             if not i_object: # если пусто - ошибка
-                sys.exit("Объект не является объектом класса "+p_class_name)
+                AbaseError(p_error_text="Object doesn't belong to class " + p_class_name, p_module="DWH",
+                           p_class="Connection", p_def="_class_checker").raise_error()
             _object_class_checker(p_object=i_object, p_class_name=p_class_name)
     else:
         _object_class_checker(p_object=p_object, p_class_name=p_class_name) # в остальных случаях проверяем объект
@@ -278,7 +284,8 @@ def _get_attribute_type(p_attribute: object):
     :param p_attribute:
     """
     if not p_attribute:
-        sys.exit("Передан пустой атрибут")
+        AbaseError(p_error_text="Attribute is empty", p_module="DWH",
+                   p_class="Connection", p_def="_get_attribute_type").raise_error()
     if p_attribute.type==C_ENTITY_COLUMN:
         return "entity_attribute"
     if p_attribute.type==C_QUEUE_COLUMN:
@@ -355,7 +362,8 @@ def _add_object(p_parent_object: object, p_object: object, p_object_type: str):
         l_object.append(p_object)
         setattr(p_parent_object,p_object_type,l_object)# добавление дочернего элемента
     elif type(l_object).__name__=="object": # если атрибут есть, но он один - ошибка
-        sys.exit("Похоже нельзя добавить больше одного атрибута")
+        AbaseError(p_error_text="Can not add more than one attribute", p_module="DWH", p_class="",
+                   p_def="_add_object").raise_error()
     elif not l_object: # если нет атрибутов - добавляем список
         setattr(p_parent_object,p_object_type,[p_object])
 
@@ -424,7 +432,8 @@ def remove_attribute(p_table: object, p_attribute: object):
             l_attribute_list.pop(i) # убираем атрибут в соответствии с порядковым номером в листе
         i=i+1
     if l_attribute_list.__len__()==0:
-        sys.exit("Удалены все атрибуты") #TODO: переделать
+        AbaseError(p_error_text="All attributes already deleted", p_module="DWH", p_class="",
+                   p_def="remove_attribute").raise_error()
     p_table.attribute=l_attribute_list
 
 
@@ -921,7 +930,8 @@ class _DWHObject:
             ) # достаем метаданные источника
             # проверяет на наличие источника в метаданных
             if l_meta_objs.__len__()==0:
-                sys.exit("Нет "+self._type+" с указанным id "+self._id)
+                AbaseError(p_error_text="There;s no "+self._type+" with id "+self._id, p_module="DWH", p_class="_DWHObject",
+                           p_def="__object_attrs_meta").raise_error()
             else:
                 l_attr_dict=l_meta_objs[0].attrs
         return l_attr_dict
@@ -1601,7 +1611,8 @@ class Attribute(_DWHObject):
         if self._attribute_type is not None:
             l_attribute_type=self._attribute_type.lower()
             if l_attribute_type not in C_ATTRIBUTE_TABLE_TYPE_LIST:
-                sys.exit("Некорректно задан тип атрибута "+str(l_attribute_type))
+                AbaseError(p_error_text="Incorrect type of attribute" + self._id, p_module="DWH",
+                           p_class="Attribute", p_def="attribute_type").raise_error()
         return l_attribute_type or self.object_attrs_meta.get(C_TYPE_VALUE,None)
 
     @property
@@ -1640,7 +1651,8 @@ class Attribute(_DWHObject):
         """
         if self.source_table.schema+"."+self.source_table.name+"."+self.name not in self.source_table.source.source_attributes \
                 and self.attribute_type not in ([C_UPDATE, C_ETL_ATTR]):
-            sys.exit("На источнике на найден атрибут "+self.source_table.schema+"."+self.source_table.name+"."+self.name)
+            AbaseError(p_error_text="Attribute " +self.source_table.schema+"."+self.source_table.name+"."+self.name + "wasn't found", p_module="DWH",
+                       p_class="Attribute", p_def="__source_attribute_exist_checker").raise_error()
 
 
 class Entity(_DWHObject):
@@ -1816,7 +1828,8 @@ class SourceTable(_DWHObject):
         """
         if self._increment:
             if type(self._increment).__name__!="Attribute":
-                sys.exit("p_increment не является объектом класса Attribute") #TODO переделать
+                AbaseError(p_error_text="p_increment doesn't belong to class Attribute",
+                    p_module="DWH", p_class="SourceTable", p_def="increment").raise_error()
             # if self._increment.datatype.data_type_name!=C_TIMESTAMP_DBMS.get(self.source.type):
             #     sys.exit("У инкремента некорректный тип данных") #TODO переделать
         l_increment_meta_obj=self.object_attrs_meta.get(C_INCREMENT,None)
