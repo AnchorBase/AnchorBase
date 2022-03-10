@@ -123,8 +123,6 @@ class Connection:
             p_result=p_result,
             p_rollback=p_rollback
         )
-        if l_sql_result[1]:
-            sys.exit(l_sql_result[1])
         return l_sql_result
 
 

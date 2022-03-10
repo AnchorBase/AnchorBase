@@ -1121,7 +1121,7 @@ class _EntityParam:
                     l_source_table_pk.append(str(i_source.source_id)+"_"+str(i_source.schema)+"_"+str(i_source.table))
         for i_source_table in l_source_table:
             if i_source_table not in l_source_table_pk:
-                AbaseError(p_error_text="Source table isn't mentioned like source of PK", p_module="Model",
+                AbaseError(p_error_text="Source table "+i_source_table+" isn't mentioned like source of PK", p_module="Model",
                            p_class="_EntityParam", p_def="source_table_pk_checker").raise_error()
 
     def attribute_double_checker(self):

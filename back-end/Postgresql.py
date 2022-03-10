@@ -57,7 +57,6 @@ def sql_exec(
             cnct.commit() # в остальных случаях - комит транзакции
     except psycopg2.Error as e:
         cnct.rollback() # при возникновении ошибки - откат транзакции
-        # sys.exit(e) #TODO: реализовать вывод ошибок, как сделал Рустем
         l_error=e.args[0]
     finally:
         crsr.close()
@@ -489,7 +488,7 @@ def get_table_partition_etl(
           "WHERE 1=1\n\t\t\t"\
           "AND prt.partition_date IS NULL\n\t"\
           "LOOP\n\t\t"\
-          "EXECUTE 'CREATE TABLE "+'"'+str(p_table_id)+"'||v_n_prt_date||"+"'"+'"'+"'"+"||\n\t\t\t"\
+          "EXECUTE 'CREATE TABLE "+'"'+str(p_table_id)+"_date'||v_n_prt_date||"+"'"+'"'+"'"+"||\n\t\t\t"\
           "'PARTITION OF "+'"'+C_AM_SCHEMA+'"'+"."+'"'+str(p_table_id)+'"'+" FOR VALUES '||\n\t\t\t"\
           "'FROM ('''||CAST(DATE_TRUNC('month',CAST(v_n_prt_date AS DATE)) AS DATE)||' 00:00:00'') TO ('''||v_n_prt_date||' 23:59:59'');';\n\t"\
           "END LOOP;\n"\
