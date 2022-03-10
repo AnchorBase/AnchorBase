@@ -699,7 +699,8 @@ def get_attribute_etl(p_attribute_table: object, p_etl_id: str, p_source_table: 
         if l_source_table_id and l_source_table_id!=i_source_attribute.source_table.id: # пропускаем таблицу источник, если не она указана
             continue
         l_column_nk_sql=""
-        for i_column_nk in p_attribute_table.entity.idmap.source_attribute_nk:
+        l_source_attribute_nk=sorted(p_attribute_table.entity.idmap.source_attribute_nk, key=lambda nk: nk.name)
+        for i_column_nk in l_source_attribute_nk:
             if i_source_attribute.source_table.id==i_column_nk.source_table.id:
                 l_column_nk_sql=l_column_nk_sql+"CAST("+'"'+str(i_column_nk.id)+'"'+" AS VARCHAR(4000))\n\t\t||'@@'||\n\t\t"
         l_column_value_id=i_source_attribute.id
@@ -783,14 +784,14 @@ def get_tie_etl(
         if l_source_table_id and l_source_table_id!=i_source_table.id:
             continue # пропускаем таблицу источник, если не она указана
         l_column_nk_sql=""
-        for i_column_nk in p_tie.entity.idmap.source_attribute_nk:
+        l_source_attribute_nk=sorted(p_tie.entity.idmap.source_attribute_nk, key=lambda nk: nk.name)
+        for i_column_nk in l_source_attribute_nk:
             if i_source_table.id==i_column_nk.source_table.id:
                 l_column_nk_sql=l_column_nk_sql+"CAST("+'"'+str(i_column_nk.id)+'"'+" AS VARCHAR(4000))\n\t\t||'@@'||\n\t\t"
         l_link_column_nk_sql=""
-        for i_entity_link_attribute in p_tie.entity_attribute:
-            for i_column_nk in i_entity_link_attribute.source_attribute:
-                if i_source_table.id==i_column_nk.source_table.id:
-                    l_link_column_nk_sql=l_link_column_nk_sql+"CAST("+'"'+str(i_column_nk.id)+'"'+" AS VARCHAR(4000))\n\t\t||'@@'||\n\t\t"
+        for i_column_nk in p_tie.entity_attribute.source_attribute:
+            if i_source_table.id==i_column_nk.source_table.id:
+                l_link_column_nk_sql=l_link_column_nk_sql+"CAST("+'"'+str(i_column_nk.id)+'"'+" AS VARCHAR(4000))\n\t\t||'@@'||\n\t\t"
         l_update_timestamp_id=None
         for i_source_attribute in i_source_table.source_attribute:
             if i_source_attribute.attribute_type==C_UPDATE:

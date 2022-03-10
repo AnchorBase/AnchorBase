@@ -550,6 +550,6 @@ def get_entity_function_sql(
           "v_from_sql varchar(1000):=(' from "+C_AM_SCHEMA+"."+'"'+p_entity_name+C_TABLE_NAME_POSTFIX.get(C_ANCHOR)+'"'+" as "+'"main"'+"');\n\t"+l_entity_attribute_join_sql+""\
           "v_select_sql varchar(1000) := ' select main."+'"'+p_entity_name+"_"+C_RK+'"'+",'||regexp_replace("+l_entity_attribute_select_sql+",',$','')"+""\
           "||',main."+'"'+C_SOURCE_ATTRIBUTE_NAME+'"'+"';\n\t"\
-          "v_sql varchar(1000):=v_select_sql||' '||v_from_sql||' '||"+l_entity_attribute_sql+"';'"+";\n"\
+          "v_sql text:=v_select_sql||' '||v_from_sql||' '||"+l_entity_attribute_sql+"';'"+";\n"\
           "begin\n\treturn query execute v_sql;\nend;\n$$\nlanguage plpgsql;"
     return l_sql
