@@ -100,7 +100,15 @@ class Source:
         """
         Описание источника
         """
-        return self._desc or self.source_meta_attrs.get(C_DESC, None)
+        if self._desc=='null': # обработка случаев, когда пользователь сам задал пустое описание
+            return None
+        else:
+            return self._desc or self.source_meta_attrs.get(C_DESC, None)
+
+    @description.setter
+    def description(self, p_new_desc: str):
+        self._desc=p_new_desc
+        self.source_meta_attrs.pop(C_DESC, None)
 
     @property
     def server(self):
@@ -128,7 +136,10 @@ class Source:
         """
         Пароль
         """
-        return self._password or self.source_meta_attrs.get(C_PASSWORD, None)
+        if self._password=='null': # обработка случаев, когда пользователь сам задал пустой пароль
+            return None
+        else:
+            return self._password or self.source_meta_attrs.get(C_PASSWORD, None)
 
     @property
     def port(self):
