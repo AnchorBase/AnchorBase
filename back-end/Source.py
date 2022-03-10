@@ -100,7 +100,15 @@ class Source:
         """
         Описание источника
         """
-        return self._desc or self.source_meta_attrs.get(C_DESC, None)
+        if self._desc=='null': # обработка случаев, когда пользователь сам задал пустое описание
+            return None
+        else:
+            return self._desc or self.source_meta_attrs.get(C_DESC, None)
+
+    @description.setter
+    def description(self, p_new_desc: str):
+        self._desc=p_new_desc
+        self.source_meta_attrs.pop(C_DESC, None)
 
     @property
     def server(self):
@@ -128,7 +136,10 @@ class Source:
         """
         Пароль
         """
-        return self._password or self.source_meta_attrs.get(C_PASSWORD, None)
+        if self._password=='null': # обработка случаев, когда пользователь сам задал пустой пароль
+            return None
+        else:
+            return self._password or self.source_meta_attrs.get(C_PASSWORD, None)
 
     @property
     def port(self):
@@ -169,38 +180,38 @@ class Source:
                        p_class="Source", p_def="type").raise_error()
         return self._type or self.source_meta_attrs.get(C_TYPE_VALUE, None)
 
-    @property
-    def __source_objects(self):
-        """
-        Получает таблицы и атрибуты источника
-        """
-        l_source_meta_objects=self.__cnct.get_objects(
-            p_server=self.server,
-            p_database=self.database,
-            p_user=self.user,
-            p_password=self.password,
-            p_port=self.port
-        ) # получаем метаданные источника
-        return l_source_meta_objects
+    # @property
+    #     # def __source_objects(self):
+    #     #     """
+    #     #     Получает таблицы и атрибуты источника
+    #     #     """
+    #     #     l_source_meta_objects=self.__cnct.get_objects(
+    #     #         p_server=self.server,
+    #     #         p_database=self.database,
+    #     #         p_user=self.user,
+    #     #         p_password=self.password,
+    #     #         p_port=self.port
+    #     #     ) # получаем метаданные источника
+    #     #     return l_source_meta_objects
 
-    @property
-    def source_tables(self):
-        """
-        Все таблицы источника
-        """
-        l_source_table=set() # множетво таблиц (не повторяются наименования таблиц)
-        for i_source_meta_object in self.__source_objects:
-            l_source_table.add(str(i_source_meta_object[0]).lower()+"."+str(i_source_meta_object[1]).lower()) # добавляем в список и приводим к нижнему регистру
-        return l_source_table
-    @property
-    def source_attributes(self):
-        """
-        Все атрибуты источника
-        """
-        l_source_attributes=set()
-        for i_source_attributes in self.__source_objects:
-            l_source_attributes.add(str(i_source_attributes[0]).lower()+"."+str(i_source_attributes[1]).lower()+"."+str(i_source_attributes[4]).lower()) # добавляем в список и приводим к нижнему регистру
-        return l_source_attributes
+    # @property
+    # def source_tables(self):
+    #     """
+    #     Все таблицы источника
+    #     """
+    #     l_source_table=set() # множетво таблиц (не повторяются наименования таблиц)
+    #     for i_source_meta_object in self.__source_objects:
+    #         l_source_table.add(str(i_source_meta_object[0]).lower()+"."+str(i_source_meta_object[1]).lower()) # добавляем в список и приводим к нижнему регистру
+    #     return l_source_table
+    # @property
+    # def source_attributes(self):
+    #     """
+    #     Все атрибуты источника
+    #     """
+    #     l_source_attributes=set()
+    #     for i_source_attributes in self.__source_objects:
+    #         l_source_attributes.add(str(i_source_attributes[0]).lower()+"."+str(i_source_attributes[1]).lower()+"."+str(i_source_attributes[4]).lower()) # добавляем в список и приводим к нижнему регистру
+    #     return l_source_attributes
 
 
     @property
@@ -237,9 +248,13 @@ class Source:
         Проверяет подключение к источнику
         """
         # выполняет простой запрос на источнике
-        self.sql_exec(
+        l_rslt=self.sql_exec(
             p_sql="SELECT 1;"
         )
+        if l_rslt[1]:
+            AbaseError(p_error_text=l_rslt[1], p_module="Source",
+                       p_class="Source", p_def="type").raise_error()
+
 
     @property
     def __meta_obj(self):

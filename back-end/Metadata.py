@@ -296,5 +296,5 @@ class MetaObject:
                     l_meta_attr_objs_uuid_list.append(i_meta_attr_obj.uuid)
                 # если уже есть объекты метаданных с таким значением ключевого атрибута и их uuid отличаются от self.uuid (объект не он сам)
                 if l_meta_attr_objs.__len__()>0 and self.uuid not in l_meta_attr_objs_uuid_list:
-                    AbaseError(p_error_text="Object" + self.type + " с "+i_attr+"="+str(self._attrs.get(i_attr, None)) + " already exists",
+                    AbaseError(p_error_text="Object " + self.type + " with "+i_attr+"="+str(self._attrs.get(i_attr, None)) + " already exists",
                           p_module="Metadata", p_class="MetaObject", p_def="attrs_checker").raise_error()

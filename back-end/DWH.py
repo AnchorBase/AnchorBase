@@ -1228,12 +1228,15 @@ class _DWHObject:
         """
         Описание атрибута
         """
-        return self._desc or self.object_attrs_meta.get(C_DESC,None)
+        if self._desc=='null':
+            return None
+        else:
+            return self._desc or self.object_attrs_meta.get(C_DESC,None)
 
     @desc.setter
     def desc(self, p_new_desc):
 
-        self._desc=p_new_desc
+        self._desc=p_new_desc if p_new_desc!='null' else None
         self.object_attrs_meta.pop(C_DESC, None)
 
     def __get_property_id(self,p_property):

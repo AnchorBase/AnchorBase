@@ -29,10 +29,11 @@ def sql_exec(
             database=p_database,
             user=p_user,
             password=p_password,
-            port=p_port
+            port=p_port,
+            connection_timeout=30
         )
     except mysql.Error as e:
-        l_error=e
+        l_error=e.args[1]
         return query_output, l_error
     crsr=cnct.cursor()
     try:
@@ -42,7 +43,7 @@ def sql_exec(
         else:
             query_output=1
     except mysql.Error as e:
-        l_error=e
+        l_error=e.args[1]
     finally:
         crsr.close()
         cnct.close()
