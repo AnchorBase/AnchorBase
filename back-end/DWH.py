@@ -2974,7 +2974,8 @@ class Package(Job):
         self.end_datetime=datetime.datetime.now() # проставляем дату окончания процесса
         if l_result[1]: # если завершилось с ошибкой
             self.status=C_STATUS_FAIL
-            self.error=getattr(l_result[1], "pgerror",None) or l_result[1].args[1] # бывают случаи, когда pgerror не указан
+            # self.error=getattr(l_result[1], "pgerror",None) or l_result[1] # бывают случаи, когда pgerror не указан
+            self.error=l_result[1]
         else:
             self.status=C_STATUS_SUCCESS
         # записываем в метаданные
