@@ -1147,7 +1147,7 @@ class _EntityParam:
             }
         )
         if l_entity_meta_obj.__len__()>0:
-            AbaseError(p_error_text="Entity with the name already exists",
+            AbaseError(p_error_text="Entity with the name "+self.name+" already exists",
                        p_module="Model", p_class="_EntityParam", p_def="entity_name_double_checker").raise_error()
 
     def source_attribute_double_checker(self):

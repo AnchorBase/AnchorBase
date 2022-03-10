@@ -930,7 +930,7 @@ class _DWHObject:
             ) # достаем метаданные источника
             # проверяет на наличие источника в метаданных
             if l_meta_objs.__len__()==0:
-                AbaseError(p_error_text="There;s no "+self._type+" with id "+self._id, p_module="DWH", p_class="_DWHObject",
+                AbaseError(p_error_text="There's no "+self._type+" with id "+self._id, p_module="DWH", p_class="_DWHObject",
                            p_def="__object_attrs_meta").raise_error()
             else:
                 l_attr_dict=l_meta_objs[0].attrs
