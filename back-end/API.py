@@ -345,21 +345,32 @@ def start_job(p_entity: str =None, p_entity_attribute: str =None):
     """
     Запускает джоб
 
-    :param p_entity: id сущности, который требуется прогрузить
+    :param p_entity: наименование сущности, который требуется прогрузить
     :param p_entity_attribute: id атрибута сущности, который требуется прогрузить
     """
     try:
         l_entity=None
-        if p_entity:
-            l_entity=Entity(
-                p_id=p_entity
-            )
         l_entity_attribute=None
-        if p_entity_attribute:
-            l_entity_attribute=Attribute(
-                p_type=C_ENTITY_COLUMN,
-                p_id=p_entity_attribute
+        if p_entity_attribute and not p_entity:
+            return _JsonOutput(p_json_object=None, p_error="Не указана сущность").body
+        if p_entity:
+            l_entity_meta=search_object(p_type=C_ENTITY, p_attrs={C_NAME:p_entity})
+            if l_entity_meta.__len__()==0:
+                return _JsonOutput(p_json_object=None, p_error="Сущность "+p_entity+" не найдена").body
+            l_entity=Entity(
+                p_id=str(l_entity_meta[0].uuid)
             )
+            if p_entity_attribute:
+                l_entity_attr_meta=search_object(
+                    p_type=C_ENTITY_COLUMN,
+                    p_attrs={C_NAME:p_entity_attribute, C_ENTITY:l_entity}
+                )
+                if l_entity_attr_meta.__len__()==0:
+                    return _JsonOutput(p_json_object=None, p_error="Атрибут "+p_entity_attribute+" не найден").body
+                l_entity_attribute=Attribute(
+                    p_type=C_ENTITY_COLUMN,
+                    p_id=str(l_entity_attr_meta[0].uuid)
+                )
         l_job=Job(
             p_entity=l_entity,
             p_entity_attribute=l_entity_attribute
