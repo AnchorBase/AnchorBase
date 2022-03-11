@@ -1,5 +1,5 @@
 {
-    "entity":"client_trip",
+    "entity":"222",
     "description":"link between client and trip",
     "attribute":
     [
@@ -17,24 +17,6 @@
                     "schema":"public",
                     "table":"Pass_in_trip",
                     "column":"trip_no"
-                }
-            ]
-        }
-        ,
-        {
-            "name":"client_id",
-            "description":"key of the client",
-            "pk":1,
-            "datatype":"int",
-            "length":null,
-            "link_entity":"eef0c217-7b95-42cb-a189-ad1a6f514ee9",
-            "source":
-            [
-                {
-                    "source":"1e7747ae-a02f-48f0-b462-26f2ccdafb7c", 
-                    "schema":"public",
-                    "table":"passenger",
-                    "column":"id"
                 }
             ]
         }

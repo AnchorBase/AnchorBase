@@ -532,8 +532,8 @@ def get_entity_function_sql(
         l_entity_attribute_join_sql+="v_"+str(i_entity_attribute)+"_join_sql varchar(1000):=("\
                                      "case when v_"+str(i_entity_attribute)+" is not null "\
                                      "then ' left join "+C_AM_SCHEMA+"."+'"'+p_entity_attribute_dict.get(i_entity_attribute).get(C_TABLE)+'"'+""\
-                                     " as "+'"'+str(i_entity_attribute)+'"'+" on "+'"main"'+"."+p_entity_name+"_"+C_RK+"="+""\
-                                     '"'+str(i_entity_attribute)+'"'+"."+p_entity_name+"_"+C_RK+""\
+                                     " as "+'"'+str(i_entity_attribute)+'"'+" on "+'"main"'+'."'+p_entity_name+"_"+C_RK+'"='+""\
+                                     '"'+str(i_entity_attribute)+'"'+'."'+p_entity_name+"_"+C_RK+'"'\
                                      " and cast('''||dt||''' as timestamp) between "+'"'+str(i_entity_attribute)+'"'+"."+C_FROM_ATTRIBUTE_NAME+" and "+'"'+str(i_entity_attribute)+'"'+"."+C_TO_ATTRIBUTE_NAME+"'"\
                                      " else '' end);\n\t"
         l_entity_attribute_select_sql+="coalesce(v_"+str(i_entity_attribute)+"||'"+str(i_entity_attribute)+",','NULL::"+p_entity_attribute_dict.get(i_entity_attribute).get(C_DATATYPE)+",')||"
