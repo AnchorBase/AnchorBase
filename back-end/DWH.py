@@ -2993,7 +2993,7 @@ class Package(Job):
         l_cast_dict={}
         l_attribute_name_list=[] # список с наименованиями атрибутов для последующей сортировки
         for i_attribute in self.source_table.source_attribute:
-            if i_attribute.attribute_type!=C_ETL_ATTR:
+            if i_attribute.attribute_type==C_QUEUE_ATTR:
                 l_attribute_name_list.append(i_attribute.name)
         l_attribute_name_list.sort()
         i=0

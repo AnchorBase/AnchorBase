@@ -447,10 +447,7 @@ C_BIGINT = "bigint"
 C_DECIMAL = "decimal"
 C_NUMERIC = "numeric"
 C_REAL = "real"
-C_DOUBLE = "double"
-C_SMALLSERIAL = "smallserial"
-C_SERIAL = "serial"
-C_BIGSERIAL = "bigserial"
+C_DOUBLE = "double precision"
 C_MONEY = "money"
 C_CHARACTER = "character"
 C_CHAR = "char"
@@ -463,8 +460,8 @@ C_TIME = "time"
 C_INTERVAL = "interval"
 C_BOOLEAN = "boolean"
 C_DATETIME = "datetime"
-C_UUID = "uuid"
-C_JSON = "json"
+C_UUID = "uuid" # AnchorBase не умеет работать с данным типом данных
+C_JSON = "json" # AnchorBase не умеет работать с данным типом данных
 # СПИСКИ ТИПОВ ДАННЫХ ДЛЯ КАЖДОЙ СУБД
 C_POSTGRESQL_DATA_TYPE_LIST = [ # фиксированный список типов данных для PostgreSQL, с которыми умеет работать AnchorBase
      C_SMALLINT
@@ -475,9 +472,6 @@ C_POSTGRESQL_DATA_TYPE_LIST = [ # фиксированный список тип
     ,C_NUMERIC
     ,C_REAL
     ,C_DOUBLE
-    ,C_SMALLSERIAL
-    ,C_SERIAL
-    ,C_BIGSERIAL
     ,C_MONEY
     ,C_CHARACTER
     ,C_CHAR
