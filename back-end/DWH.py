@@ -2664,7 +2664,11 @@ class Job(_DWHObject):
             l_source_table_meta=meta.search_object(p_type=C_QUEUE)
             for i_source_table_meta in l_source_table_meta:
                  l_source_table=SourceTable(p_id=i_source_table_meta.uuid)
-                 l_source_table_list.append(l_source_table)
+                 l_entity_meta=meta.search_object(p_type=C_ENTITY)
+                 if l_entity_meta:
+                     for i_ent in l_entity_meta:
+                         if l_source_table.id in i_ent.attrs.get(C_QUEUE,None) and l_source_table not in l_source_table_list: # грузим только те таблицы источники, которые используются в сущностях
+                            l_source_table_list.append(l_source_table)
             # idmap
             l_idmap_table_meta=meta.search_object(p_type=C_IDMAP)
             for i_idmap_meta in l_idmap_table_meta:
