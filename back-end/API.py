@@ -421,11 +421,12 @@ def get_last_etl():
     except Exception as e:
         return _JsonOutput(p_json_object=None, p_error=e.args[0]).body
 
-def get_etl_hist(p_date: str =None):
+def get_etl_hist(p_date: str =None, p_etl: str =None):
     """
     Возвращает логи по etl-процессам
 
     :param p_date: дата запуска etl-процесса
+    :param p_etl: etl_id
     """
     try:
         l_error=None
@@ -438,6 +439,12 @@ def get_etl_hist(p_date: str =None):
                 l_etl=Job(
                     p_id=str(i_etl_meta.uuid)
                 )
+                # проверка на заданные значения
+                if p_etl or p_date:
+                    if p_etl and p_etl!=str(l_etl.etl_id):
+                        continue
+                    if p_date and datetime.datetime.strptime(p_date,'%Y-%m-%d').date()!=l_etl.start_datetime.date():
+                        continue
                 l_entity_name=None
                 if l_etl.entity:
                     l_entity_name=l_etl.entity.name
@@ -453,10 +460,9 @@ def get_etl_hist(p_date: str =None):
                     C_END_DATETIME:str(l_etl.end_datetime),
                     C_DURATION:l_etl.duration
                 }
-                if not p_date or datetime.datetime.strptime(p_date,'%Y-%m-%d').date()==l_etl.start_datetime.date():
-                    l_json_object.append(
-                        _JsonObject(p_type=C_ETL,p_id=l_etl.id, p_attribute=l_etl_dict)
-                    )
+                l_json_object.append(
+                    _JsonObject(p_type=C_ETL,p_id=l_etl.id, p_attribute=l_etl_dict)
+                )
         return _JsonOutput(p_json_object=l_json_object, p_error=l_error).body
     except Exception as e:
         return _JsonOutput(p_json_object=None, p_error=e.args[0]).body
