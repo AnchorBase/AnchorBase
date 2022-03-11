@@ -363,7 +363,7 @@ def start_job(p_entity: str =None, p_entity_attribute: str =None):
             if p_entity_attribute:
                 l_entity_attr_meta=search_object(
                     p_type=C_ENTITY_COLUMN,
-                    p_attrs={C_NAME:p_entity_attribute, C_ENTITY:l_entity}
+                    p_attrs={C_NAME:p_entity_attribute, C_ENTITY:l_entity.id}
                 )
                 if l_entity_attr_meta.__len__()==0:
                     return _JsonOutput(p_json_object=None, p_error="Атрибут "+p_entity_attribute+" не найден").body
