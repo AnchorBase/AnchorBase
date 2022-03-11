@@ -82,6 +82,9 @@ def __arg_checker(p_command: str, p_arg: str):
     :param p_command: команда
     :param p_arg: аргумент команды
     """
+    if not C_CONSOLE_ARGS.get(p_command) and p_arg!=C_HELP:
+        print(C_COLOR_FAIL+"У команды "+p_command+" не существует аргумента "+p_arg+C_COLOR_ENDC)
+        console_input()
     if C_CONSOLE_ARGS.get(p_command) and p_arg not in list(C_CONSOLE_ARGS.get(p_command).keys()) and p_arg!=C_HELP:
         print(C_COLOR_FAIL+"У команды "+p_command+" не существует аргумента "+p_arg+C_COLOR_ENDC)
         console_input()
