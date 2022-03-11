@@ -269,6 +269,30 @@ class Model:
             for i_tie in l_link_tie_meta:
                 l_link_tie=Tie(p_id=str(i_tie.uuid))
                 l_link_ties.append(l_link_tie)
+        # находим атрибуты других сущностей, которые ссылаются на данную сущность
+        l_link_attr_meta=meta.search_object(
+            p_type=C_ENTITY_COLUMN,
+            p_attrs={C_LINK_ENTITY:l_entity.id}
+        )
+        l_link_attr_list=[]
+        if l_link_attr_meta.__len__()>0:
+            for i_attr in l_link_attr_meta:
+                l_attr=Attribute(p_type=C_ENTITY_COLUMN,p_id=str(i_attr.uuid))
+                # если FK - удаляем его
+                if l_attr.fk==1:
+                    l_link_attr_list.append(l_attr)
+                    # удаляем его также у сущности родителя
+                    l_ent=l_attr.entity
+                    l_ent_attr=l_ent.entity_attribute
+                    l_ent_attr_new=[]
+                    for i_ent_attr in l_ent_attr:
+                        if i_ent_attr.id!=l_attr.id:
+                            l_ent_attr_new.append(i_ent_attr)
+                    l_ent.entity_attribute=l_ent_attr_new
+                    l_ent.update_metadata()
+                else: # иначе удаляем у него связанную сущность
+                    l_attr.link_entity=None
+                    l_attr.update_metadata()
         # формируем список объектов, которые требуется удалить
         l_obj=self.__get_object_list(p_entity_child=l_entity, p_tie=l_link_ties)
         # формируем скрипт удаления объектов
@@ -285,6 +309,7 @@ class Model:
             p_tie=l_link_ties,
             p_attribute=1
         )
+        l_obj.extend(l_link_attr_list)
         # обновляем метаданные у сущностей, которые ссылались на удаленный tie (l_link_tie)
         if l_link_ties:
             for i_link_tie in l_link_ties:
