@@ -258,7 +258,7 @@ class Model:
         l_entity=Entity(
             p_id=self.entity_param.id
         )
-        # находим tie, где переименованная сущность - связанная
+        # находим tie, где удаляемая сущность - связанная
         l_link_tie_meta=meta.search_object(
             p_type=C_TIE,
             p_attrs={C_LINK_ENTITY:self.entity_param.id}
@@ -298,9 +298,14 @@ class Model:
                 self.__update_metadata(p_objects=[l_link_entity])
         # удаляем метаданные
         self.__delete_metadata(p_objects=l_obj)
+        # собираем ETL, которые грузили таблицы dds данной сущности
+        l_job=search_object(p_type=C_ETL,p_attrs={C_ENTITY:l_entity.id})
+        # удаляем логи etl - оставляя логи по пакетам!
+        if l_job.__len__()>0:
+            for i_job in l_job:
+                delete_object(p_object=i_job)
         #удаляем объекты из ХД
         self.__ddl_execute(p_ddl=l_sql)
-        #TODO: вынести проверку метаданные и ddl, а также их запуск в отедльный метод
 
 
     def __create_entity(self) -> object:
