@@ -637,8 +637,8 @@ C_CONSOLE_ARGS={
         C_FILE_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"путь до файла с параметрами сущности в формате json (необязательный)"}
     },
     C_START_JOB:{
-        C_ENTITY_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"id сущности, данные которой требуется обновить (необязательный)"},
-        C_ENTITY_ATTR_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"id атрибута, данные которого требуется обновить (необязательный)"}
+        C_ENTITY_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"наименование сущности, данные которой требуется обновить (необязательный)"},
+        C_ENTITY_ATTR_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"наименование атрибута, данные которого требуется обновить (необязательный)"}
     },
     C_GET_ETL_HIST:{
         C_DATE_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"дата выполнения etl-процесса в формате YYYY-MM-DD (необязательный)"},
