@@ -498,12 +498,11 @@ C_DBMS_COMPONENTS = {
 #================================
 #  Цвета шрифтов для консоли
 #================================
-C_COLOR_HEADER = '\033[95m' # заголовок
-C_COLOR_OKBLUE = '\033[94m' # синий
-C_COLOR_OKCYAN = '\033[96m' # фиолетовый
-C_COLOR_OKGREEN = '\033[92m' # зеленый
-C_COLOR_WARNING = '\033[93m' # желтый
-C_COLOR_FAIL = '\033[91m' # красный
+C_COLOR_HEADER = '\033[45m' # заголовок
+C_COLOR_OKCYAN = '\033[46m' # фиолетовый
+C_COLOR_OKGREEN = '\033[32m' # зеленый
+C_COLOR_WARNING = '\033[43m' # желтый
+C_COLOR_FAIL = '\033[31m' # красный
 C_COLOR_ENDC = '\033[0m' # дефолтный цвет
 C_COLOR_BOLD = '\033[1m' # жирный шрифт
 C_COLOR_UNDERLINE = '\033[4m' #  подчеркивание

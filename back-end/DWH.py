@@ -2771,8 +2771,6 @@ class Job(_DWHObject):
             return C_COLOR_WARNING+p_status+C_COLOR_ENDC
         if p_status==C_STATUS_FAIL:
             return C_COLOR_FAIL+p_status+C_COLOR_ENDC
-        if p_status==C_STATUS_IN_PROGRESS:
-            return C_COLOR_OKBLUE+p_status+C_COLOR_ENDC
 
 
     def source_table_load(self, p_source_table: list):
