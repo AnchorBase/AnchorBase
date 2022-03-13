@@ -57,7 +57,6 @@ def sql_exec(
             cnct.commit() # в остальных случаях - комит транзакции
     except psycopg2.Error as e:
         cnct.rollback() # при возникновении ошибки - откат транзакции
-        # sys.exit(e) #TODO: реализовать вывод ошибок, как сделал Рустем
         l_error=e.args[0]
     finally:
         crsr.close()
@@ -489,7 +488,7 @@ def get_table_partition_etl(
           "WHERE 1=1\n\t\t\t"\
           "AND prt.partition_date IS NULL\n\t"\
           "LOOP\n\t\t"\
-          "EXECUTE 'CREATE TABLE "+'"'+str(p_table_id)+"'||v_n_prt_date||"+"'"+'"'+"'"+"||\n\t\t\t"\
+          "EXECUTE 'CREATE TABLE "+'"'+str(p_table_id)+"_date'||v_n_prt_date||"+"'"+'"'+"'"+"||\n\t\t\t"\
           "'PARTITION OF "+'"'+C_AM_SCHEMA+'"'+"."+'"'+str(p_table_id)+'"'+" FOR VALUES '||\n\t\t\t"\
           "'FROM ('''||CAST(DATE_TRUNC('month',CAST(v_n_prt_date AS DATE)) AS DATE)||' 00:00:00'') TO ('''||v_n_prt_date||' 23:59:59'');';\n\t"\
           "END LOOP;\n"\
@@ -533,8 +532,8 @@ def get_entity_function_sql(
         l_entity_attribute_join_sql+="v_"+str(i_entity_attribute)+"_join_sql varchar(1000):=("\
                                      "case when v_"+str(i_entity_attribute)+" is not null "\
                                      "then ' left join "+C_AM_SCHEMA+"."+'"'+p_entity_attribute_dict.get(i_entity_attribute).get(C_TABLE)+'"'+""\
-                                     " as "+'"'+str(i_entity_attribute)+'"'+" on "+'"main"'+"."+p_entity_name+"_"+C_RK+"="+""\
-                                     '"'+str(i_entity_attribute)+'"'+"."+p_entity_name+"_"+C_RK+""\
+                                     " as "+'"'+str(i_entity_attribute)+'"'+" on "+'"main"'+'."'+p_entity_name+"_"+C_RK+'"='+""\
+                                     '"'+str(i_entity_attribute)+'"'+'."'+p_entity_name+"_"+C_RK+'"'\
                                      " and cast('''||dt||''' as timestamp) between "+'"'+str(i_entity_attribute)+'"'+"."+C_FROM_ATTRIBUTE_NAME+" and "+'"'+str(i_entity_attribute)+'"'+"."+C_TO_ATTRIBUTE_NAME+"'"\
                                      " else '' end);\n\t"
         l_entity_attribute_select_sql+="coalesce(v_"+str(i_entity_attribute)+"||'"+str(i_entity_attribute)+",','NULL::"+p_entity_attribute_dict.get(i_entity_attribute).get(C_DATATYPE)+",')||"
@@ -551,6 +550,6 @@ def get_entity_function_sql(
           "v_from_sql varchar(1000):=(' from "+C_AM_SCHEMA+"."+'"'+p_entity_name+C_TABLE_NAME_POSTFIX.get(C_ANCHOR)+'"'+" as "+'"main"'+"');\n\t"+l_entity_attribute_join_sql+""\
           "v_select_sql varchar(1000) := ' select main."+'"'+p_entity_name+"_"+C_RK+'"'+",'||regexp_replace("+l_entity_attribute_select_sql+",',$','')"+""\
           "||',main."+'"'+C_SOURCE_ATTRIBUTE_NAME+'"'+"';\n\t"\
-          "v_sql varchar(1000):=v_select_sql||' '||v_from_sql||' '||"+l_entity_attribute_sql+"';'"+";\n"\
+          "v_sql text:=v_select_sql||' '||v_from_sql||' '||"+l_entity_attribute_sql+"';'"+";\n"\
           "begin\n\treturn query execute v_sql;\nend;\n$$\nlanguage plpgsql;"
     return l_sql

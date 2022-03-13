@@ -1,26 +1,24 @@
 {
-    "entity":"description: name of the entity, type: str",
-    "description":"description: description of the entity, type: str",
+    "entity":"222",
+    "description":"link between client and trip",
     "attribute":
     [
         {
-            "name":"description: name of the attribute, type: str",
-            "description":"description: description of the attribute, type: str",
-            "pk":"description: the attribute is the entity's primary key (0 or 1 or null), type: int",
-            "datatype":"description: datatype of the attribute, type: str",
-            "length":"description: length of the attribute (number or null), type: int",
-            "scale":"description: scale of the attribute (number or null), type: int",
-            "link_entity":"description: id of the linked entity, type: str",
+            "name":"trip_id",
+            "description":"trip number",
+            "pk":1,
+            "datatype":"int",
+            "length":null,
+            "link_entity":null,
             "source":
             [
                 {
-                    "source":"description: id of the source, type: str",
-                    "schema":"description: the source schema, type: str",
-                    "table":"description: the source table, type: str",
-                    "column":"the source column"
+                    "source":"1e7747ae-a02f-48f0-b462-26f2ccdafb7c",
+                    "schema":"public",
+                    "table":"Pass_in_trip",
+                    "column":"trip_no"
                 }
             ]
         }
     ]
-
 }

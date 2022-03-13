@@ -345,21 +345,32 @@ def start_job(p_entity: str =None, p_entity_attribute: str =None):
     """
     Запускает джоб
 
-    :param p_entity: id сущности, который требуется прогрузить
+    :param p_entity: наименование сущности, который требуется прогрузить
     :param p_entity_attribute: id атрибута сущности, который требуется прогрузить
     """
     try:
         l_entity=None
-        if p_entity:
-            l_entity=Entity(
-                p_id=p_entity
-            )
         l_entity_attribute=None
-        if p_entity_attribute:
-            l_entity_attribute=Attribute(
-                p_type=C_ENTITY_COLUMN,
-                p_id=p_entity_attribute
+        if p_entity_attribute and not p_entity:
+            return _JsonOutput(p_json_object=None, p_error="Не указана сущность").body
+        if p_entity:
+            l_entity_meta=search_object(p_type=C_ENTITY, p_attrs={C_NAME:p_entity})
+            if l_entity_meta.__len__()==0:
+                return _JsonOutput(p_json_object=None, p_error="Сущность "+p_entity+" не найдена").body
+            l_entity=Entity(
+                p_id=str(l_entity_meta[0].uuid)
             )
+            if p_entity_attribute:
+                l_entity_attr_meta=search_object(
+                    p_type=C_ENTITY_COLUMN,
+                    p_attrs={C_NAME:p_entity_attribute, C_ENTITY:l_entity.id}
+                )
+                if l_entity_attr_meta.__len__()==0:
+                    return _JsonOutput(p_json_object=None, p_error="Атрибут "+p_entity_attribute+" не найден").body
+                l_entity_attribute=Attribute(
+                    p_type=C_ENTITY_COLUMN,
+                    p_id=str(l_entity_attr_meta[0].uuid)
+                )
         l_job=Job(
             p_entity=l_entity,
             p_entity_attribute=l_entity_attribute
@@ -410,11 +421,12 @@ def get_last_etl():
     except Exception as e:
         return _JsonOutput(p_json_object=None, p_error=e.args[0]).body
 
-def get_etl_hist(p_date: str =None):
+def get_etl_hist(p_date: str =None, p_etl: str =None):
     """
     Возвращает логи по etl-процессам
 
     :param p_date: дата запуска etl-процесса
+    :param p_etl: etl_id
     """
     try:
         l_error=None
@@ -427,6 +439,12 @@ def get_etl_hist(p_date: str =None):
                 l_etl=Job(
                     p_id=str(i_etl_meta.uuid)
                 )
+                # проверка на заданные значения
+                if p_etl or p_date:
+                    if p_etl and p_etl!=str(l_etl.etl_id):
+                        continue
+                    if p_date and datetime.datetime.strptime(p_date,'%Y-%m-%d').date()!=l_etl.start_datetime.date():
+                        continue
                 l_entity_name=None
                 if l_etl.entity:
                     l_entity_name=l_etl.entity.name
@@ -442,10 +460,9 @@ def get_etl_hist(p_date: str =None):
                     C_END_DATETIME:str(l_etl.end_datetime),
                     C_DURATION:l_etl.duration
                 }
-                if not p_date or datetime.datetime.strptime(p_date,'%Y-%m-%d').date()==l_etl.start_datetime.date():
-                    l_json_object.append(
-                        _JsonObject(p_type=C_ETL,p_id=l_etl.id, p_attribute=l_etl_dict)
-                    )
+                l_json_object.append(
+                    _JsonObject(p_type=C_ETL,p_id=l_etl.id, p_attribute=l_etl_dict)
+                )
         return _JsonOutput(p_json_object=l_json_object, p_error=l_error).body
     except Exception as e:
         return _JsonOutput(p_json_object=None, p_error=e.args[0]).body

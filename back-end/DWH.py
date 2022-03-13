@@ -123,8 +123,6 @@ class Connection:
             p_result=p_result,
             p_rollback=p_rollback
         )
-        if l_sql_result[1]:
-            sys.exit(l_sql_result[1])
         return l_sql_result
 
 
@@ -701,7 +699,8 @@ def get_attribute_etl(p_attribute_table: object, p_etl_id: str, p_source_table: 
         if l_source_table_id and l_source_table_id!=i_source_attribute.source_table.id: # пропускаем таблицу источник, если не она указана
             continue
         l_column_nk_sql=""
-        for i_column_nk in p_attribute_table.entity.idmap.source_attribute_nk:
+        l_source_attribute_nk=sorted(p_attribute_table.entity.idmap.source_attribute_nk, key=lambda nk: nk.name)
+        for i_column_nk in l_source_attribute_nk:
             if i_source_attribute.source_table.id==i_column_nk.source_table.id:
                 l_column_nk_sql=l_column_nk_sql+"CAST("+'"'+str(i_column_nk.id)+'"'+" AS VARCHAR(4000))\n\t\t||'@@'||\n\t\t"
         l_column_value_id=i_source_attribute.id
@@ -785,14 +784,14 @@ def get_tie_etl(
         if l_source_table_id and l_source_table_id!=i_source_table.id:
             continue # пропускаем таблицу источник, если не она указана
         l_column_nk_sql=""
-        for i_column_nk in p_tie.entity.idmap.source_attribute_nk:
+        l_source_attribute_nk=sorted(p_tie.entity.idmap.source_attribute_nk, key=lambda nk: nk.name)
+        for i_column_nk in l_source_attribute_nk:
             if i_source_table.id==i_column_nk.source_table.id:
                 l_column_nk_sql=l_column_nk_sql+"CAST("+'"'+str(i_column_nk.id)+'"'+" AS VARCHAR(4000))\n\t\t||'@@'||\n\t\t"
         l_link_column_nk_sql=""
-        for i_entity_link_attribute in p_tie.entity_attribute:
-            for i_column_nk in i_entity_link_attribute.source_attribute:
-                if i_source_table.id==i_column_nk.source_table.id:
-                    l_link_column_nk_sql=l_link_column_nk_sql+"CAST("+'"'+str(i_column_nk.id)+'"'+" AS VARCHAR(4000))\n\t\t||'@@'||\n\t\t"
+        for i_column_nk in p_tie.entity_attribute.source_attribute:
+            if i_source_table.id==i_column_nk.source_table.id:
+                l_link_column_nk_sql=l_link_column_nk_sql+"CAST("+'"'+str(i_column_nk.id)+'"'+" AS VARCHAR(4000))\n\t\t||'@@'||\n\t\t"
         l_update_timestamp_id=None
         for i_source_attribute in i_source_table.source_attribute:
             if i_source_attribute.attribute_type==C_UPDATE:
@@ -930,7 +929,7 @@ class _DWHObject:
             ) # достаем метаданные источника
             # проверяет на наличие источника в метаданных
             if l_meta_objs.__len__()==0:
-                AbaseError(p_error_text="There;s no "+self._type+" with id "+self._id, p_module="DWH", p_class="_DWHObject",
+                AbaseError(p_error_text="There's no "+self._type+" with id "+self._id, p_module="DWH", p_class="_DWHObject",
                            p_def="__object_attrs_meta").raise_error()
             else:
                 l_attr_dict=l_meta_objs[0].attrs
@@ -1508,15 +1507,9 @@ class _DWHObject:
         """
         Записывает метаданные объекта
         """
-        l_obj_meta=meta.search_object(p_uuid=[str(self.id)], p_type=self.type)
-        if l_obj_meta.__len__()>0: # если объект уже существует в метаданных - обновляем его атрибуты
-            meta.update_object(
-                p_object=self.metadata_object(p_id=self.id, p_attrs=self.metadata_json)
-            )
-        else:
-            meta.create_object(
-                p_object=self.metadata_object(p_id=self.id, p_attrs=self.metadata_json)
-            )
+        meta.create_object(
+            p_object=self.metadata_object(p_id=self.id, p_attrs=self.metadata_json)
+        )
 
     def update_metadata(self):
         """
@@ -2665,7 +2658,11 @@ class Job(_DWHObject):
             l_source_table_meta=meta.search_object(p_type=C_QUEUE)
             for i_source_table_meta in l_source_table_meta:
                  l_source_table=SourceTable(p_id=i_source_table_meta.uuid)
-                 l_source_table_list.append(l_source_table)
+                 l_entity_meta=meta.search_object(p_type=C_ENTITY)
+                 if l_entity_meta:
+                     for i_ent in l_entity_meta:
+                         if l_source_table.id in i_ent.attrs.get(C_QUEUE,None) and l_source_table not in l_source_table_list: # грузим только те таблицы источники, которые используются в сущностях
+                            l_source_table_list.append(l_source_table)
             # idmap
             l_idmap_table_meta=meta.search_object(p_type=C_IDMAP)
             for i_idmap_meta in l_idmap_table_meta:
@@ -2994,7 +2991,7 @@ class Package(Job):
         l_cast_dict={}
         l_attribute_name_list=[] # список с наименованиями атрибутов для последующей сортировки
         for i_attribute in self.source_table.source_attribute:
-            if i_attribute.attribute_type!=C_ETL_ATTR:
+            if i_attribute.attribute_type==C_QUEUE_ATTR:
                 l_attribute_name_list.append(i_attribute.name)
         l_attribute_name_list.sort()
         i=0

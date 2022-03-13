@@ -108,7 +108,7 @@ class DataType(DBMS):
         self._data_type_name=self._data_type_name.lower()
         l_datatype_list=C_DBMS_COMPONENTS.get(self.dbms_type,None).get(C_DATATYPE,None)
         if self._data_type_name not in l_datatype_list:
-            AbaseError(p_error_text="Data type is incorrect", p_module="Driver",
+            AbaseError(p_error_text="Data type "+self._data_type_name+" is incorrect", p_module="Driver",
                        p_class="DataType", p_def="data_type_name").raise_error()
         return self._data_type_name.upper()
 

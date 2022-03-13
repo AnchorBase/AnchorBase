@@ -82,6 +82,9 @@ def __arg_checker(p_command: str, p_arg: str):
     :param p_command: команда
     :param p_arg: аргумент команды
     """
+    if not C_CONSOLE_ARGS.get(p_command) and p_arg!=C_HELP:
+        print(C_COLOR_FAIL+"У команды "+p_command+" не существует аргумента "+p_arg+C_COLOR_ENDC)
+        console_input()
     if C_CONSOLE_ARGS.get(p_command) and p_arg not in list(C_CONSOLE_ARGS.get(p_command).keys()) and p_arg!=C_HELP:
         print(C_COLOR_FAIL+"У команды "+p_command+" не существует аргумента "+p_arg+C_COLOR_ENDC)
         console_input()
@@ -174,7 +177,7 @@ def __command_exec(p_command: str, p_arg: dict =None, p_help_command: str =None)
     elif p_command==C_GET_LAST_ETL:
         l_json=get_last_etl()
     elif p_command==C_GET_ETL_HIST:
-        l_json=get_etl_hist(p_date=p_arg.get(C_DATE_CONSOLE_ARG))
+        l_json=get_etl_hist(p_date=p_arg.get(C_DATE_CONSOLE_ARG), p_etl=p_arg.get(C_ETL_ID_CONSOLE_ARG))
     elif p_command==C_GET_ETL_DETAIL:
         l_json=get_etl_detail(
             p_etl=p_arg.get(C_ID_CONSOLE_ARG),
