@@ -2717,7 +2717,7 @@ class Job(_DWHObject):
 
         # грузим данные в таблицы источники
         if p_step_name==C_STG_SCHEMA:
-            print(C_COLOR_BOLD+"\n==============================")
+            print(C_COLOR_BOLD+C_COLOR_OKCYAN+"\n==============================")
             print("Source tables loading")
             print("=============================="+C_COLOR_ENDC)
             print("("+str(l_source_table_list.__len__())+" tables)"+"\n")
@@ -2727,7 +2727,7 @@ class Job(_DWHObject):
             C_IDMAP_SCHEMA,
             C_STG_SCHEMA
         ]:
-            print(C_COLOR_BOLD+"\n==============================")
+            print(C_COLOR_BOLD+C_COLOR_OKCYAN+"\n==============================")
             print("Idmap tables loading")
             print("=============================="+C_COLOR_ENDC)
             print("("+str(l_idmap_list.__len__())+" tables)"+"\n")
@@ -2737,7 +2737,7 @@ class Job(_DWHObject):
             C_STG_SCHEMA,
             C_AM_SCHEMA
         ]:
-            print(C_COLOR_BOLD+"\n==============================")
+            print(C_COLOR_BOLD+C_COLOR_OKCYAN+"\n==============================")
             print("Anchor tables loading")
             print("=============================="+C_COLOR_ENDC)
             print("("+str(l_anchor_list.__len__())+" tables)"+"\n")
@@ -2749,7 +2749,7 @@ class Job(_DWHObject):
                 print("("+str(l_attribute_list.__len__())+" tables)"+"\n")
                 self.attribute_table_load(p_attribute_table=l_attribute_list)
             if l_tie_list.__len__()>0: # не всегда ест tie у сущности
-                print(C_COLOR_BOLD+"\n==============================")
+                print(C_COLOR_BOLD+C_COLOR_OKCYAN+"\n==============================")
                 print("Tie tables loading")
                 print("=============================="+C_COLOR_ENDC)
                 print("("+str(l_tie_list.__len__())+" tables)"+"\n")
