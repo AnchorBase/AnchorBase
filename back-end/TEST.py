@@ -327,17 +327,7 @@ l_json2="""
 # l_table=DWH.AttributeTable(p_id='dd522776-f90f-4c16-a2f2-53fa3e13c2b7')
 # print(DWH.drop_view_ddl(p_table=l_table))
 
-print(
-    MySQL.sql_exec(
-        p_server="localhost",
-        p_database="",
-        p_user="root",
-        p_password="Netwik44!",
-        p_port=3306,
-        p_sql="select * from source.client"
-    )
-)
-
+ConsoleWork.console_input()
 
 
 

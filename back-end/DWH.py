@@ -2526,9 +2526,10 @@ class Job(_DWHObject):
         for i_anchr_pack in self.anchor_package:
             if i_anchr_pack.status==C_STATUS_FAIL:
                 l_fail=C_STATUS_FAIL
-        for i_attr_pack in self.attribute_table_package:
-            if i_attr_pack.status==C_STATUS_FAIL:
-                l_fail=C_STATUS_FAIL
+        if self.attribute_table_package:
+            for i_attr_pack in self.attribute_table_package:
+                if i_attr_pack.status==C_STATUS_FAIL:
+                    l_fail=C_STATUS_FAIL
         if self.tie_package: # так как может не быть tie у джоба
             for i_tie_pack in self.tie_package:
                 if i_tie_pack.status==C_STATUS_FAIL:
@@ -2650,21 +2651,25 @@ class Job(_DWHObject):
         l_tie_list=[]
         if self.entity or self.entity_attribute:
             if self.entity_attribute: # если указан атрибут грузим только его (даже если указана и таблица)
+                if self.entity_attribute.rk==1:
+                    AbaseError(p_error_text="Attribute " +self.entity_attribute.name+" is invalid for load independently", p_module="DWH",
+                               p_class="Job", p_def="start_job").raise_error()
                 # таблицы источники
-                for i_source_attribute in self.entity_attribute.source_attribute:
-                    l_source_table_list.append(i_source_attribute.source_table)
+                if self.entity_attribute.source_attribute:
+                    for i_source_attribute in self.entity_attribute.source_attribute:
+                        l_source_table_list.append(i_source_attribute.source_table)
+                if self.entity_attribute.tie: # у FK таблица источник хранится на tie
+                    for i_source_table in self.entity_attribute.tie.source_table:
+                        l_source_table_list.append(i_source_table)
                 # idmap
                 l_idmap_list.append(self.entity_attribute.entity.idmap)
                 # anchor
                 l_anchor_list.append(self.entity_attribute.entity.anchor)
-                # attribute
-                l_attribute_meta=meta.search_object( # поиск таблицы атрибута в метаданных
-                    p_type=C_ATTRIBUTE_TABLE,
-                    p_attrs={C_ENTITY_COLUMN:self.entity_attribute.id}
-                )[0]
-                l_attribute=AttributeTable(p_id=l_attribute_meta.uuid)
-                l_attribute_list.append(l_attribute)
-                # tie - не обновляем, если указан атрибут сущности!
+                # attribute or tie
+                if self.entity_attribute.tie:
+                    l_tie_list.append(self.entity_attribute.tie)
+                if self.entity_attribute.attribute_table:
+                    l_attribute_list.append(self.entity_attribute.attribute_table)
             else:
                 # таблицы источники
                 for i_source_table in self.entity.source_table:
@@ -2712,36 +2717,42 @@ class Job(_DWHObject):
 
         # грузим данные в таблицы источники
         if p_step_name==C_STG_SCHEMA:
-            print(C_COLOR_BOLD+"==============================")
+            print(C_COLOR_BOLD+"\n==============================")
             print("Source tables loading")
             print("=============================="+C_COLOR_ENDC)
+            print("("+str(l_source_table_list.__len__())+" tables)"+"\n")
             self.source_table_load(p_source_table=l_source_table_list)
         # грузим данные в idmap
         if p_step_name in [
             C_IDMAP_SCHEMA,
             C_STG_SCHEMA
         ]:
-            print(C_COLOR_BOLD+"==============================")
+            print(C_COLOR_BOLD+"\n==============================")
             print("Idmap tables loading")
             print("=============================="+C_COLOR_ENDC)
+            print("("+str(l_idmap_list.__len__())+" tables)"+"\n")
             self.idmap_load(p_idmap=l_idmap_list)
         if p_step_name in [
             C_IDMAP_SCHEMA,
             C_STG_SCHEMA,
             C_AM_SCHEMA
         ]:
-            print(C_COLOR_BOLD+"==============================")
+            print(C_COLOR_BOLD+"\n==============================")
             print("Anchor tables loading")
             print("=============================="+C_COLOR_ENDC)
+            print("("+str(l_anchor_list.__len__())+" tables)"+"\n")
             self.anchor_load(p_anchor=l_anchor_list)
-            print(C_COLOR_BOLD+"==============================")
-            print("Attribute tables loading")
-            print("=============================="+C_COLOR_ENDC)
-            self.attribute_table_load(p_attribute_table=l_attribute_list)
+            if l_attribute_list.__len__()>0:
+                print(C_COLOR_BOLD+"\n==============================")
+                print("Attribute tables loading")
+                print("=============================="+C_COLOR_ENDC)
+                print("("+str(l_attribute_list.__len__())+" tables)"+"\n")
+                self.attribute_table_load(p_attribute_table=l_attribute_list)
             if l_tie_list.__len__()>0: # не всегда ест tie у сущности
-                print(C_COLOR_BOLD+"==============================")
+                print(C_COLOR_BOLD+"\n==============================")
                 print("Tie tables loading")
                 print("=============================="+C_COLOR_ENDC)
+                print("("+str(l_tie_list.__len__())+" tables)"+"\n")
                 self.tie_load(p_tie=l_tie_list)
         # записываем метаданные
         self.end_datetime=datetime.datetime.now() # проставляем дату окончания процесса
@@ -2771,7 +2782,7 @@ class Job(_DWHObject):
         :param p_source_table: список таблиц источников, которые требуется прогрузить
         """
         for i_source_table in p_source_table:
-            print("("+i_source_table.source.name+") "+i_source_table.name+" : "+self.__status_color(C_STATUS_IN_PROGRESS), end="")
+            print("("+i_source_table.source.name+") "+i_source_table.name+" : ", end="")
             l_package=Package(
                 p_source_table=i_source_table,
                 p_type=C_QUEUE_ETL,
@@ -2787,7 +2798,7 @@ class Job(_DWHObject):
         :param p_idmap: список idmap, которые требуется прогрузить
         """
         for i_idmap in p_idmap:
-            print(i_idmap.name+" : "+self.__status_color(C_STATUS_IN_PROGRESS), end="")
+            print(i_idmap.name+" : ", end="")
             l_error_cnt=0
             l_source_table_cnt=0
             for i_source_table in i_idmap.entity.source_table:
@@ -2816,7 +2827,7 @@ class Job(_DWHObject):
         :param p_anchor: список якорей, которые требуется прогрузить
         """
         for i_anchor in p_anchor:
-            print(i_anchor.name+" : "+self.__status_color(C_STATUS_IN_PROGRESS), end="")
+            print(i_anchor.name+" : ", end="")
             l_package=Package(
                 p_anchor=i_anchor,
                 p_type=C_ANCHOR_ETL,
@@ -2832,7 +2843,7 @@ class Job(_DWHObject):
         :param p_attribute_table: список таблиц атрибутов, которые требуется прогрузить
         """
         for i_attribute_table in p_attribute_table:
-            print(i_attribute_table.name+" : "+self.__status_color(C_STATUS_IN_PROGRESS), end="")
+            print(i_attribute_table.name+" : ", end="")
             l_error_cnt=0
             l_source_table_cnt=0
             for i_source_attribute in i_attribute_table.entity_attribute.source_attribute:
@@ -2861,7 +2872,7 @@ class Job(_DWHObject):
         :param p_tie: список таблиц tie, которые требуется прогрузить
         """
         for i_tie in p_tie:
-            print(i_tie.name+" : "+self.__status_color(C_STATUS_IN_PROGRESS), end="")
+            print(i_tie.name+" : ", end="")
             l_error_cnt=0
             l_source_table_cnt=0
             for i_source_table in i_tie.source_table:
@@ -2882,9 +2893,6 @@ class Job(_DWHObject):
             else:
                 l_status=C_STATUS_PARTLY_SUCCESS
             print("\r"+i_tie.name+" : "+self.__status_color(l_status))
-
-
-
 
 
 class Package(Job):

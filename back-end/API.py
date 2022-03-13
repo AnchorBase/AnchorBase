@@ -405,6 +405,7 @@ def get_last_etl():
             l_entity_attr_name=None
             if l_etl.entity_attribute:
                 l_entity_attr_name=l_etl.entity_attribute.name
+            x=0
             l_etl_dict={
                 C_ETL_ATTRIBUTE_NAME:l_etl.etl_id,
                 C_ENTITY:l_entity_name,
