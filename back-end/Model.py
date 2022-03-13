@@ -198,10 +198,35 @@ class Model:
         l_sql+=l_entity.get_drop_entity_function_sql()+"\n"
         # изменяем имя у сущности, а также у таблиц и ее атрибутов
         l_entity.name=self.entity_param.name # автоматически заменяются имена у всех производных объектов
-        # отдельно заменяем наименование у tie, где переименованная сущность - связанная
+        l_ent_attr=[] # список атрибутов сущностей  (в том числе и других сущностей), которые нужно переименовать
+        # ищем RK
+        l_rk=None
+        for i_attr in l_entity.entity_attribute:
+            if i_attr.rk==1:
+                l_rk=i_attr
+                l_ent_attr.append(l_rk)
+        # отдельно заменяем наименование у tie и атрибутов, где переименованная сущность - связанная
         if l_link_ties:
             for i_link_tie in l_link_ties:
+                # изменяем наименование tie
                 i_link_tie.link_entity=l_entity
+                # связання сущность
+                l_link_ent=i_link_tie.entity
+                # изменяем tie у атрибута связанной сущности
+                l_link_attr=[]
+                for i_link_attr in l_link_ent.entity_attribute:
+                    if i_link_attr.tie and i_link_attr.tie.id==i_link_tie.id:
+                        # изменяем наименование атрибута у связанной сущности
+                        i_link_attr.name=l_rk.name # берем наименование с PK переименованной сущности
+                        i_link_attr.tie=i_link_tie
+                        l_link_attr.append(i_link_attr)
+                        l_ent_attr.append(i_link_attr)
+                    else:
+                        l_link_attr.append(i_link_attr)
+                l_link_ent.entity_attribute=l_link_attr
+                i_link_tie.entity=l_link_ent
+                # переписываем конструктор запросов связанной сущности
+                l_sql+=l_link_ent.get_entity_function()
 
         l_obj=self.__get_object_list(
             p_entity_child=l_entity,
@@ -218,7 +243,8 @@ class Model:
             p_entity=l_entity,
             p_entity_child=l_entity,
             p_tie=l_link_ties,
-            p_attribute=1
+            p_attribute=1,
+            p_entity_attribute=l_ent_attr
         )
         # проверяем метаданные
         self.__metadata_checker(
@@ -533,7 +559,6 @@ class Model:
         for i_attr in l_tie.tie_attribute:
             if i_attr.attribute_type==C_LINK_RK:
                 l_link_rk=i_attr
-
         l_entity_link_rk=Attribute( # создаем атрибут для добавления в метаданные сущности
             p_name=l_link_rk.name,
             p_desc=C_LINK_RK_DESC,
@@ -566,6 +591,7 @@ class Model:
     def __get_object_list(
             self,
             p_entity: object =None,
+            p_entity_attribute: list =None,
             p_entity_child: object =None,
             p_idmap: list =None,
             p_anchor: list =None,
@@ -579,6 +605,7 @@ class Model:
         Если указана сущность (p_entity_child), будут собираться все ее дочерние объекты.
 
         :param p_entity: сущность
+        :param p_entity_attribute: атрибуты сущности
         :param p_entity_child: сущность, для которой нужно добавить дочерние объекты
         :param p_idmap: idmap (лист объектов)
         :param p_anchor: якорная таблица (лист объектов)
@@ -637,6 +664,9 @@ class Model:
             l_obj.append(p_entity)
             if p_attribute==1:
                 l_obj.extend(p_entity.entity_attribute)
+        if p_entity_attribute:
+            l_obj.extend(p_entity_attribute)
+
         return l_obj
 
     def __get_create_table_sql(self, p_objects: list) -> str:

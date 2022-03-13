@@ -1700,6 +1700,15 @@ class Entity(_DWHObject):
 
         # изменяем наименование сущности
         self._name=p_new_name.lower()
+        # изменяем наименование у RK сущности
+        l_ent_attr=[]
+        for i_attr in self.entity_attribute:
+            if i_attr.rk==1:
+                i_attr.name=self.name+"_"+C_RK
+                l_ent_attr.append(i_attr)
+            else:
+                l_ent_attr.append(i_attr)
+        self.entity_attribute=l_ent_attr
         # изменяем наименования объектов путем изменения у них сущности
         # idmap
         l_idmap=self.idmap
@@ -1714,6 +1723,15 @@ class Entity(_DWHObject):
         for i_attribute in self.attribute_table:
             l_attribute=i_attribute
             l_attribute.entity=self
+            # изменяем таблицу атрибут и у атрибута сущности
+            l_new_ent_attr=[]
+            for i_ent_attr in self.entity_attribute:
+                if i_ent_attr.attribute_table and i_ent_attr.attribute_table.id==i_attribute.id:
+                    i_ent_attr.attribute_table=i_attribute
+                    l_new_ent_attr.append(i_ent_attr)
+                else:
+                    l_new_ent_attr.append(i_ent_attr)
+            self.entity_attribute=l_new_ent_attr
             l_attributes.append(l_attribute)
         self.attribute_table=l_attributes
         #tie
@@ -1722,6 +1740,15 @@ class Entity(_DWHObject):
             for i_tie in self.tie:
                 l_tie=i_tie
                 l_tie.entity=self
+                # изменяем tie и у атрибута сущности
+                l_new_ent_attr=[]
+                for i_ent_attr in self.entity_attribute:
+                    if i_ent_attr.tie and i_ent_attr.tie.id==i_tie.id:
+                        i_ent_attr.tie=i_tie
+                        l_new_ent_attr.append(i_ent_attr)
+                    else:
+                        l_new_ent_attr.append(i_ent_attr)
+                self.entity_attribute=l_new_ent_attr
                 l_ties.append(l_tie)
             self.tie=l_ties
 
@@ -1826,8 +1853,6 @@ class SourceTable(_DWHObject):
             if type(self._increment).__name__!="Attribute":
                 AbaseError(p_error_text="p_increment doesn't belong to class Attribute",
                     p_module="DWH", p_class="SourceTable", p_def="increment").raise_error()
-            # if self._increment.datatype.data_type_name!=C_TIMESTAMP_DBMS.get(self.source.type):
-            #     sys.exit("У инкремента некорректный тип данных") #TODO переделать
         l_increment_meta_obj=self.object_attrs_meta.get(C_INCREMENT,None)
         l_increment=None
         if l_increment_meta_obj:
