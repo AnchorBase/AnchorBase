@@ -69,10 +69,6 @@ class Model:
         if l_source_table_meta.__len__()>0:
             for i_source_table in l_source_table_meta:
                 l_source_table_name_list.append(i_source_table.attrs.get(C_NAME))
-        l_source_table_meta=search_object(p_type=C_QUEUE)
-        if l_source_table_meta.__len__()>0:
-            for i_source_table in l_source_table_meta:
-                l_source_table_name_list.append(i_source_table.attrs.get(C_NAME))
         l_source_table_list=[] # лист объектов класса SourceTable - таблицы источники
         l_idmap_source_attribute_list=[] # лист атрибутов таблиц источников - первичные ключи
         l_attribute_table_list=[] # список таблиц атрибутов сущности
@@ -96,7 +92,7 @@ class Model:
             for i_source_param in i_attribute_param.source_param:
                 # таблица источник
                 l_source_table=self.__create_source_table(p_entity=l_entity, p_source_param=i_source_param)
-                if l_source_table_list.__len__():
+                if l_source_table_list.__len__()>0:
                     for index, i_source_table in enumerate(l_source_table_list):
                         if i_source_table.queue_name==l_source_table.queue_name:
                             l_source_table=i_source_table
@@ -725,8 +721,16 @@ class Model:
         :param p_objects: лист объектов, которым требуется записать метаданные
         """
         # метаданные сущности и ее атрибутов
+        l_exist_obj=[] # список ранее созданных объектов в метаданных
         for i_obj in p_objects:
+            # проверяем, что объект не создан ранее, так как сперва объекты создаются, а потом изменяются
+            l_obj_meta=search_object(p_type=i_obj.type, p_uuid=[str(i_obj.id)])
+            if l_obj_meta.__len__()>0:
+                l_exist_obj.append(i_obj)
+                continue
             i_obj.create_metadata()
+        for i_obj in l_exist_obj:
+            i_obj.update_metadata()
 
     def __update_metadata(self,p_objects: list):
         """
@@ -1099,6 +1103,7 @@ class _EntityParam:
         self.entity_name_double_checker()
         self.source_attribute_double_checker()
         self.link_entity_double_checker()
+        self.rk_attribute_checker()
 
     def name_checker(self):
         """
@@ -1213,6 +1218,16 @@ class _EntityParam:
                            p_def="link_entity_double_checker").raise_error()
             elif i_attribute.link_entity_id:
                 l_link_entity_id_list.append(i_attribute.link_entity_id)
+
+    def rk_attribute_checker(self):
+        """
+        Проверяет, что у сущности не указан атрибут RK, так как он генерируется автоматически
+        """
+        for i_attribute in self.attribute_param:
+            if i_attribute.name==self.name+"_"+C_RK:
+                AbaseError(p_error_text="The name of attribute "+i_attribute.name+" is invalid" ,
+                           p_module="Model", p_class="_EntityParam",
+                           p_def="link_entity_double_checker").raise_error()
 
 
 

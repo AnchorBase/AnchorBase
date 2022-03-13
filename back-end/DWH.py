@@ -1507,15 +1507,9 @@ class _DWHObject:
         """
         Записывает метаданные объекта
         """
-        l_obj_meta=meta.search_object(p_uuid=[str(self.id)], p_type=self.type)
-        if l_obj_meta.__len__()>0: # если объект уже существует в метаданных - обновляем его атрибуты
-            meta.update_object(
-                p_object=self.metadata_object(p_id=self.id, p_attrs=self.metadata_json)
-            )
-        else:
-            meta.create_object(
-                p_object=self.metadata_object(p_id=self.id, p_attrs=self.metadata_json)
-            )
+        meta.create_object(
+            p_object=self.metadata_object(p_id=self.id, p_attrs=self.metadata_json)
+        )
 
     def update_metadata(self):
         """
