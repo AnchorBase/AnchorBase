@@ -1,6 +1,7 @@
 # coding=utf-8
 import psycopg2
 import psycopg2.extensions
+from psycopg2 import extras
 from Constants import *
 import sys
 
@@ -16,7 +17,8 @@ def sql_exec(
         p_port: int,
         p_sql: str,
         p_result: int =1,
-        p_rollback: int =0
+        p_rollback: int =0,
+        p_vl: list =None
 ):
     """
     Выполняет запросы в PostgreSQL
@@ -29,6 +31,7 @@ def sql_exec(
     :param p_sql: SQL-запрос
     :param p_result: Признак наличия результата запроса (по умолчанию 1)
     :param p_rollback: Признак необходимости отката транзакции в любом случае (по умолчанию 0)
+    :param p_vl: лист с кортежами значений для вставки INSERT
     """
     l_query_output=None
     l_error=None
@@ -46,11 +49,14 @@ def sql_exec(
     cnct.autocommit = False
     crsr = cnct.cursor()
     try:
-        crsr.execute(p_sql)
-        if p_result==1: # если нужен результат запроса
-            l_query_output = crsr.fetchall()
+        if p_vl:
+            extras.execute_values(crsr, p_sql, p_vl, page_size=C_PAGE_SIZE)
         else:
-            l_query_output = 1
+            crsr.execute(p_sql)
+            if p_result==1: # если нужен результат запроса
+                l_query_output = crsr.fetchall()
+            else:
+                l_query_output = 1
         if p_rollback==1:
             cnct.rollback() # откат транзакции, если признак - 1
         else:
@@ -99,12 +105,18 @@ def get_source_table_etl(
     :param p_source_attribute: атрибуты таблицы (список должен быть отсортирован в соответствии с наименованием атрибута)
     :param p_source_attribute_value: значения атрибутов
     """
-    l_etl="DELETE FROM "+'"'+C_STG_SCHEMA+'"'+"."+'"'+str(p_source_table_id)+'";'+"\n\t" \
-           "INSERT INTO "+'"'+C_STG_SCHEMA+'"'+"."+'"'+str(p_source_table_id)+'"'+"\n\t"\
+    l_etl="INSERT INTO "+'"'+C_STG_SCHEMA+'"'+"."+'"'+str(p_source_table_id)+'"'+"\n\t"\
           "("+p_source_attribute+")\n\t"\
-          "VALUES\n"+p_source_attribute_value+";\n"
+          "VALUES "+p_source_attribute_value+";\n"
     return l_etl
 
+def get_source_table_delete_sql(p_source_table_id: str):
+    """
+    Генерирует SQL-запрос удаления записей из таблицы источника
+    :param p_source_table_id: id таблицы
+    """
+    l_sql="DELETE FROM "+'"'+C_STG_SCHEMA+'"'+"."+'"'+str(p_source_table_id)+'";'+"\n"
+    return l_sql
 
 def get_idmap_etl(
       p_idmap_id: str,
