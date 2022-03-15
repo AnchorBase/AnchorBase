@@ -1,6 +1,7 @@
 # coding=utf-8
 import psycopg2
 import psycopg2.extensions
+from psycopg2 import extras
 from Constants import *
 import sys
 
@@ -16,7 +17,8 @@ def sql_exec(
         p_port: int,
         p_sql: str,
         p_result: int =1,
-        p_rollback: int =0
+        p_rollback: int =0,
+        p_vl: list =None
 ):
     """
     Выполняет запросы в PostgreSQL
@@ -29,6 +31,7 @@ def sql_exec(
     :param p_sql: SQL-запрос
     :param p_result: Признак наличия результата запроса (по умолчанию 1)
     :param p_rollback: Признак необходимости отката транзакции в любом случае (по умолчанию 0)
+    :param p_vl: лист с кортежами значений для вставки INSERT
     """
     l_query_output=None
     l_error=None
@@ -46,11 +49,14 @@ def sql_exec(
     cnct.autocommit = False
     crsr = cnct.cursor()
     try:
-        crsr.execute(p_sql)
-        if p_result==1: # если нужен результат запроса
-            l_query_output = crsr.fetchall()
+        if p_vl:
+            extras.execute_values(crsr, p_sql, p_vl, page_size=C_PAGE_SIZE)
         else:
-            l_query_output = 1
+            crsr.execute(p_sql)
+            if p_result==1: # если нужен результат запроса
+                l_query_output = crsr.fetchall()
+            else:
+                l_query_output = 1
         if p_rollback==1:
             cnct.rollback() # откат транзакции, если признак - 1
         else:
@@ -99,12 +105,18 @@ def get_source_table_etl(
     :param p_source_attribute: атрибуты таблицы (список должен быть отсортирован в соответствии с наименованием атрибута)
     :param p_source_attribute_value: значения атрибутов
     """
-    l_etl="DELETE FROM "+'"'+C_STG_SCHEMA+'"'+"."+'"'+str(p_source_table_id)+'";'+"\n\t" \
-           "INSERT INTO "+'"'+C_STG_SCHEMA+'"'+"."+'"'+str(p_source_table_id)+'"'+"\n\t"\
+    l_etl="INSERT INTO "+'"'+C_STG_SCHEMA+'"'+"."+'"'+str(p_source_table_id)+'"'+"\n\t"\
           "("+p_source_attribute+")\n\t"\
-          "VALUES\n"+p_source_attribute_value+";\n"
+          "VALUES "+p_source_attribute_value+";\n"
     return l_etl
 
+def get_source_table_delete_sql(p_source_table_id: str):
+    """
+    Генерирует SQL-запрос удаления записей из таблицы источника
+    :param p_source_table_id: id таблицы
+    """
+    l_sql="DELETE FROM "+'"'+C_STG_SCHEMA+'"'+"."+'"'+str(p_source_table_id)+'";'+"\n"
+    return l_sql
 
 def get_idmap_etl(
       p_idmap_id: str,
@@ -114,7 +126,8 @@ def get_idmap_etl(
       p_idmap_nk_id: str,
       p_idmap_rk_id: str,
       p_etl_id: str,
-      p_etl_value: str
+      p_etl_value: str,
+      p_max_rk: str
 ):
     """
     Генерирует ETL для Idmap
@@ -127,6 +140,7 @@ def get_idmap_etl(
     :param p_idmap_rk_id: id атрибута суррогатного ключа
     :param p_etl_id: id атрибута etl_id
     :param p_etl_value: значение для атрибута etl_id
+    :param p_max_rk: максимальное значение RK у idmap
     """
     l_etl="DROP TABLE IF EXISTS "+'"'+C_WRK_SCHEMA+'"'+"."+'"'+str(p_idmap_id)+"_1"+'"'+";\n"\
           "CREATE TABLE "+'"'+C_WRK_SCHEMA+'"'+"."+'"'+str(p_idmap_id)+"_1"+'"'+" AS (\n"\
@@ -139,13 +153,11 @@ def get_idmap_etl(
           "CREATE TABLE "+'"'+C_WRK_SCHEMA+'"'+"."+'"'+str(p_idmap_id)+"_2"+'"'+" AS (\n\t"\
           "SELECT\n\t"\
           "nk.idmap_nk\n\t"\
-          ",COALESCE(mx_rk.max_rk,0) + ROW_NUMBER() OVER (ORDER BY 1) AS idmap_rk\n\t"\
+          ","+p_max_rk+" + ROW_NUMBER() OVER (ORDER BY 1) AS idmap_rk\n\t"\
           "FROM "+'"'+C_WRK_SCHEMA+'"'+"."+'"'+str(p_idmap_id)+"_1"+'"'+" as nk\n\t"\
           "LEFT JOIN "+'"'+C_IDMAP_SCHEMA+'"'+"."+'"'+str(p_idmap_id)+'"'+" as idmp\n\t\t"\
           "ON 1=1\n\t\t"\
           "AND nk.idmap_nk=idmp."+'"'+str(p_idmap_nk_id)+'"'+"\n\t" \
-          "CROSS JOIN (\n\t\tSELECT \n\t\tMAX("+'"'+str(p_idmap_rk_id)+'"'+") as max_rk \n\t\tFROM "\
-          +'"'+C_IDMAP_SCHEMA+'"'+"."+'"'+str(p_idmap_id)+'"'+"\n\t) as mx_rk\n\t"\
           "WHERE 1=1\n\t\t"\
           "AND idmp."+'"'+str(p_idmap_rk_id)+'"'+" IS NULL\n);\n"\
           "INSERT INTO "+'"'+C_IDMAP_SCHEMA+'"'+"."+'"'+str(p_idmap_id)+'"'+"\n"\
@@ -552,4 +564,14 @@ def get_entity_function_sql(
           "||',main."+'"'+C_SOURCE_ATTRIBUTE_NAME+'"'+"';\n\t"\
           "v_sql text:=v_select_sql||' '||v_from_sql||' '||"+l_entity_attribute_sql+"';'"+";\n"\
           "begin\n\treturn query execute v_sql;\nend;\n$$\nlanguage plpgsql;"
+    return l_sql
+
+def idmap_max_rk_sql(p_idmap_id: str, p_idmap_rk_id: str)->str:
+    """
+    Генерирует SQL-запрос определения максимального RK в idmap
+
+    :param p_idmap_id: Id idmap
+    :param p_idmap_rk_id: Id атрибута RK в idmap
+    """
+    l_sql="SELECT COALESCE(MAX("+'"'+str(p_idmap_rk_id)+'"'+"),0) FROM "+'"'+C_IDMAP_SCHEMA+'"'+"."+'"'+str(p_idmap_id)+'";'
     return l_sql

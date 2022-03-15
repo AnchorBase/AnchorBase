@@ -12,8 +12,9 @@ import Metadata as meta
 from Source import Source as Source
 import datetime
 from Constants import *
-import SystemObjects
 from SystemObjects import *
+import math
+import threading
 
 class Connection:
     """
@@ -105,13 +106,14 @@ class Connection:
             return pgsql
 
 
-    def sql_exec(self, p_sql: str, p_result: int =1, p_rollback: int =0):
+    def sql_exec(self, p_sql: str, p_result: int =1, p_rollback: int =0, p_vl: list =None):
         """
         Выполнение запроса на стороне ХД
 
         :param p_sql: SQL-выражение
         :param p_result: Признак наличия результата запроса (по умолчанию 1)
         :param p_rollback: Признак необходимости отката транзакции в любом случае (по умолчанию 0)
+        :param p_vl: лист с кортежами значений для вставки INSERT
         """
         l_sql_result=self.dbms.sql_exec(
             p_server=self.server,
@@ -121,7 +123,8 @@ class Connection:
             p_port=self.port,
             p_sql=p_sql,
             p_result=p_result,
-            p_rollback=p_rollback
+            p_rollback=p_rollback,
+            p_vl=p_vl
         )
         return l_sql_result
 
@@ -225,8 +228,10 @@ def get_values_sql(p_data_frame: list, p_cast_dict: dict, p_etl_id: int):
     """
     Возвращает преобразованный data frame в конструкцию values (...,...),
 
+    Устаревший метод!!!
+
     :param p_data_frame: data frame
-    :param p_cast_list: словарь с порядковыми номерами атрибутов и конструкцией cast для каждого атрибута
+    :param p_cast_dict: словарь с порядковыми номерами атрибутов и конструкцией cast для каждого атрибута
     :param p_etl_id: id etl процесса
     """
     l_sql=""
@@ -235,15 +240,17 @@ def get_values_sql(p_data_frame: list, p_cast_dict: dict, p_etl_id: int):
         l_sql=l_sql+"(\n\t"
         for i_column in i_row:
             if p_cast_dict.get(i,None) is None:
-                AbaseError(p_error_text="cast is necessary for " + l_dbms_type, p_module="DWH", p_class="",
+                AbaseError(p_error_text="technical error", p_module="DWH", p_class="",
                            p_def="get_values_sql").raise_error()
             if not i_column: # преобразуем none в null, если значение пустое
                 i_column="NULL "
             else:
                 i_column="'"+str(i_column).replace("'","''")+"' " # экранируем одинарную кавычку ' в строке
-            l_sql=l_sql+p_cast_dict.get(i,None).replace(str(i),i_column,1)+",\n\t"
+            # l_sql=l_sql+p_cast_dict.get(i,None).replace(str(i),i_column,1)+",\n\t"
+            l_sql=l_sql+i_column+",\n\t"
             i=i+1
-        l_sql=l_sql+"CAST("+str(p_etl_id)+" AS BIGINT)\n),\n" # добавляем etl_id
+        # l_sql=l_sql+"CAST("+str(p_etl_id)+" AS BIGINT)\n),\n" # добавляем etl_id
+        l_sql=l_sql+str(p_etl_id)+"\n),\n"
     return l_sql[:-2]
 
 def _object_class_checker(p_object: object, p_class_name: str):
@@ -525,7 +532,16 @@ def drop_view_ddl(p_table: object):
     l_sql="DROP VIEW IF EXISTS "+l_schema+"."+'"'+l_table_name+'";'
     return l_sql
 
-def get_source_table_etl(p_source_table: object, p_attribute_value: str):
+def get_source_table_delete_sql(p_source_table: object):
+    """
+    SQL-запрос удаления строк из таблицы источника
+
+    :param p_source_table: объект класса SourceTable
+    """
+    l_sql=Connection().dbms.get_source_table_delete_sql(p_source_table_id=str(p_source_table.id))
+    return l_sql
+
+def get_source_table_etl(p_source_table: object, p_attribute_value: str =None):
     """
     ETL таблицы источника
 
@@ -546,8 +562,8 @@ def get_source_table_etl(p_source_table: object, p_attribute_value: str):
             l_attribute_name_list.append(i_attribute.name)
         elif i_attribute.attribute_type==C_UPDATE:
             l_update_attribute_sql='"'+str(i_attribute.id)+'"'
-        elif i_attribute.attribute_type==C_ETL_ATTR:
-            l_etl_update_sql='"'+str(i_attribute.id)+'"'
+        # elif i_attribute.attribute_type==C_ETL_ATTR:
+        #     l_etl_update_sql='"'+str(i_attribute.id)+'"' # временно отказываемся от данного атрибута
     l_attribute_name_list.sort() # сортируем по наименованию
     # сортируем id в соответствии с наименованием атрибутов
     l_attribute_sql="\n\t\t"
@@ -555,12 +571,12 @@ def get_source_table_etl(p_source_table: object, p_attribute_value: str):
         for i_attribute in _get_table_attribute_property(p_table=p_source_table):
             if i_attribute.name==i_attribute_name:
                 l_attribute_sql=l_attribute_sql+'"'+str(i_attribute.id)+'"'+",\n\t\t"
-    l_attribute_sql=l_attribute_sql+l_update_attribute_sql+",\n\t\t"+l_etl_update_sql+"\n\t"
+    l_attribute_sql=l_attribute_sql+l_update_attribute_sql#",\n\t\t"+l_etl_update_sql+"\n\t"
 
     l_etl=Connection().dbms.get_source_table_etl(
         p_source_table_id=p_source_table.id,
         p_source_attribute=l_attribute_sql,
-        p_source_attribute_value=p_attribute_value
+        p_source_attribute_value=p_attribute_value or "%s"
     )
     return l_etl
 
@@ -613,7 +629,8 @@ def get_idmap_etl(
                 p_etl_value=p_etl_id,
                 p_source_table_id=i_source_table.id,
                 p_attribute_nk=l_column_nk_sql,
-                p_source_id=l_source_id
+                p_source_id=l_source_id,
+                p_max_rk=str(p_idmap.max_rk)
             )
         )
     return l_etl
@@ -1943,6 +1960,33 @@ class SourceTable(_DWHObject):
             if C_ETL_ATTR not in l_attribute_type_list:
                 add_attribute(p_table=self, p_attribute=etl_column)
 
+    @property
+    def cast_script(self):
+        """
+        Скрипт CAST AS для таблицы источника
+        """
+        # формирование словаря с cast() выражением для каждого атрибута
+        l_cast_dict={}
+        l_attribute_name_list=[] # список с наименованиями атрибутов для последующей сортировки
+        for i_attribute in self.source_attribute:
+            if i_attribute.attribute_type==C_QUEUE_ATTR:
+                l_attribute_name_list.append(i_attribute.name)
+        l_attribute_name_list.sort()
+        i=0
+        for i_attribute_name in l_attribute_name_list:
+            for i_attribute in self.source_attribute:
+                if i_attribute.name==i_attribute_name:
+                    l_cast_dict.update(
+                        {i:"CAST("+str(i)+"AS "+i_attribute.datatype.data_type_sql+")"}
+                    )
+                    i+=1
+        l_cast_dict.update(
+            {
+                i:"CAST("+str(i)+"AS "+C_TIMESTAMP_DBMS.get(Connection().dbms_type)+")"
+            }
+        )
+        return l_cast_dict
+
 
 
 class Idmap(_DWHObject):
@@ -2062,7 +2106,21 @@ class Idmap(_DWHObject):
         self._source_attribute_nk=p_new_source_attribute_nk
         self.object_attrs_meta.pop(C_ATTRIBUTE_NK, None)
 
-
+    @property
+    def max_rk(self):
+        """
+        Максимальное значение RK
+        """
+        l_rk=None
+        for i_attr in self.idmap_attribute:
+            if i_attr.attribute_type==C_RK:
+                l_rk=i_attr
+        l_sql=Connection().dbms.idmap_max_rk_sql(
+            p_idmap_id=str(self.id),
+            p_idmap_rk_id=str(l_rk.id)
+        )
+        l_mx_rk=Connection().sql_exec(p_sql=l_sql)
+        return l_mx_rk[0][0][0]
 
 
 
@@ -2721,7 +2779,20 @@ class Job(_DWHObject):
             print("Source tables loading")
             print("=============================="+C_COLOR_ENDC)
             print("("+str(l_source_table_list.__len__())+" tables)"+"\n")
-            self.source_table_load(p_source_table=l_source_table_list)
+            # грузим параллельно до 10 потоков
+            # определяем количество итераций
+            l_prt=math.ceil(l_source_table_list.__len__()/C_PARALLEL_OBJECT_NUM)
+            l_source_thread=[]
+            for i_prt in range(l_prt):
+                # лист для прогрузки объектов параллельно
+                l_source_table_load_list=l_source_table_list[i_prt*C_PARALLEL_OBJECT_NUM:(i_prt+1)*C_PARALLEL_OBJECT_NUM]
+                for i_obj in l_source_table_load_list:
+                    l_obj_list=[i_obj]
+                    l_thread=threading.Thread(target=self.source_table_load, args=(l_obj_list,))
+                    l_source_thread.append(l_thread)
+                    l_thread.start()
+
+            [thread.join() for thread in l_source_thread]
         # грузим данные в idmap
         if p_step_name in [
             C_IDMAP_SCHEMA,
@@ -2731,7 +2802,19 @@ class Job(_DWHObject):
             print("Idmap tables loading")
             print("=============================="+C_COLOR_ENDC)
             print("("+str(l_idmap_list.__len__())+" tables)"+"\n")
-            self.idmap_load(p_idmap=l_idmap_list)
+            # грузим параллельно до 10 потоков
+            # определяем количество итераций
+            l_prt=math.ceil(l_idmap_list.__len__()/C_PARALLEL_OBJECT_NUM)
+            l_idmap_thread=[]
+            for i_prt in range(l_prt):
+                # лист для прогрузки объектов параллельно
+                l_idmap_table_load_list=l_idmap_list[i_prt*C_PARALLEL_OBJECT_NUM:(i_prt+1)*C_PARALLEL_OBJECT_NUM]
+                for i_obj in l_idmap_table_load_list:
+                    l_obj_list=[i_obj]
+                    l_thread=threading.Thread(target=self.idmap_load, args=(l_obj_list,))
+                    l_idmap_thread.append(l_thread)
+                    l_thread.start()
+            [thread.join() for thread in l_idmap_thread]
         if p_step_name in [
             C_IDMAP_SCHEMA,
             C_STG_SCHEMA,
@@ -2741,19 +2824,55 @@ class Job(_DWHObject):
             print("Anchor tables loading")
             print("=============================="+C_COLOR_ENDC)
             print("("+str(l_anchor_list.__len__())+" tables)"+"\n")
-            self.anchor_load(p_anchor=l_anchor_list)
+            # грузим параллельно до 10 потоков
+            # определяем количество итераций
+            l_prt=math.ceil(l_anchor_list.__len__()/C_PARALLEL_OBJECT_NUM)
+            l_anchor_thread=[]
+            for i_prt in range(l_prt):
+                # лист для прогрузки объектов параллельно
+                l_anchor_table_load_list=l_anchor_list[i_prt*C_PARALLEL_OBJECT_NUM:(i_prt+1)*C_PARALLEL_OBJECT_NUM]
+                for i_obj in l_anchor_table_load_list:
+                    l_obj_list=[i_obj]
+                    l_thread=threading.Thread(target=self.anchor_load, args=(l_obj_list,))
+                    l_anchor_thread.append(l_thread)
+                    l_thread.start()
+            [thread.join() for thread in l_anchor_thread]
             if l_attribute_list.__len__()>0:
                 print(C_COLOR_BOLD+"\n==============================")
                 print("Attribute tables loading")
                 print("=============================="+C_COLOR_ENDC)
                 print("("+str(l_attribute_list.__len__())+" tables)"+"\n")
-                self.attribute_table_load(p_attribute_table=l_attribute_list)
+                # грузим параллельно до 10 потоков
+                # определяем количество итераций
+                l_prt=math.ceil(l_attribute_list.__len__()/C_PARALLEL_OBJECT_NUM)
+                l_attr_thread=[]
+                for i_prt in range(l_prt):
+                    # лист для прогрузки объектов параллельно
+                    l_attr_table_load_list=l_attribute_list[i_prt*C_PARALLEL_OBJECT_NUM:(i_prt+1)*C_PARALLEL_OBJECT_NUM]
+                    for i_obj in l_attr_table_load_list:
+                        l_obj_list=[i_obj]
+                        l_thread=threading.Thread(target=self.attribute_table_load, args=(l_obj_list,))
+                        l_attr_thread.append(l_thread)
+                        l_thread.start()
+                [thread.join() for thread in l_attr_thread]
             if l_tie_list.__len__()>0: # не всегда ест tie у сущности
                 print(C_COLOR_BOLD+C_COLOR_OKCYAN+"\n==============================")
                 print("Tie tables loading")
                 print("=============================="+C_COLOR_ENDC)
                 print("("+str(l_tie_list.__len__())+" tables)"+"\n")
-                self.tie_load(p_tie=l_tie_list)
+                # грузим параллельно до 10 потоков
+                # определяем количество итераций
+                l_prt=math.ceil(l_tie_list.__len__()/C_PARALLEL_OBJECT_NUM)
+                l_tie_thread=[]
+                for i_prt in range(l_prt):
+                    # лист для прогрузки объектов параллельно
+                    l_tie_table_load_list=l_tie_list[i_prt*C_PARALLEL_OBJECT_NUM:(i_prt+1)*C_PARALLEL_OBJECT_NUM]
+                    for i_obj in l_tie_table_load_list:
+                        l_obj_list=[i_obj]
+                        l_thread=threading.Thread(target=self.tie_load, args=(l_obj_list,))
+                        l_tie_thread.append(l_thread)
+                        l_thread.start()
+                [thread.join() for thread in l_tie_thread]
         # записываем метаданные
         self.end_datetime=datetime.datetime.now() # проставляем дату окончания процесса
         # записываем в метаданные
@@ -2780,7 +2899,6 @@ class Job(_DWHObject):
         :param p_source_table: список таблиц источников, которые требуется прогрузить
         """
         for i_source_table in p_source_table:
-            print("("+i_source_table.source.name+") "+i_source_table.name+" : ", end="")
             l_package=Package(
                 p_source_table=i_source_table,
                 p_type=C_QUEUE_ETL,
@@ -2796,7 +2914,6 @@ class Job(_DWHObject):
         :param p_idmap: список idmap, которые требуется прогрузить
         """
         for i_idmap in p_idmap:
-            print(i_idmap.name+" : ", end="")
             l_error_cnt=0
             l_source_table_cnt=0
             for i_source_table in i_idmap.entity.source_table:
@@ -2825,7 +2942,6 @@ class Job(_DWHObject):
         :param p_anchor: список якорей, которые требуется прогрузить
         """
         for i_anchor in p_anchor:
-            print(i_anchor.name+" : ", end="")
             l_package=Package(
                 p_anchor=i_anchor,
                 p_type=C_ANCHOR_ETL,
@@ -2841,7 +2957,6 @@ class Job(_DWHObject):
         :param p_attribute_table: список таблиц атрибутов, которые требуется прогрузить
         """
         for i_attribute_table in p_attribute_table:
-            print(i_attribute_table.name+" : ", end="")
             l_error_cnt=0
             l_source_table_cnt=0
             for i_source_attribute in i_attribute_table.entity_attribute.source_attribute:
@@ -2870,7 +2985,6 @@ class Job(_DWHObject):
         :param p_tie: список таблиц tie, которые требуется прогрузить
         """
         for i_tie in p_tie:
-            print(i_tie.name+" : ", end="")
             l_error_cnt=0
             l_source_table_cnt=0
             for i_source_table in i_tie.source_table:
@@ -2969,7 +3083,8 @@ class Package(Job):
         """
         # получаем etl в зависимости от типа объекта
         l_etl=None
-        l_result=None
+        l_result=(None, None)
+        l_attribute_value=(None, None)
         # загружаем данные
         # таблицы источники
         if self.type==C_QUEUE_ETL:
@@ -2978,7 +3093,7 @@ class Package(Job):
                 l_result=None, l_attribute_value[1]
             else:
                 # формируем sql-запрос
-                l_etl=get_source_table_etl(p_source_table=self.source_table, p_attribute_value=l_attribute_value[0])
+                l_etl=get_source_table_etl(p_source_table=self.source_table)
         # idmap
         elif self.type==C_IDMAP_ETL:
             # sql-запрос
@@ -2996,8 +3111,11 @@ class Package(Job):
             #sql-запрос
             l_etl=get_tie_etl(p_tie=self.tie, p_source_table=self.source_table, p_etl_id=str(self.etl_id))[0]
         # выполняем запрос в ХД
-        if not l_result:
-            l_result=Connection().sql_exec(p_sql=l_etl, p_result=0)
+        if self.type==C_QUEUE_ETL: # сперва очищаем таблицу источник
+            l_sql=get_source_table_delete_sql(p_source_table=self.source_table)
+            l_result=Connection().sql_exec(p_sql=l_sql, p_result=0)
+        if not l_result[1]:
+            l_result=Connection().sql_exec(p_sql=l_etl, p_result=0, p_vl=l_attribute_value[0])
         # логируем
         self.end_datetime=datetime.datetime.now() # проставляем дату окончания процесса
         if l_result[1]: # если завершилось с ошибкой
@@ -3018,32 +3136,20 @@ class Package(Job):
         l_data_frame=self.source_table.source.sql_exec(
             p_sql=self.source_table.source_table_sql
         )
-        # формирование словаря с cast() выражением для каждого атрибута
-        l_cast_dict={}
-        l_attribute_name_list=[] # список с наименованиями атрибутов для последующей сортировки
-        for i_attribute in self.source_table.source_attribute:
-            if i_attribute.attribute_type==C_QUEUE_ATTR:
-                l_attribute_name_list.append(i_attribute.name)
-        l_attribute_name_list.sort()
-        i=0
-        for i_attribute_name in l_attribute_name_list:
-            for i_attribute in self.source_table.source_attribute:
-                if i_attribute.name==i_attribute_name:
-                    l_cast_dict.update(
-                        {i:"CAST("+str(i)+"AS "+i_attribute.datatype.data_type_sql+")"}
-                    )
-                    i+=1
-        l_cast_dict.update(
-            {
-                i:"CAST("+str(i)+"AS "+C_TIMESTAMP_DBMS.get(Connection().dbms_type)+")"
-            }
-        )
         if l_data_frame[1]: # если возникла ошибка
             return None, l_data_frame[1]
         else:
-            l_insert_data_frame=get_values_sql(p_data_frame=l_data_frame[0], p_cast_dict=l_cast_dict, p_etl_id=self.etl_id) # data frame для вставки в таблицу
-
-        return l_insert_data_frame, None
+            # l_df_len=l_data_frame[0].__len__()
+            # # разбиваем на партиции по n строк
+            # l_prt_num=math.ceil(l_df_len/C_ROW_NUM)
+            # l_insert_data_frame=""
+            # for i_prt in range(l_prt_num):
+            #     l_insert_data_frame+=get_values_sql(
+            #         p_data_frame=l_data_frame[0][i_prt*C_ROW_NUM:(i_prt+1)*C_ROW_NUM], # берем только строки в диапазоне
+            #         p_cast_dict=self.source_table.cast_script,
+            #         p_etl_id=self.etl_id
+            #     )+",\n" # data frame для вставки в таблицу
+            return l_data_frame[0], None
 
     def __add_package_to_job(self):
         """
