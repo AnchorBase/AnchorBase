@@ -2779,7 +2779,20 @@ class Job(_DWHObject):
             print("Source tables loading")
             print("=============================="+C_COLOR_ENDC)
             print("("+str(l_source_table_list.__len__())+" tables)"+"\n")
-            self.source_table_load(p_source_table=l_source_table_list)
+            # грузим параллельно до 10 потоков
+            # определяем количество итераций
+            l_prt=math.ceil(l_source_table_list.__len__()/C_PARALLEL_OBJECT_NUM)
+            l_source_thread=[]
+            for i_prt in range(l_prt):
+                # лист для прогрузки объектов параллельно
+                l_source_table_load_list=l_source_table_list[i_prt*C_PARALLEL_OBJECT_NUM:(i_prt+1)*C_PARALLEL_OBJECT_NUM]
+                for i_obj in l_source_table_load_list:
+                    l_obj_list=[i_obj]
+                    l_thread=threading.Thread(target=self.source_table_load, args=(l_obj_list,))
+                    l_source_thread.append(l_thread)
+                    l_thread.start()
+
+            [thread.join() for thread in l_source_thread]
         # грузим данные в idmap
         if p_step_name in [
             C_IDMAP_SCHEMA,
@@ -2789,7 +2802,19 @@ class Job(_DWHObject):
             print("Idmap tables loading")
             print("=============================="+C_COLOR_ENDC)
             print("("+str(l_idmap_list.__len__())+" tables)"+"\n")
-            self.idmap_load(p_idmap=l_idmap_list)
+            # грузим параллельно до 10 потоков
+            # определяем количество итераций
+            l_prt=math.ceil(l_idmap_list.__len__()/C_PARALLEL_OBJECT_NUM)
+            l_idmap_thread=[]
+            for i_prt in range(l_prt):
+                # лист для прогрузки объектов параллельно
+                l_idmap_table_load_list=l_idmap_list[i_prt*C_PARALLEL_OBJECT_NUM:(i_prt+1)*C_PARALLEL_OBJECT_NUM]
+                for i_obj in l_idmap_table_load_list:
+                    l_obj_list=[i_obj]
+                    l_thread=threading.Thread(target=self.idmap_load, args=(l_obj_list,))
+                    l_idmap_thread.append(l_thread)
+                    l_thread.start()
+            [thread.join() for thread in l_idmap_thread]
         if p_step_name in [
             C_IDMAP_SCHEMA,
             C_STG_SCHEMA,
@@ -2799,19 +2824,55 @@ class Job(_DWHObject):
             print("Anchor tables loading")
             print("=============================="+C_COLOR_ENDC)
             print("("+str(l_anchor_list.__len__())+" tables)"+"\n")
-            self.anchor_load(p_anchor=l_anchor_list)
+            # грузим параллельно до 10 потоков
+            # определяем количество итераций
+            l_prt=math.ceil(l_anchor_list.__len__()/C_PARALLEL_OBJECT_NUM)
+            l_anchor_thread=[]
+            for i_prt in range(l_prt):
+                # лист для прогрузки объектов параллельно
+                l_anchor_table_load_list=l_anchor_list[i_prt*C_PARALLEL_OBJECT_NUM:(i_prt+1)*C_PARALLEL_OBJECT_NUM]
+                for i_obj in l_anchor_table_load_list:
+                    l_obj_list=[i_obj]
+                    l_thread=threading.Thread(target=self.anchor_load, args=(l_obj_list,))
+                    l_anchor_thread.append(l_thread)
+                    l_thread.start()
+            [thread.join() for thread in l_anchor_thread]
             if l_attribute_list.__len__()>0:
                 print(C_COLOR_BOLD+"\n==============================")
                 print("Attribute tables loading")
                 print("=============================="+C_COLOR_ENDC)
                 print("("+str(l_attribute_list.__len__())+" tables)"+"\n")
-                self.attribute_table_load(p_attribute_table=l_attribute_list)
+                # грузим параллельно до 10 потоков
+                # определяем количество итераций
+                l_prt=math.ceil(l_attribute_list.__len__()/C_PARALLEL_OBJECT_NUM)
+                l_attr_thread=[]
+                for i_prt in range(l_prt):
+                    # лист для прогрузки объектов параллельно
+                    l_attr_table_load_list=l_attribute_list[i_prt*C_PARALLEL_OBJECT_NUM:(i_prt+1)*C_PARALLEL_OBJECT_NUM]
+                    for i_obj in l_attr_table_load_list:
+                        l_obj_list=[i_obj]
+                        l_thread=threading.Thread(target=self.attribute_table_load, args=(l_obj_list,))
+                        l_attr_thread.append(l_thread)
+                        l_thread.start()
+                [thread.join() for thread in l_attr_thread]
             if l_tie_list.__len__()>0: # не всегда ест tie у сущности
                 print(C_COLOR_BOLD+C_COLOR_OKCYAN+"\n==============================")
                 print("Tie tables loading")
                 print("=============================="+C_COLOR_ENDC)
                 print("("+str(l_tie_list.__len__())+" tables)"+"\n")
-                self.tie_load(p_tie=l_tie_list)
+                # грузим параллельно до 10 потоков
+                # определяем количество итераций
+                l_prt=math.ceil(l_tie_list.__len__()/C_PARALLEL_OBJECT_NUM)
+                l_tie_thread=[]
+                for i_prt in range(l_prt):
+                    # лист для прогрузки объектов параллельно
+                    l_tie_table_load_list=l_tie_list[i_prt*C_PARALLEL_OBJECT_NUM:(i_prt+1)*C_PARALLEL_OBJECT_NUM]
+                    for i_obj in l_tie_table_load_list:
+                        l_obj_list=[i_obj]
+                        l_thread=threading.Thread(target=self.tie_load, args=(l_obj_list,))
+                        l_tie_thread.append(l_thread)
+                        l_thread.start()
+                [thread.join() for thread in l_tie_thread]
         # записываем метаданные
         self.end_datetime=datetime.datetime.now() # проставляем дату окончания процесса
         # записываем в метаданные
@@ -2838,7 +2899,6 @@ class Job(_DWHObject):
         :param p_source_table: список таблиц источников, которые требуется прогрузить
         """
         for i_source_table in p_source_table:
-            print("("+i_source_table.source.name+") "+i_source_table.name+" : ", end="")
             l_package=Package(
                 p_source_table=i_source_table,
                 p_type=C_QUEUE_ETL,
@@ -2854,7 +2914,6 @@ class Job(_DWHObject):
         :param p_idmap: список idmap, которые требуется прогрузить
         """
         for i_idmap in p_idmap:
-            print(i_idmap.name+" : ", end="")
             l_error_cnt=0
             l_source_table_cnt=0
             for i_source_table in i_idmap.entity.source_table:
@@ -2883,7 +2942,6 @@ class Job(_DWHObject):
         :param p_anchor: список якорей, которые требуется прогрузить
         """
         for i_anchor in p_anchor:
-            print(i_anchor.name+" : ", end="")
             l_package=Package(
                 p_anchor=i_anchor,
                 p_type=C_ANCHOR_ETL,
@@ -2899,7 +2957,6 @@ class Job(_DWHObject):
         :param p_attribute_table: список таблиц атрибутов, которые требуется прогрузить
         """
         for i_attribute_table in p_attribute_table:
-            print(i_attribute_table.name+" : ", end="")
             l_error_cnt=0
             l_source_table_cnt=0
             for i_source_attribute in i_attribute_table.entity_attribute.source_attribute:
@@ -2928,7 +2985,6 @@ class Job(_DWHObject):
         :param p_tie: список таблиц tie, которые требуется прогрузить
         """
         for i_tie in p_tie:
-            print(i_tie.name+" : ", end="")
             l_error_cnt=0
             l_source_table_cnt=0
             for i_source_table in i_tie.source_table:
