@@ -2836,7 +2836,7 @@ class Job(_DWHObject):
                     l_thread=threading.Thread(target=self.anchor_load, args=(l_obj_list,))
                     l_anchor_thread.append(l_thread)
                     l_thread.start()
-            [thread.join() for thread in l_anchor_thread]
+                [thread.join() for thread in l_anchor_thread]
             if l_attribute_list.__len__()>0:
                 print(C_COLOR_BOLD+"\n==============================")
                 print("Attribute tables loading")
@@ -2854,7 +2854,7 @@ class Job(_DWHObject):
                         l_thread=threading.Thread(target=self.attribute_table_load, args=(l_obj_list,))
                         l_attr_thread.append(l_thread)
                         l_thread.start()
-                [thread.join() for thread in l_attr_thread]
+                    [thread.join() for thread in l_attr_thread]
             if l_tie_list.__len__()>0: # не всегда ест tie у сущности
                 print(C_COLOR_BOLD+C_COLOR_OKCYAN+"\n==============================")
                 print("Tie tables loading")
@@ -2872,7 +2872,7 @@ class Job(_DWHObject):
                         l_thread=threading.Thread(target=self.tie_load, args=(l_obj_list,))
                         l_tie_thread.append(l_thread)
                         l_thread.start()
-                [thread.join() for thread in l_tie_thread]
+                    [thread.join() for thread in l_tie_thread]
         # записываем метаданные
         self.end_datetime=datetime.datetime.now() # проставляем дату окончания процесса
         # записываем в метаданные
