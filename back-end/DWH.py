@@ -629,7 +629,8 @@ def get_idmap_etl(
                 p_etl_value=p_etl_id,
                 p_source_table_id=i_source_table.id,
                 p_attribute_nk=l_column_nk_sql,
-                p_source_id=l_source_id
+                p_source_id=l_source_id,
+                p_max_rk=str(p_idmap.max_rk)
             )
         )
     return l_etl
@@ -2105,7 +2106,21 @@ class Idmap(_DWHObject):
         self._source_attribute_nk=p_new_source_attribute_nk
         self.object_attrs_meta.pop(C_ATTRIBUTE_NK, None)
 
-
+    @property
+    def max_rk(self):
+        """
+        Максимальное значение RK
+        """
+        l_rk=None
+        for i_attr in self.idmap_attribute:
+            if i_attr.attribute_type==C_RK:
+                l_rk=i_attr
+        l_sql=Connection().dbms.idmap_max_rk_sql(
+            p_idmap_id=str(self.id),
+            p_idmap_rk_id=str(l_rk.id)
+        )
+        l_mx_rk=Connection().sql_exec(p_sql=l_sql)
+        return l_mx_rk[0][0][0]
 
 
 

@@ -126,7 +126,8 @@ def get_idmap_etl(
       p_idmap_nk_id: str,
       p_idmap_rk_id: str,
       p_etl_id: str,
-      p_etl_value: str
+      p_etl_value: str,
+      p_max_rk: str
 ):
     """
     Генерирует ETL для Idmap
@@ -139,6 +140,7 @@ def get_idmap_etl(
     :param p_idmap_rk_id: id атрибута суррогатного ключа
     :param p_etl_id: id атрибута etl_id
     :param p_etl_value: значение для атрибута etl_id
+    :param p_max_rk: максимальное значение RK у idmap
     """
     l_etl="DROP TABLE IF EXISTS "+'"'+C_WRK_SCHEMA+'"'+"."+'"'+str(p_idmap_id)+"_1"+'"'+";\n"\
           "CREATE TABLE "+'"'+C_WRK_SCHEMA+'"'+"."+'"'+str(p_idmap_id)+"_1"+'"'+" AS (\n"\
@@ -151,13 +153,11 @@ def get_idmap_etl(
           "CREATE TABLE "+'"'+C_WRK_SCHEMA+'"'+"."+'"'+str(p_idmap_id)+"_2"+'"'+" AS (\n\t"\
           "SELECT\n\t"\
           "nk.idmap_nk\n\t"\
-          ",COALESCE(mx_rk.max_rk,0) + ROW_NUMBER() OVER (ORDER BY 1) AS idmap_rk\n\t"\
+          ","+p_max_rk+" + ROW_NUMBER() OVER (ORDER BY 1) AS idmap_rk\n\t"\
           "FROM "+'"'+C_WRK_SCHEMA+'"'+"."+'"'+str(p_idmap_id)+"_1"+'"'+" as nk\n\t"\
           "LEFT JOIN "+'"'+C_IDMAP_SCHEMA+'"'+"."+'"'+str(p_idmap_id)+'"'+" as idmp\n\t\t"\
           "ON 1=1\n\t\t"\
           "AND nk.idmap_nk=idmp."+'"'+str(p_idmap_nk_id)+'"'+"\n\t" \
-          "CROSS JOIN (\n\t\tSELECT \n\t\tMAX("+'"'+str(p_idmap_rk_id)+'"'+") as max_rk \n\t\tFROM "\
-          +'"'+C_IDMAP_SCHEMA+'"'+"."+'"'+str(p_idmap_id)+'"'+"\n\t) as mx_rk\n\t"\
           "WHERE 1=1\n\t\t"\
           "AND idmp."+'"'+str(p_idmap_rk_id)+'"'+" IS NULL\n);\n"\
           "INSERT INTO "+'"'+C_IDMAP_SCHEMA+'"'+"."+'"'+str(p_idmap_id)+'"'+"\n"\
@@ -564,4 +564,14 @@ def get_entity_function_sql(
           "||',main."+'"'+C_SOURCE_ATTRIBUTE_NAME+'"'+"';\n\t"\
           "v_sql text:=v_select_sql||' '||v_from_sql||' '||"+l_entity_attribute_sql+"';'"+";\n"\
           "begin\n\treturn query execute v_sql;\nend;\n$$\nlanguage plpgsql;"
+    return l_sql
+
+def idmap_max_rk_sql(p_idmap_id: str, p_idmap_rk_id: str)->str:
+    """
+    Генерирует SQL-запрос определения максимального RK в idmap
+
+    :param p_idmap_id: Id idmap
+    :param p_idmap_rk_id: Id атрибута RK в idmap
+    """
+    l_sql="SELECT COALESCE(MAX("+'"'+str(p_idmap_rk_id)+'"'+"),0) FROM "+'"'+C_IDMAP_SCHEMA+'"'+"."+'"'+str(p_idmap_id)+'";'
     return l_sql
