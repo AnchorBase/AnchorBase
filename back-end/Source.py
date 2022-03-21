@@ -2,8 +2,12 @@
 import Metadata
 import MSSQL as mssql
 import Postgresql as pgsql
+import MySQL as mysql
 import sys
 from Constants import *
+import SystemObjects
+from SystemObjects import *
+
 
 class Source:
     """
@@ -61,7 +65,8 @@ class Source:
             ) # достаем метаданные источника
             # проверяет на наличие источника в метаданных
             if l_source_meta_objs.__len__()==0:
-                sys.exit("Нет источника с указанным id "+self._id)
+                AbaseError(p_error_text="There's no source with ID mentioned "+self._id, p_module="Source", p_class="Source",
+                           p_def="__source_meta_attrs").raise_error()
             else:
                 l_attr_dict=l_source_meta_objs[0].attrs
         return l_attr_dict
@@ -95,7 +100,15 @@ class Source:
         """
         Описание источника
         """
-        return self._desc or self.source_meta_attrs.get(C_DESC, None)
+        if self._desc=='null': # обработка случаев, когда пользователь сам задал пустое описание
+            return None
+        else:
+            return self._desc or self.source_meta_attrs.get(C_DESC, None)
+
+    @description.setter
+    def description(self, p_new_desc: str):
+        self._desc=p_new_desc
+        self.source_meta_attrs.pop(C_DESC, None)
 
     @property
     def server(self):
@@ -123,7 +136,10 @@ class Source:
         """
         Пароль
         """
-        return self._password or self.source_meta_attrs.get(C_PASSWORD, None)
+        if self._password=='null': # обработка случаев, когда пользователь сам задал пустой пароль
+            return None
+        else:
+            return self._password or self.source_meta_attrs.get(C_PASSWORD, None)
 
     @property
     def port(self):
@@ -160,41 +176,42 @@ class Source:
         Тип источника
         """
         if self._type is not None and self._type not in C_AVAILABLE_SOURCE_LIST:
-            sys.exit("Некорректный источник "+self._type)
+            AbaseError(p_error_text="The source is incorrect: " + self._type, p_module="Source",
+                       p_class="Source", p_def="type").raise_error()
         return self._type or self.source_meta_attrs.get(C_TYPE_VALUE, None)
 
-    @property
-    def __source_objects(self):
-        """
-        Получает таблицы и атрибуты источника
-        """
-        l_source_meta_objects=self.__cnct.get_objects(
-            p_server=self.server,
-            p_database=self.database,
-            p_user=self.user,
-            p_password=self.password,
-            p_port=self.port
-        ) # получаем метаданные источника
-        return l_source_meta_objects
+    # @property
+    #     # def __source_objects(self):
+    #     #     """
+    #     #     Получает таблицы и атрибуты источника
+    #     #     """
+    #     #     l_source_meta_objects=self.__cnct.get_objects(
+    #     #         p_server=self.server,
+    #     #         p_database=self.database,
+    #     #         p_user=self.user,
+    #     #         p_password=self.password,
+    #     #         p_port=self.port
+    #     #     ) # получаем метаданные источника
+    #     #     return l_source_meta_objects
 
-    @property
-    def source_tables(self):
-        """
-        Все таблицы источника
-        """
-        l_source_table=set() # множетво таблиц (не повторяются наименования таблиц)
-        for i_source_meta_object in self.__source_objects:
-            l_source_table.add(str(i_source_meta_object[0]).lower()+"."+str(i_source_meta_object[1]).lower()) # добавляем в список и приводим к нижнему регистру
-        return l_source_table
-    @property
-    def source_attributes(self):
-        """
-        Все атрибуты источника
-        """
-        l_source_attributes=set()
-        for i_source_attributes in self.__source_objects:
-            l_source_attributes.add(str(i_source_attributes[0]).lower()+"."+str(i_source_attributes[1]).lower()+"."+str(i_source_attributes[4]).lower()) # добавляем в список и приводим к нижнему регистру
-        return l_source_attributes
+    # @property
+    # def source_tables(self):
+    #     """
+    #     Все таблицы источника
+    #     """
+    #     l_source_table=set() # множетво таблиц (не повторяются наименования таблиц)
+    #     for i_source_meta_object in self.__source_objects:
+    #         l_source_table.add(str(i_source_meta_object[0]).lower()+"."+str(i_source_meta_object[1]).lower()) # добавляем в список и приводим к нижнему регистру
+    #     return l_source_table
+    # @property
+    # def source_attributes(self):
+    #     """
+    #     Все атрибуты источника
+    #     """
+    #     l_source_attributes=set()
+    #     for i_source_attributes in self.__source_objects:
+    #         l_source_attributes.add(str(i_source_attributes[0]).lower()+"."+str(i_source_attributes[1]).lower()+"."+str(i_source_attributes[4]).lower()) # добавляем в список и приводим к нижнему регистру
+    #     return l_source_attributes
 
 
     @property
@@ -206,6 +223,8 @@ class Source:
             return mssql
         elif self.type==C_POSTGRESQL:
             return pgsql
+        elif self.type==C_MYSQL:
+            return mysql
 
     def sql_exec(self, p_sql: str):
         """
@@ -229,9 +248,13 @@ class Source:
         Проверяет подключение к источнику
         """
         # выполняет простой запрос на источнике
-        self.sql_exec(
+        l_rslt=self.sql_exec(
             p_sql="SELECT 1;"
         )
+        if l_rslt[1]:
+            AbaseError(p_error_text=l_rslt[1], p_module="Source",
+                       p_class="Source", p_def="type").raise_error()
+
 
     @property
     def __meta_obj(self):

@@ -1,3 +1,5 @@
+
+
 # coding=utf-8
 #!path/to/interpretter
 #!/usr/bin/python
@@ -12,6 +14,7 @@ import shlex
 import ConsoleWork
 import uuid
 import datetime
+import MySQL
 # source = DWH.Source(
 #     p_id='0a884f59-48b6-4afe-838e-57bdbbb9ec7c'
 # )
@@ -321,10 +324,10 @@ l_json2="""
 # print(l_job.status)
 
 
-l_table=DWH.AttributeTable(p_id='dd522776-f90f-4c16-a2f2-53fa3e13c2b7')
-print(DWH.drop_view_ddl(p_table=l_table))
+# l_table=DWH.AttributeTable(p_id='dd522776-f90f-4c16-a2f2-53fa3e13c2b7')
+# print(DWH.drop_view_ddl(p_table=l_table))
 
-
+ConsoleWork.console_input()
 
 
 

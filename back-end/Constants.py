@@ -52,6 +52,7 @@ C_SCALE = "scale" # количество знаков после запятой
 C_DWH = "dwh" # ХД
 C_INCREMENT = "increment" # инкремент
 C_PK = "pk" # ключ
+C_FK="fk" # внешний ключ
 C_DESC="description" # описание
 C_ID="id" # идентификатор
 C_DATA="data" # данные
@@ -76,7 +77,7 @@ C_DUMMY_UUID="00000000-0000-0000-0000-000000000000" # пустой uuid
 C_STATUS="status"
 C_STATUS_IN_PROGRESS="in progress"
 C_STATUS_FAIL="fail"
-C_STATUS_SUCCESS="success    " # пробелы поставлены для корректного возврата каретки в консоли
+C_STATUS_SUCCESS="success" # пробелы поставлены для корректного возврата каретки в консоли
 C_STATUS_PARTLY_SUCCESS="partly success"
 C_STATUS_START="start"
 C_START_DATETIME="start_datetime"
@@ -112,8 +113,15 @@ C_TABLE_NAME_POSTFIX={ # постфиксы таблиц
 #================================
 C_STG_SCHEMA="stg"
 C_IDMAP_SCHEMA="idmap"
-C_AM_SCHEMA="am"
+C_AM_SCHEMA="dds"
 C_WRK_SCHEMA="wrk"
+C_META_SCHEMA="abase_meta"
+C_SCHEMA_LIST=[
+    C_STG_SCHEMA,
+    C_IDMAP_SCHEMA,
+    C_AM_SCHEMA,
+    C_WRK_SCHEMA
+]
 C_SCHEMA_TABLE_TYPE = { # наименование схемы в соответствии с типом таблицы
     C_QUEUE:C_STG_SCHEMA,
     C_IDMAP:C_IDMAP_SCHEMA,
@@ -160,6 +168,10 @@ C_UPDATE_TIMESTAMP_NAME = "update_timestamp"
 C_CONFIG_FILE_PATH = "dwh_config.py" # путь до файла с конфигами подключения к ХД
 C_MSSQL_DRIVER_MACOS_PATH = "/usr/local/lib/libtdsodbc.so" # расположение драйвера в MacOS
 C_TDS_VERSION = '7.3' # версия TDS для pyodbc
+C_META_CONFIG="metadata_config.py" # наименование файла с параметрами подключения к метеданным
+C_DBMS_TYPE="dbms_type" # тип СУБД
+C_PAGE_SIZE=10000 # количество строк для вставки батчом
+C_PARALLEL_OBJECT_NUM=20 # количество объектов, обрабатываемых параллельно
 #================================
 #  Метаданные
 #================================
@@ -177,6 +189,8 @@ C_ANCHOR_ETL="anchor_etl" # логи etl таблицы якоря
 C_ATTRIBUTE_ETL="attribute_etl" # логи etl таблицы атрибут
 C_TIE_ETL="tie_etl" # логи etl таблицы связи
 C_QUEUE_INCREMENT = C_QUEUE+"_"+C_INCREMENT
+C_RK_DESC="Суррогат сущности" # описание суррогата для метаданных
+C_LINK_RK_DESC="Суррогат связанной сущности" # описание суррогата связанной сущности для метаданных
 C_META_TABLES = [ # список таблиц метаданных (для проверки корректности)
     C_SOURCE_META,
     C_ENTITY,
@@ -191,7 +205,6 @@ C_META_TABLES = [ # список таблиц метаданных (для пр�
     C_ATTRIBUTE_COLUMN,
     C_TIE,
     C_TIE_COLUMN,
-    C_QUEUE_COLUMN,
     C_ETL,
     C_QUEUE_ETL,
     C_IDMAP_ETL,
@@ -214,7 +227,7 @@ C_SOURCE_META_ATTRIBUTES = { # необходимые атрибуты исто�
     C_SERVER:{C_NOT_NULL:1,C_TYPE_VALUE:"str", C_PK:0},
     C_DATABASE:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:0},
     C_USER:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:0},
-    C_PASSWORD:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:0},
+    C_PASSWORD:{C_NOT_NULL:0,C_TYPE_VALUE:"str",C_PK:0},
     C_PORT:{C_NOT_NULL:1,C_TYPE_VALUE:"int",C_PK:0},
     C_TYPE_VALUE:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:0},
     C_NAME:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:1},
@@ -234,14 +247,19 @@ C_ENTITY_META_ATTRIBUTES = { # необходимые атрибуты сущн�
 }
 C_ENTITY_COLUMN_META_ATTRIBUTES = { # необходимые атрибуты атрибутов сущности
     C_NAME:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:0},
-    C_PK:{C_NOT_NULL:1,C_TYPE_VALUE:"int",C_PK:0},
+    C_PK:{C_NOT_NULL:0,C_TYPE_VALUE:"int",C_PK:0},
+    C_RK:{C_NOT_NULL:0,C_TYPE_VALUE:"int",C_PK:0},
+    C_FK:{C_NOT_NULL:0,C_TYPE_VALUE:"int",C_PK:0},
     C_DESC:{C_NOT_NULL:0,C_TYPE_VALUE:"str",C_PK:0},
     C_ENTITY:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:0},
     C_DATATYPE:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:0},
     C_LENGTH:{C_NOT_NULL:0,C_TYPE_VALUE:"int",C_PK:0},
     C_SCALE:{C_NOT_NULL:0,C_TYPE_VALUE:"int",C_PK:0},
     C_LINK_ENTITY:{C_NOT_NULL:0,C_TYPE_VALUE:"str",C_PK:0},
-    C_QUEUE_COLUMN:{C_NOT_NULL:1,C_TYPE_VALUE:"list",C_PK:0}
+    C_QUEUE_COLUMN:{C_NOT_NULL:0,C_TYPE_VALUE:"list",C_PK:0},
+    C_ANCHOR:{C_NOT_NULL:0,C_TYPE_VALUE:"str",C_PK:0},
+    C_ATTRIBUTE_TABLE:{C_NOT_NULL:0,C_TYPE_VALUE:"str",C_PK:0},
+    C_TIE:{C_NOT_NULL:0,C_TYPE_VALUE:"str",C_PK:0}
 }
 C_QUEUE_META_ATTRIBUTES = { # необходимые атрибуты таблицы очереди
     C_NAME:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:1},
@@ -403,7 +421,12 @@ C_META_ATTRIBUTES = { # таблица метаданных и необходи�
 #================================
 C_MSSQL = "mssql"  # MSSQL
 C_POSTGRESQL = "postgresql" # PostgreSQL
-C_AVAILABLE_SOURCE_LIST = [C_MSSQL] # фиксированный список СУБД, с которым AnchorBase умеет работать как с источником
+C_MYSQL ="mysql" # MySQL
+C_AVAILABLE_SOURCE_LIST = [
+    C_MSSQL,
+    C_POSTGRESQL,
+    C_MYSQL
+] # фиксированный список СУБД, с которым AnchorBase умеет работать как с источником
 C_AVAILABLE_DWH_LIST = [C_POSTGRESQL] # фиксированный список СУБД, с которым AnchorBase умеет работать как с DWH
 C_CNCT_PARAMS = [  # фиксированный список параметров подключения
     C_SERVER,
@@ -426,10 +449,7 @@ C_BIGINT = "bigint"
 C_DECIMAL = "decimal"
 C_NUMERIC = "numeric"
 C_REAL = "real"
-C_DOUBLE = "double"
-C_SMALLSERIAL = "smallserial"
-C_SERIAL = "serial"
-C_BIGSERIAL = "bigserial"
+C_DOUBLE = "double precision"
 C_MONEY = "money"
 C_CHARACTER = "character"
 C_CHAR = "char"
@@ -442,8 +462,8 @@ C_TIME = "time"
 C_INTERVAL = "interval"
 C_BOOLEAN = "boolean"
 C_DATETIME = "datetime"
-C_UUID = "uuid"
-C_JSON = "json"
+C_UUID = "uuid" # AnchorBase не умеет работать с данным типом данных
+C_JSON = "json" # AnchorBase не умеет работать с данным типом данных
 # СПИСКИ ТИПОВ ДАННЫХ ДЛЯ КАЖДОЙ СУБД
 C_POSTGRESQL_DATA_TYPE_LIST = [ # фиксированный список типов данных для PostgreSQL, с которыми умеет работать AnchorBase
      C_SMALLINT
@@ -454,9 +474,6 @@ C_POSTGRESQL_DATA_TYPE_LIST = [ # фиксированный список тип
     ,C_NUMERIC
     ,C_REAL
     ,C_DOUBLE
-    ,C_SMALLSERIAL
-    ,C_SERIAL
-    ,C_BIGSERIAL
     ,C_MONEY
     ,C_CHARACTER
     ,C_CHAR
@@ -471,7 +488,8 @@ C_POSTGRESQL_DATA_TYPE_LIST = [ # фиксированный список тип
 ]
 C_TIMESTAMP_DBMS={ #тип данных даты и времени в разных СУБД
     C_MSSQL:C_DATETIME,
-    C_POSTGRESQL:C_TIMESTAMP
+    C_POSTGRESQL:C_TIMESTAMP,
+    C_MYSQL:C_DATETIME
 }
 # компоненты СУБД: типы данных и т.д.
 C_DBMS_COMPONENTS = {
@@ -482,12 +500,11 @@ C_DBMS_COMPONENTS = {
 #================================
 #  Цвета шрифтов для консоли
 #================================
-C_COLOR_HEADER = '\033[95m' # заголовок
-C_COLOR_OKBLUE = '\033[94m' # синий
-C_COLOR_OKCYAN = '\033[96m' # фиолетовый
-C_COLOR_OKGREEN = '\033[92m' # зеленый
-C_COLOR_WARNING = '\033[93m' # желтый
-C_COLOR_FAIL = '\033[91m' # красный
+C_COLOR_HEADER = '\033[45m' # заголовок
+C_COLOR_OKCYAN = '\033[46m' # фиолетовый
+C_COLOR_OKGREEN = '\033[32m' # зеленый
+C_COLOR_WARNING = '\033[43m' # желтый
+C_COLOR_FAIL = '\033[31m' # красный
 C_COLOR_ENDC = '\033[0m' # дефолтный цвет
 C_COLOR_BOLD = '\033[1m' # жирный шрифт
 C_COLOR_UNDERLINE = '\033[4m' #  подчеркивание
@@ -495,21 +512,29 @@ C_COLOR_UNDERLINE = '\033[4m' #  подчеркивание
 #  Команды консоли
 #================================
 # не забыть добавить новые команды в список C_CONSOLE_COMMAND_LIST
-C_GET_SOURCE="get_source" # получение источника/источников
-C_ADD_SOURCE="add_source" # добавление нового источника
-C_ALTER_SOURCE="alter_source" # изменение параметров источника
-C_GET_SOURCE_TYPE="get_source_type" # показывается все типы источников, с которыми AnchorBase умеет работать
-C_GET_ENTITY="get_entity" # получение сущности
-C_GET_ENTITY_ATTR="get_attr" # получение атрибута сущности
-C_GET_ENTITY_SOURCE="get_entity_source" # получение источников сущности
-C_GET_ATTR_SOURCE="get_attr_source" # получение источников атрибутов сущности
-C_START_JOB="load_data" # загрузка данных в ХД
-C_GET_LAST_ETL="get_last_etl" # получение информации о последнем etl
-C_GET_ETL_HIST="get_etl_hist" # получение логов etl-процессов
-C_GET_ETL_DETAIL="get_etl_detail" # получение детализации по etl-процессу
-C_ADD_ENTITY="add_entity" # добавление сущности в ХД
+C_GET_SOURCE="show source" # получение источника/источников
+C_ADD_SOURCE="create source" # добавление нового источника
+C_ALTER_SOURCE="alter source" # изменение параметров источника
+C_GET_SOURCE_TYPE="show source type" # показывается все типы источников, с которыми AnchorBase умеет работать
+C_GET_ENTITY="show entity" # получение сущности
+C_GET_ENTITY_ATTR="show column" # получение атрибута сущности
+C_GET_ENTITY_SOURCE="show entity source" # получение источников сущности
+C_GET_ATTR_SOURCE="show column source" # получение источников атрибутов сущности
+C_START_JOB="load data" # загрузка данных в ХД
+C_GET_LAST_ETL="show log" # получение информации о последнем etl
+C_GET_ETL_HIST="show log hist" # получение логов etl-процессов
+C_GET_ETL_DETAIL="show log detail" # получение детализации по etl-процессу
+C_ADD_ENTITY="create entity" # добавление сущности в ХД
+C_ALTER_ENTITY="alter entity" # изменение сущности в ХД
+C_DROP_ENTITY="drop entity" # удаляет указанную сущность
+C_GET_META_CONFIG="show meta config" # возвращает параметры подключения к метаданным
+C_UPDATE_META_CONFIG="alter meta config" # изменяет параметры подключения к метаданным
+C_CREATE_META="install meta" # создает схему и таблицы метаданных
+C_GET_DWH_CONFIG="show dwh config" # возвращает параметры подключения к ХД
+C_UPDATE_DWH_CONFIG="alter dwh config" # изменяет параметры подключения к ХД
+C_CREATE_DWH="install dwh" # создает схемы для ХД
 C_EXIT="exit"
-C_HELP="help"
+C_HELP="-help"
 C_CONSOLE_COMMAND_LIST=[
     C_GET_SOURCE,
     C_ADD_SOURCE,
@@ -524,8 +549,15 @@ C_CONSOLE_COMMAND_LIST=[
     C_GET_ETL_HIST,
     C_GET_ETL_DETAIL,
     C_ADD_ENTITY,
-    C_EXIT,
-    C_HELP
+    C_ALTER_ENTITY,
+    C_DROP_ENTITY,
+    C_GET_META_CONFIG,
+    C_UPDATE_META_CONFIG,
+    C_CREATE_META,
+    C_GET_DWH_CONFIG,
+    C_UPDATE_DWH_CONFIG,
+    C_CREATE_DWH,
+    C_EXIT
 ]
 # АРГУМЕНТЫ КОМАНД КОНСОЛИ
 C_NAME_CONSOLE_ARG="-name"
@@ -538,10 +570,10 @@ C_PORT_CONSOLE_ARG="-port"
 C_DESC_CONSOLE_ARG="-desc"
 C_TYPE_CONSOLE_ARG="-type"
 C_ENTITY_CONSOLE_ARG="-entity"
-C_ENTITY_ATTR_CONSOLE_ARG="-attr"
+C_ENTITY_ATTR_CONSOLE_ARG="-column"
 C_SOURCE_ID_CONSOLE_ARG="-source_id"
 C_DATE_CONSOLE_ARG="-date"
-C_ETL_ID_CONSOLE_ARG="-etl_id"
+C_ETL_ID_CONSOLE_ARG="-etl"
 C_FILE_CONSOLE_ARG="-file"
 C_CONSOLE_ARGS={
     C_GET_SOURCE:{
@@ -554,7 +586,7 @@ C_CONSOLE_ARGS={
         C_SERVER_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"сервер/хост (обязательный)"},
         C_DATABASE_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"база данных (обязательный)"},
         C_USER_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"логин (обязательный)"},
-        C_PASSWORD_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"пароль (обязательный)"},
+        C_PASSWORD_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"пароль (необязательный)"},
         C_PORT_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"порт (обязательный)"},
         C_TYPE_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"тип источника (обязательный)"}
     },
@@ -568,6 +600,20 @@ C_CONSOLE_ARGS={
         C_PASSWORD_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"новый пароль (необязательный)"},
         C_PORT_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"новый порт (необязательный)"},
         C_TYPE_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"новый тип источника (необязательный)"}
+    },
+    C_UPDATE_META_CONFIG:{
+        C_SERVER_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"сервер/хост (обязательный)"},
+        C_DATABASE_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"база данных (обязательный)"},
+        C_USER_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"логин (обязательный)"},
+        C_PASSWORD_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"пароль (обязательный)"},
+        C_PORT_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"порт (обязательный)"}
+    },
+    C_UPDATE_DWH_CONFIG:{
+        C_SERVER_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"сервер/хост (обязательный)"},
+        C_DATABASE_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"база данных (обязательный)"},
+        C_USER_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"логин (обязательный)"},
+        C_PASSWORD_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"пароль (обязательный)"},
+        C_PORT_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"порт (обязательный)"}
     },
     C_GET_ENTITY:{
         C_NAME_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"наименование сущности (необязательный)"},
@@ -593,26 +639,59 @@ C_CONSOLE_ARGS={
         C_FILE_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"путь до файла с параметрами сущности в формате json (необязательный)"}
     },
     C_START_JOB:{
-        C_ENTITY_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"id сущности, данные которой требуется обновить (необязательный)"},
-        C_ENTITY_ATTR_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"id атрибута, данные которого требуется обновить (необязательный)"}
+        C_ENTITY_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"наименование сущности, данные которой требуется обновить (необязательный)"},
+        C_ENTITY_ATTR_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"наименование атрибута, данные которого требуется обновить (необязательный)"}
     },
     C_GET_ETL_HIST:{
-        C_DATE_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"дата выполнения etl-процесса в формате YYYY-MM-DD (необязательный)"}
+        C_DATE_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"дата выполнения etl-процесса в формате YYYY-MM-DD (необязательный)"},
+        C_ETL_ID_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"etl_id (необязательный)"}
     },
     C_GET_ETL_DETAIL:{
-        C_ID_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"дата выполнения etl-процесса в формате YYYY-MM-DD (необязательный)"},
-        C_ETL_ID_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"дата выполнения etl-процесса в формате YYYY-MM-DD (необязательный)"}
+        C_ID_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"id (uuid) etl процесса (необязательный)"},
+        C_ETL_ID_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"etl_id (необязательный)"}
+    },
+    C_ALTER_ENTITY:{
+        C_ID_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"id сущности (обязательный)"},
+        C_NAME_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"наименование сущности (необязательный)"},
+        C_DESC_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"наименование сущности (необязательный)"}
+    },
+    C_DROP_ENTITY:{
+        C_ID_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"id сущности (обязательный)"}
     }
 }
 # описание команд консоли
 C_CONSOLE_COMMAND_DESC={
+    C_GET_META_CONFIG:"\n"+C_COLOR_HEADER+C_GET_META_CONFIG+C_COLOR_ENDC+"\n"+
+                       C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tВозвращает параметры подключения к метаданным ХД",
+    C_UPDATE_META_CONFIG:"\n"+C_COLOR_HEADER+C_UPDATE_META_CONFIG+C_COLOR_ENDC+"\n"+
+                         C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tИзменяет параметры подключения к метаданным\n"+
+                         C_COLOR_BOLD+"Аргументы:"+C_COLOR_ENDC+"\n\t"+
+                         C_COLOR_OKCYAN+C_SERVER_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_UPDATE_META_CONFIG).get(C_SERVER_CONSOLE_ARG).get(C_DESC)+"\n\t"+
+                         C_COLOR_OKCYAN+C_DATABASE_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_UPDATE_META_CONFIG).get(C_DATABASE_CONSOLE_ARG).get(C_DESC)+"\n\t"+
+                         C_COLOR_OKCYAN+C_USER_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_UPDATE_META_CONFIG).get(C_USER_CONSOLE_ARG).get(C_DESC)+"\n\t"+
+                         C_COLOR_OKCYAN+C_PASSWORD_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_UPDATE_META_CONFIG).get(C_PASSWORD_CONSOLE_ARG).get(C_DESC)+"\n\t"+
+                         C_COLOR_OKCYAN+C_PORT_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_UPDATE_META_CONFIG).get(C_PORT_CONSOLE_ARG).get(C_DESC),
+    C_CREATE_META:"\n"+C_COLOR_HEADER+C_CREATE_META+C_COLOR_ENDC+"\n"+
+                  C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tСоздает таблицы метаданных\n",
+    C_GET_DWH_CONFIG:"\n"+C_COLOR_HEADER+C_GET_DWH_CONFIG+C_COLOR_ENDC+"\n"+
+                      C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tВозвращает параметры подключения к ХД",
+    C_UPDATE_DWH_CONFIG:"\n"+C_COLOR_HEADER+C_UPDATE_DWH_CONFIG+C_COLOR_ENDC+"\n"+
+                         C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tИзменяет параметры подключения к ХД\n"+
+                         C_COLOR_BOLD+"Аргументы:"+C_COLOR_ENDC+"\n\t"+
+                         C_COLOR_OKCYAN+C_SERVER_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_UPDATE_DWH_CONFIG).get(C_SERVER_CONSOLE_ARG).get(C_DESC)+"\n\t"+
+                         C_COLOR_OKCYAN+C_DATABASE_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_UPDATE_DWH_CONFIG).get(C_DATABASE_CONSOLE_ARG).get(C_DESC)+"\n\t"+
+                         C_COLOR_OKCYAN+C_USER_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_UPDATE_DWH_CONFIG).get(C_USER_CONSOLE_ARG).get(C_DESC)+"\n\t"+
+                         C_COLOR_OKCYAN+C_PASSWORD_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_UPDATE_DWH_CONFIG).get(C_PASSWORD_CONSOLE_ARG).get(C_DESC)+"\n\t"+
+                         C_COLOR_OKCYAN+C_PORT_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_UPDATE_DWH_CONFIG).get(C_PORT_CONSOLE_ARG).get(C_DESC),
+    C_CREATE_DWH:"\n"+C_COLOR_HEADER+C_CREATE_DWH+C_COLOR_ENDC+"\n"+
+                  C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tСоздает схемы для ХД\n",
     C_GET_SOURCE:"\n"+C_COLOR_HEADER+C_GET_SOURCE+C_COLOR_ENDC+"\n"+
                  C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tВозвращает источники и их свойства\n"+
                  C_COLOR_BOLD+"Аргументы:"+C_COLOR_ENDC+"\n\t"+
                  C_COLOR_OKCYAN+C_ID_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_GET_SOURCE).get(C_ID_CONSOLE_ARG).get(C_DESC)+"\n\t"+
                  C_COLOR_OKCYAN+C_NAME_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_GET_SOURCE).get(C_NAME_CONSOLE_ARG).get(C_DESC),
     C_ADD_SOURCE:"\n"+C_COLOR_HEADER+C_ADD_SOURCE+C_COLOR_ENDC+"\n"+
-                 C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tДобавляет новый источник\n"+
+                 C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tСоздает подключение к источнику\n"+
                  C_COLOR_BOLD+"Аргументы:"+C_COLOR_ENDC+"\n\t"+
                  C_COLOR_OKCYAN+C_NAME_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ADD_SOURCE).get(C_NAME_CONSOLE_ARG).get(C_DESC)+"\n\t"+
                  C_COLOR_OKCYAN+C_DESC_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ADD_SOURCE).get(C_DESC_CONSOLE_ARG).get(C_DESC)+"\n\t"+
@@ -623,9 +702,9 @@ C_CONSOLE_COMMAND_DESC={
                  C_COLOR_OKCYAN+C_PORT_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ADD_SOURCE).get(C_PORT_CONSOLE_ARG).get(C_DESC)+"\n\t"+
                  C_COLOR_OKCYAN+C_TYPE_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ADD_SOURCE).get(C_TYPE_CONSOLE_ARG).get(C_DESC)+"\n\t",
     C_ALTER_SOURCE:"\n"+C_COLOR_HEADER+C_ALTER_SOURCE+C_COLOR_ENDC+"\n"+
-                   C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tДобавляет новый источник\n"+
+                   C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tИзменяет ранее созданное подключение к источнику\n"+
                    C_COLOR_BOLD+"Аргументы:"+C_COLOR_ENDC+"\n\t"+
-                   C_COLOR_OKCYAN+C_ID_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_GET_SOURCE).get(C_ID_CONSOLE_ARG).get(C_DESC)+"\n\t"+
+                   C_COLOR_OKCYAN+C_ID_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ALTER_SOURCE).get(C_ID_CONSOLE_ARG).get(C_DESC)+"\n\t"+
                    C_COLOR_OKCYAN+C_NAME_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ALTER_SOURCE).get(C_NAME_CONSOLE_ARG).get(C_DESC)+"\n\t"+
                    C_COLOR_OKCYAN+C_DESC_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ALTER_SOURCE).get(C_DESC_CONSOLE_ARG).get(C_DESC)+"\n\t"+
                    C_COLOR_OKCYAN+C_SERVER_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ALTER_SOURCE).get(C_SERVER_CONSOLE_ARG).get(C_DESC)+"\n\t"+
@@ -664,6 +743,16 @@ C_CONSOLE_COMMAND_DESC={
                         C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tДобавляет сущность в ХД на основе заданных параметров. Генерирует таблицы и ETL.\n"+
                         C_COLOR_BOLD+"Аргументы:"+C_COLOR_ENDC+"\n\t"+
                         C_COLOR_OKCYAN+C_ID_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ADD_ENTITY).get(C_FILE_CONSOLE_ARG).get(C_DESC),
+    C_ALTER_ENTITY:"\n"+C_COLOR_HEADER+C_ALTER_ENTITY+C_COLOR_ENDC+"\n"+
+                    C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tИзменяет созданную ранее сущность.\n"+
+                    C_COLOR_BOLD+"Аргументы:"+C_COLOR_ENDC+"\n\t"+
+                    C_COLOR_OKCYAN+C_ID_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ALTER_ENTITY).get(C_ID_CONSOLE_ARG).get(C_DESC)+"\n\t"+
+                    C_COLOR_OKCYAN+C_NAME_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ALTER_ENTITY).get(C_NAME_CONSOLE_ARG).get(C_DESC)+"\n\t"+
+                    C_COLOR_OKCYAN+C_DESC_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ALTER_ENTITY).get(C_DESC_CONSOLE_ARG).get(C_DESC),
+    C_DROP_ENTITY:"\n"+C_COLOR_HEADER+C_DROP_ENTITY+C_COLOR_ENDC+"\n"+
+                   C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tУдаляет сущность.\n"+
+                   C_COLOR_BOLD+"Аргументы:"+C_COLOR_ENDC+"\n\t"+
+                   C_COLOR_OKCYAN+C_ID_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_DROP_ENTITY).get(C_ID_CONSOLE_ARG).get(C_DESC),
     C_START_JOB:"\n"+C_COLOR_HEADER+C_START_JOB+C_COLOR_ENDC+"\n"+
                 C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tЗапускает загрузку данных в ХД\n"+
                 C_COLOR_BOLD+"Аргументы:"+C_COLOR_ENDC+"\n\t"+
@@ -674,7 +763,8 @@ C_CONSOLE_COMMAND_DESC={
     C_GET_ETL_HIST:"\n"+C_COLOR_HEADER+C_GET_ETL_HIST+C_COLOR_ENDC+"\n"+
                   C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tВыдает логи по ETL-процессу\n"+
                   C_COLOR_BOLD+"Аргументы:"+C_COLOR_ENDC+"\n\t"+
-                  C_COLOR_OKCYAN+C_DATE_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_GET_ETL_HIST).get(C_DATE_CONSOLE_ARG).get(C_DESC),
+                  C_COLOR_OKCYAN+C_DATE_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_GET_ETL_HIST).get(C_DATE_CONSOLE_ARG).get(C_DESC)+"\n\t"+
+                  C_COLOR_OKCYAN+C_ETL_ID_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_GET_ETL_HIST).get(C_ETL_ID_CONSOLE_ARG).get(C_DESC),
     C_GET_ETL_DETAIL:"\n"+C_COLOR_HEADER+C_GET_ETL_DETAIL+C_COLOR_ENDC+"\n"+
                       C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tВыдает детализацию по ETL-процессу\n"+
                       C_COLOR_BOLD+"Аргументы (хотя бы один должен быть заполнен):"+C_COLOR_ENDC+"\n\t"+
@@ -686,28 +776,32 @@ C_CONSOLE_COMMAND_DESC={
 
 # шаблон json для создания сущности
 C_ENTITY_PARAM_TEMPLATE="""{
-    "entity":"description: name of the entity, type: str",
-    "description":"description: description of the entity, type: str",
+    "entity":"name of the entity (str)",
+    "description":"description of the entity (str/null)",
     "attribute":
     [
         {
-            "name":"description: name of the attribute, type: str",
-            "description":"description: description of the attribute, type: str",
-            "pk":"description: the attribute is the entity's primary key (0 or 1 or null), type: int",
-            "datatype":"description: datatype of the attribute, type: str",
-            "length":"description: length of the attribute (number or null), type: int",
-            "scale":"description: scale of the attribute (number or null), type: int",
-            "link_entity":"description: id of the linked entity, type: str",
+            "name":"name of the attribute (str)",
+            "description":"description of the attribute (str/null)",
+            "pk":"business key or not (0/1/null)",
+            "datatype":"datatype of the attribute (str)",
+            "length":"length of the attribute (int/null)",
+            "scale":"scale of the attribute (int/null)",
+            "link_entity":"id of the linked entity (str/null)",
             "source":
             [
                 {
-                    "source":"description: id of the source, type: str",
-                    "schema":"description: the source schema, type: str",
-                    "table":"description: the source table, type: str",
-                    "column":"the source column"
+                    "source":"id of the source (str)",
+                    "schema":"source schema (str)",
+                    "table":"name of the source table (str)",
+                    "column":"name of the source column (str)"
                 }
+                ,
+                ...
             ]
         }
+        ,
+        ...
     ]
 
 }"""

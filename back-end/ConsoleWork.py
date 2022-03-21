@@ -18,19 +18,38 @@ def __get_command(p_input: str):
     """
     # разбиваем строку по пробелам (если в кавычках слово - не разбиваем) и получаем лист слов
     l_word=[]
-    for i_word in shlex.split(p_input):
+    l_cmnd_num=0 # порядковый номер последнего слова в команде
+    for i, i_word in enumerate(shlex.split(p_input)):
+        if i_word.__len__()==0: # слово пустое
+            l_word.append(i_word)
+            continue
+        if i_word[0]=="-": # если слово начинается на "-" значит аргумент команды
+            if l_cmnd_num==0:
+                l_cmnd_num=i
+            if l_cmnd_num==0:
+                print(C_COLOR_FAIL+"Неверно заданная команда"+C_COLOR_ENDC)
+                console_input()
         l_word.append(i_word)
-    l_command = l_word[0] # первое слово - команда
+    l_command=""
+    if l_cmnd_num==0: # если нет аргументов
+        l_cmnd_num=l_word.__len__()
+    # определяем команду
+    for i_word_num in range(l_cmnd_num):
+        l_command+=" "+l_word[i_word_num]
+    l_command=l_command[1:]
     __command_checker(l_command)
     l_help_command=None
-    if l_command==C_HELP and l_word.__len__()>1:
-        l_help_command=l_word[1] # если команда help - второе слово будет наименование команды, по которой нужно выдать справку
+    # if l_command==C_HELP and l_word.__len__()>1:
+    #     l_help_command=l_word[1] # если команда help - второе слово будет наименование команды, по которой нужно выдать справку
     l_arg={} # словарь аргументов
     l_arg_list=[] # список аргументов
     i=0
     for i_arg in l_word:
-        if i_arg[0]=="-": # если слово начинается на "-" значит аргумент команды
+        if i_arg.__len__()>0 and i_arg[0]=="-": # если слово начинается на "-" значит аргумент команды
             __arg_checker(p_command=l_command, p_arg=i_arg)
+            if i_arg==C_HELP:
+                l_help_command=l_command
+                break
             l_arg.update(
                 {
                     i_arg:l_word[i+1]
@@ -38,7 +57,8 @@ def __get_command(p_input: str):
             )
             l_arg_list.append(i_arg)
         i+=1
-    __neccessary_args_checker(p_command=l_command, p_arg=l_arg_list)
+    if not l_help_command: # проверяем наличие необходимых аргументов, если help не указан
+        __neccessary_args_checker(p_command=l_command, p_arg=l_arg_list)
 
     return l_command, l_arg, l_help_command
 
@@ -62,7 +82,10 @@ def __arg_checker(p_command: str, p_arg: str):
     :param p_command: команда
     :param p_arg: аргумент команды
     """
-    if p_arg not in list(C_CONSOLE_ARGS.get(p_command).keys()):
+    if not C_CONSOLE_ARGS.get(p_command) and p_arg!=C_HELP:
+        print(C_COLOR_FAIL+"У команды "+p_command+" не существует аргумента "+p_arg+C_COLOR_ENDC)
+        console_input()
+    if C_CONSOLE_ARGS.get(p_command) and p_arg not in list(C_CONSOLE_ARGS.get(p_command).keys()) and p_arg!=C_HELP:
         print(C_COLOR_FAIL+"У команды "+p_command+" не существует аргумента "+p_arg+C_COLOR_ENDC)
         console_input()
 
@@ -90,7 +113,9 @@ def __command_exec(p_command: str, p_arg: dict =None, p_help_command: str =None)
     :param p_help_command: команда, по которой требуется выдать справку
     """
     l_json=None
-    if p_command==C_GET_SOURCE:
+    if p_help_command:
+        __help(p_command=p_help_command)
+    elif p_command==C_GET_SOURCE:
         l_json=get_source(
             p_source_name=p_arg.get(C_NAME_CONSOLE_ARG),
             p_source_id=p_arg.get(C_ID_CONSOLE_ARG)
@@ -152,7 +177,7 @@ def __command_exec(p_command: str, p_arg: dict =None, p_help_command: str =None)
     elif p_command==C_GET_LAST_ETL:
         l_json=get_last_etl()
     elif p_command==C_GET_ETL_HIST:
-        l_json=get_etl_hist(p_date=p_arg.get(C_DATE_CONSOLE_ARG))
+        l_json=get_etl_hist(p_date=p_arg.get(C_DATE_CONSOLE_ARG), p_etl=p_arg.get(C_ETL_ID_CONSOLE_ARG))
     elif p_command==C_GET_ETL_DETAIL:
         l_json=get_etl_detail(
             p_etl=p_arg.get(C_ID_CONSOLE_ARG),
@@ -160,20 +185,67 @@ def __command_exec(p_command: str, p_arg: dict =None, p_help_command: str =None)
         )
     elif p_command==C_ADD_ENTITY:
         # считываем содержимое файла
-        l_json=None
         if p_arg.get(C_FILE_CONSOLE_ARG): # если пользователь указал файл с параметрами сущности
             l_file=File(p_file_path=p_arg.get(C_FILE_CONSOLE_ARG))
             l_entity_param=l_file.file_body
-            l_json=add_entity(p_json=l_entity_param)
+            l_json=create_entity(p_json=l_entity_param)
         else: #  если пользователь не указал конкретный файл - передаем шаблон в json
             print(C_ENTITY_PARAM_TEMPLATE+"\n"+C_COLOR_WARNING+"Вставьте параметры сущности в соответствии с шаблоном выше в файл '..\Entity param.json' и нажмите в консоли любую кнопку"+C_COLOR_ENDC)
             input()
             l_entity_param=File(p_file_path=C_ENTITY_PARAM_TEMPLATE_FILE_PATH)
-            l_json=add_entity(p_json=l_entity_param.file_body)
+            l_json=create_entity(p_json=l_entity_param.file_body)
+    elif p_command==C_ALTER_ENTITY:
+        # формируем json
+        l_input_json={
+            C_ID:p_arg.get(C_ID_CONSOLE_ARG)
+        }
+        if p_arg.get(C_NAME_CONSOLE_ARG):
+                l_input_json.update({C_ENTITY:p_arg.get(C_NAME_CONSOLE_ARG)})
+        if p_arg.get(C_DESC_CONSOLE_ARG):
+            l_input_json.update({C_DESC:p_arg.get(C_DESC_CONSOLE_ARG)})
+        l_input_json=json.dumps(l_input_json)
+        l_json=alter_entity(p_json=l_input_json)
+    elif p_command==C_DROP_ENTITY:
+        # формируем json
+        l_input_json={
+            C_ID:p_arg.get(C_ID_CONSOLE_ARG)
+        }
+        l_input_json=json.dumps(l_input_json)
+        l_json=drop_entity(p_json=l_input_json)
+    elif p_command==C_GET_META_CONFIG:
+        l_json=get_meta_config()
+    elif p_command==C_UPDATE_META_CONFIG:
+        l_json=update_meta_config(
+            p_server=p_arg.get(C_SERVER_CONSOLE_ARG),
+            p_database=p_arg.get(C_DATABASE_CONSOLE_ARG),
+            p_user=p_arg.get(C_USER_CONSOLE_ARG),
+            p_password=p_arg.get(C_PASSWORD_CONSOLE_ARG),
+            p_port=p_arg.get(C_PORT_CONSOLE_ARG)
+        )
+    elif p_command==C_CREATE_META:
+        l_input=input("Все существующие метаданные будут удалены. Продолжить? (y|n):")
+        if l_input=='y':
+            l_json=create_meta()
+        else:
+            return None
+    elif p_command==C_GET_DWH_CONFIG:
+        l_json=get_dwh_config()
+    elif p_command==C_UPDATE_DWH_CONFIG:
+        l_json=update_dwh_config(
+            p_server=p_arg.get(C_SERVER_CONSOLE_ARG),
+            p_database=p_arg.get(C_DATABASE_CONSOLE_ARG),
+            p_user=p_arg.get(C_USER_CONSOLE_ARG),
+            p_password=p_arg.get(C_PASSWORD_CONSOLE_ARG),
+            p_port=p_arg.get(C_PORT_CONSOLE_ARG)
+        )
+    elif p_command==C_CREATE_DWH:
+        l_input=input("Все существующие таблицы ХД будут удалены. Продолжить? (y|n):")
+        if l_input=='y':
+            l_json=create_dwh_ddl()
+        else:
+            return None
     elif p_command==C_EXIT:
         sys.exit()
-    elif p_command==C_HELP:
-        __help(p_command=p_help_command)
     else:
         return None
     return __print_result(p_json=l_json)
@@ -223,17 +295,24 @@ def __print_result(p_json: json):
                 l_row.append(i_object.get(i_col))
             # добавляем строку в таблицу
             l_table.add_row(l_row)
+        l_table.align='l' #выравниваем по левому краю
         print(l_table)
 
 def console_input():
     """
     Выполняет команду переданную через консоль
     """
-    l_input=input(
-        "anchorbase: "
-    )
-    l_command=__get_command(l_input)
+    try:
+        l_input=input(
+            "anchorbase: "
+        )
+        l_command=__get_command(l_input)
 
-    __command_exec(p_command=l_command[0], p_arg=l_command[1], p_help_command=l_command[2])
+        __command_exec(p_command=l_command[0], p_arg=l_command[1], p_help_command=l_command[2])
+    except Exception as e:
+        print(C_COLOR_FAIL+str(e.args[0])+C_COLOR_ENDC)
+
 
     console_input()
+
+

@@ -1,11 +1,13 @@
 # coding=utf-8
 import psycopg2
 import psycopg2.extensions
+from psycopg2 import extras
 from Constants import *
-
-#TODO: проблема со вставкой русских символов
+import sys
 
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
+
+
 
 def sql_exec(
         p_database: str,
@@ -15,7 +17,8 @@ def sql_exec(
         p_port: int,
         p_sql: str,
         p_result: int =1,
-        p_rollback: int =0
+        p_rollback: int =0,
+        p_vl: list =None
 ):
     """
     Выполняет запросы в PostgreSQL
@@ -28,6 +31,7 @@ def sql_exec(
     :param p_sql: SQL-запрос
     :param p_result: Признак наличия результата запроса (по умолчанию 1)
     :param p_rollback: Признак необходимости отката транзакции в любом случае (по умолчанию 0)
+    :param p_vl: лист с кортежами значений для вставки INSERT
     """
     l_query_output=None
     l_error=None
@@ -40,30 +44,54 @@ def sql_exec(
             port=p_port
         )
     except psycopg2.OperationalError as e:
-        # sys.exit(e) #TODO: реализовать вывод ошибок, как сделал Рустем
-        l_error=e
+        l_error=e.args[0]
+        return l_query_output, l_error
     cnct.autocommit = False
     crsr = cnct.cursor()
     try:
-        crsr.execute(p_sql)
-        if p_result==1: # если нужен результат запроса
-            l_query_output = crsr.fetchall()
+        if p_vl:
+            extras.execute_values(crsr, p_sql, p_vl, page_size=C_PAGE_SIZE)
         else:
-            l_query_output = 1
+            crsr.execute(p_sql)
+            if p_result==1: # если нужен результат запроса
+                l_query_output = crsr.fetchall()
+            else:
+                l_query_output = 1
         if p_rollback==1:
             cnct.rollback() # откат транзакции, если признак - 1
         else:
             cnct.commit() # в остальных случаях - комит транзакции
     except psycopg2.Error as e:
         cnct.rollback() # при возникновении ошибки - откат транзакции
-        # sys.exit(e) #TODO: реализовать вывод ошибок, как сделал Рустем
-        l_error=e
+        l_error=e.args[0]
     finally:
         crsr.close()
         cnct.close()
     return l_query_output, l_error
 
 C_CURRENT_TIMESTAMP_SQL="CURRENT_TIMESTAMP"
+
+C_UUID_EXTENSION='DROP EXTENSION IF EXISTS "uuid-ossp"; \nCREATE EXTENSION "uuid-ossp";'
+
+def connection_checker(
+        p_database: str,
+        p_server: str,
+        p_user: str,
+        p_password: str,
+        p_port: int
+):
+    """
+    Проверяет подключение к метаданным
+    """
+    # выполняет простой запрос на источнике
+    sql_exec(
+        p_database=p_database,
+        p_server=p_server,
+        p_user=p_user,
+        p_password=p_password,
+        p_port=p_port,
+        p_sql="SELECT 1;"
+    )
 
 def get_source_table_etl(
         p_source_table_id: str,
@@ -77,12 +105,18 @@ def get_source_table_etl(
     :param p_source_attribute: атрибуты таблицы (список должен быть отсортирован в соответствии с наименованием атрибута)
     :param p_source_attribute_value: значения атрибутов
     """
-    l_etl="DELETE FROM "+'"'+C_STG_SCHEMA+'"'+"."+'"'+str(p_source_table_id)+'";'+"\n\t" \
-           "INSERT INTO "+'"'+C_STG_SCHEMA+'"'+"."+'"'+str(p_source_table_id)+'"'+"\n\t"\
+    l_etl="INSERT INTO "+'"'+C_STG_SCHEMA+'"'+"."+'"'+str(p_source_table_id)+'"'+"\n\t"\
           "("+p_source_attribute+")\n\t"\
-          "VALUES\n"+p_source_attribute_value+";\n"
+          "VALUES "+p_source_attribute_value+";\n"
     return l_etl
 
+def get_source_table_delete_sql(p_source_table_id: str):
+    """
+    Генерирует SQL-запрос удаления записей из таблицы источника
+    :param p_source_table_id: id таблицы
+    """
+    l_sql="DELETE FROM "+'"'+C_STG_SCHEMA+'"'+"."+'"'+str(p_source_table_id)+'";'+"\n"
+    return l_sql
 
 def get_idmap_etl(
       p_idmap_id: str,
@@ -92,7 +126,8 @@ def get_idmap_etl(
       p_idmap_nk_id: str,
       p_idmap_rk_id: str,
       p_etl_id: str,
-      p_etl_value: str
+      p_etl_value: str,
+      p_max_rk: str
 ):
     """
     Генерирует ETL для Idmap
@@ -105,6 +140,7 @@ def get_idmap_etl(
     :param p_idmap_rk_id: id атрибута суррогатного ключа
     :param p_etl_id: id атрибута etl_id
     :param p_etl_value: значение для атрибута etl_id
+    :param p_max_rk: максимальное значение RK у idmap
     """
     l_etl="DROP TABLE IF EXISTS "+'"'+C_WRK_SCHEMA+'"'+"."+'"'+str(p_idmap_id)+"_1"+'"'+";\n"\
           "CREATE TABLE "+'"'+C_WRK_SCHEMA+'"'+"."+'"'+str(p_idmap_id)+"_1"+'"'+" AS (\n"\
@@ -117,16 +153,14 @@ def get_idmap_etl(
           "CREATE TABLE "+'"'+C_WRK_SCHEMA+'"'+"."+'"'+str(p_idmap_id)+"_2"+'"'+" AS (\n\t"\
           "SELECT\n\t"\
           "nk.idmap_nk\n\t"\
-          ",COALESCE(mx_rk.max_rk,0) + ROW_NUMBER() OVER (ORDER BY 1) AS idmap_rk\n\t"\
+          ","+p_max_rk+" + ROW_NUMBER() OVER (ORDER BY 1) AS idmap_rk\n\t"\
           "FROM "+'"'+C_WRK_SCHEMA+'"'+"."+'"'+str(p_idmap_id)+"_1"+'"'+" as nk\n\t"\
           "LEFT JOIN "+'"'+C_IDMAP_SCHEMA+'"'+"."+'"'+str(p_idmap_id)+'"'+" as idmp\n\t\t"\
           "ON 1=1\n\t\t"\
           "AND nk.idmap_nk=idmp."+'"'+str(p_idmap_nk_id)+'"'+"\n\t" \
-          "CROSS JOIN (\n\t\tSELECT \n\t\tMAX("+'"'+str(p_idmap_rk_id)+'"'+") as max_rk \n\t\tFROM "\
-          +'"'+C_IDMAP_SCHEMA+'"'+"."+'"'+str(p_idmap_id)+'"'+"\n\t) as mx_rk\n\t"\
           "WHERE 1=1\n\t\t"\
           "AND idmp."+'"'+str(p_idmap_rk_id)+'"'+" IS NULL\n);\n"\
-          "INSERT INTO idmap."+'"'+str(p_idmap_id)+'"'+"\n"\
+          "INSERT INTO "+'"'+C_IDMAP_SCHEMA+'"'+"."+'"'+str(p_idmap_id)+'"'+"\n"\
           "(\n\t"+'"'+str(p_idmap_rk_id)+'"\n\t'+","+'"'+str(p_idmap_nk_id)+'"\n\t'+","+'"'+str(p_etl_id)+'"\n'+")\n\t"\
           "SELECT\n\t"\
           "idmap_rk,\n\t"\
@@ -216,15 +250,15 @@ def get_attribute_etl(
     )
     l_etl="DROP TABLE IF EXISTS "+'"'+C_WRK_SCHEMA+'"'+"."+'"'+str(p_attribute_id)+"_1"+'"'+";\n"\
           "CREATE TABLE "+'"'+C_WRK_SCHEMA+'"'+"."+'"'+str(p_attribute_id)+"_1"+'"'+" AS (\n\t"\
-          "SELECT\n\t"\
-          "idmap."+'"'+str(p_idmap_rk_id)+'"'+" AS idmap_rk\n\t"\
+          "SELECT\n\t" \
+          '"'+C_IDMAP_SCHEMA+'"'+"."+'"'+str(p_idmap_rk_id)+'"'+" AS idmap_rk\n\t"\
           ",qe."+'"'+str(p_stg_attribute_id)+'"'+" AS attribute_name\n\t"\
           ",qe."+'"'+str(p_update_timestamp_id)+'"'+" AS from_dttm\n\t"\
-          ",ROW_NUMBER() OVER (PARTITION BY idmap."+'"'+str(p_idmap_rk_id)+'"'+" ORDER BY qe."+'"'+str(p_update_timestamp_id)+'"'+") AS rnum\n\t"\
+          ",ROW_NUMBER() OVER (PARTITION BY "+'"'+C_IDMAP_SCHEMA+'"'+"."+'"'+str(p_idmap_rk_id)+'"'+" ORDER BY qe."+'"'+str(p_update_timestamp_id)+'"'+") AS rnum\n\t"\
           "FROM "+'"'+C_STG_SCHEMA+'"'+"."+'"'+str(p_stg_table_id)+'"'+" AS qe\n\t"\
           "INNER JOIN "+'"'+C_IDMAP_SCHEMA+'"'+"."+'"'+str(p_idmap_id)+'"'+" AS idmap\n\t\t"\
           "ON 1=1\n\t\t"\
-          "AND CAST(\n\t\t\t"+p_attribute_concat_nk+"\n\t\t\t||'@@'||\n\t\t\tCAST('"+str(p_source_id)+"' AS VARCHAR(1000)) \n\t\tAS VARCHAR(1000))=idmap."+'"'+str(p_idmap_nk_id)+'"\n);\n'\
+          "AND CAST(\n\t\t\t"+p_attribute_concat_nk+"\n\t\t\t||'@@'||\n\t\t\tCAST('"+str(p_source_id)+"' AS VARCHAR(1000)) \n\t\tAS VARCHAR(1000))="+'"'+C_IDMAP_SCHEMA+'"'+"."+'"'+str(p_idmap_nk_id)+'"\n);\n'\
           "DROP TABLE IF EXISTS "+'"'+C_WRK_SCHEMA+'"'+"."+'"'+str(p_attribute_id)+"_2"+'"'+";\n" \
           "CREATE TABLE "+'"'+C_WRK_SCHEMA+'"'+"."+'"'+str(p_attribute_id)+"_2"+'"'+" AS (\n\t"\
           "SELECT\n\t"\
@@ -341,11 +375,11 @@ def get_tie_etl(
     )
     l_etl="DROP TABLE IF EXISTS "+'"'+C_WRK_SCHEMA+'"'+"."+'"'+str(p_tie_id)+"_1"+'"'+";\n"\
           "CREATE TABLE "+'"'+C_WRK_SCHEMA+'"'+"."+'"'+str(p_tie_id)+"_1"+'"'+" AS (\n\t"\
-          "SELECT\n\t"\
-          "idmap."+'"'+str(p_idmap_rk_id)+'"'+" AS idmap_rk\n\t"\
+          "SELECT\n\t" \
+          '"'+C_IDMAP_SCHEMA+'"'+"."+'"'+str(p_idmap_rk_id)+'"'+" AS idmap_rk\n\t"\
           ",l_idmap."+'"'+str(p_link_idmap_rk_id)+'"'+" AS link_idmap_rk\n\t"\
           ",qe."+'"'+str(p_update_timestamp_id)+'"'+" AS from_dttm\n\t"\
-          ",ROW_NUMBER() OVER (PARTITION BY idmap."+'"'+str(p_idmap_rk_id)+'"'+" ORDER BY qe."+'"'+str(p_update_timestamp_id)+'"'+") AS rnum\n\t"\
+          ",ROW_NUMBER() OVER (PARTITION BY "+'"'+C_IDMAP_SCHEMA+'"'+"."+'"'+str(p_idmap_rk_id)+'"'+" ORDER BY qe."+'"'+str(p_update_timestamp_id)+'"'+") AS rnum\n\t"\
           "FROM "+'"'+C_STG_SCHEMA+'"'+"."+'"'+str(p_stg_table_id)+'"'+" AS qe\n\t"\
           "INNER JOIN "+'"'+C_IDMAP_SCHEMA+'"'+"."+'"'+str(p_idmap_id)+'"'+" AS idmap\n\t\t"\
           "ON 1=1\n\t\t"\
@@ -466,7 +500,7 @@ def get_table_partition_etl(
           "WHERE 1=1\n\t\t\t"\
           "AND prt.partition_date IS NULL\n\t"\
           "LOOP\n\t\t"\
-          "EXECUTE 'CREATE TABLE "+'"'+str(p_table_id)+"'||v_n_prt_date||"+"'"+'"'+"'"+"||\n\t\t\t"\
+          "EXECUTE 'CREATE TABLE "+'"'+str(p_table_id)+"_date'||v_n_prt_date||"+"'"+'"'+"'"+"||\n\t\t\t"\
           "'PARTITION OF "+'"'+C_AM_SCHEMA+'"'+"."+'"'+str(p_table_id)+'"'+" FOR VALUES '||\n\t\t\t"\
           "'FROM ('''||CAST(DATE_TRUNC('month',CAST(v_n_prt_date AS DATE)) AS DATE)||' 00:00:00'') TO ('''||v_n_prt_date||' 23:59:59'');';\n\t"\
           "END LOOP;\n"\
@@ -482,7 +516,7 @@ def get_drop_entity_function_sql(p_entity_name: str) -> str:
 
     :param p_entity_name: наименование сущности
     """
-    l_sql="DROP FUNCTION IF EXISTS "+p_entity_name+"(TIMESTAMP, VARCHAR(1000));"
+    l_sql="DROP FUNCTION IF EXISTS "+'"'+C_AM_SCHEMA+'"'+"."+'"'+p_entity_name+'"'+"(TIMESTAMP, VARCHAR(1000));"
     return l_sql
 
 def get_entity_function_sql(
@@ -493,7 +527,7 @@ def get_entity_function_sql(
     Генерация скрипта создания функции-конструктора запросов для сущности
 
     :param p_entity_name: наименование сущности
-    :param p_entity_attribute_dict: словарь с атрибутами сущности и их типами данных
+    :param p_entity_attribute_dict: словарь с атрибутами сущности и их типами данных и наименованиями их таблиц
     """
     l_entity_attribute_name_list=list(p_entity_attribute_dict.keys()) # лист с наименованиями атрибутов сущности
     l_entity_attribute_name_param="" # атрибуты сущности через запятую
@@ -504,30 +538,40 @@ def get_entity_function_sql(
     l_entity_attribute_sql="" # скрипт переменной финального sql
     for i_entity_attribute in l_entity_attribute_name_list:
         l_entity_attribute_name_param+=str(i_entity_attribute)+","
-        l_entity_attribute_name_datatype+='"'+str(i_entity_attribute)+'"'+" "+p_entity_attribute_dict.get(i_entity_attribute)+",\n\t"
+        l_entity_attribute_name_datatype+='"'+str(i_entity_attribute)+'"'+" "+p_entity_attribute_dict.get(i_entity_attribute).get(C_DATATYPE)+",\n\t"
         l_entity_attribute_var+="v_"+str(i_entity_attribute)+" char(1):=(select case when v_col like '%,"+str(i_entity_attribute)+\
                                 ",%' then '' else NULL end);\n\t"
         l_entity_attribute_join_sql+="v_"+str(i_entity_attribute)+"_join_sql varchar(1000):=("\
                                      "case when v_"+str(i_entity_attribute)+" is not null "\
-                                     "then ' left join "+C_AM_SCHEMA+"."+'"'+p_entity_name+"_"+str(i_entity_attribute)+C_TABLE_NAME_POSTFIX.get(C_ATTRIBUTE)+'"'+""\
-                                     " as "+'"'+str(i_entity_attribute)+'"'+" on "+'"main"'+"."+p_entity_name+"_"+C_RK+"="+""\
-                                     '"'+str(i_entity_attribute)+'"'+"."+p_entity_name+"_"+C_RK+""\
+                                     "then ' left join "+C_AM_SCHEMA+"."+'"'+p_entity_attribute_dict.get(i_entity_attribute).get(C_TABLE)+'"'+""\
+                                     " as "+'"'+str(i_entity_attribute)+'"'+" on "+'"main"'+'."'+p_entity_name+"_"+C_RK+'"='+""\
+                                     '"'+str(i_entity_attribute)+'"'+'."'+p_entity_name+"_"+C_RK+'"'\
                                      " and cast('''||dt||''' as timestamp) between "+'"'+str(i_entity_attribute)+'"'+"."+C_FROM_ATTRIBUTE_NAME+" and "+'"'+str(i_entity_attribute)+'"'+"."+C_TO_ATTRIBUTE_NAME+"'"\
                                      " else '' end);\n\t"
-        l_entity_attribute_select_sql+="coalesce(v_"+str(i_entity_attribute)+"||'"+str(i_entity_attribute)+",','NULL::"+p_entity_attribute_dict.get(i_entity_attribute)+",')||"
+        l_entity_attribute_select_sql+="coalesce(v_"+str(i_entity_attribute)+"||'"+str(i_entity_attribute)+",','NULL::"+p_entity_attribute_dict.get(i_entity_attribute).get(C_DATATYPE)+",')||"
         l_entity_attribute_sql+="coalesce(v_"+str(i_entity_attribute)+"_join_sql,'')||"
     # удаляем лишние символы (последние запятые и тд)
     l_entity_attribute_name_param=l_entity_attribute_name_param[:-1]
     l_entity_attribute_select_sql=l_entity_attribute_select_sql[:-2]
     l_sql=get_drop_entity_function_sql(p_entity_name=p_entity_name)+"\n" \
-          "CREATE OR REPLACE FUNCTION "+'"'+p_entity_name+'"'+"(\n\t"\
+          "CREATE OR REPLACE FUNCTION "+'"'+C_AM_SCHEMA+'"'+"."+'"'+p_entity_name+'"'+"(\n\t"\
           "dt TIMESTAMP DEFAULT '5999-12-31'::TIMESTAMP,\n\t"\
           "col VARCHAR(1000) DEFAULT '"+l_entity_attribute_name_param+"'\n) RETURNS\n"\
-          "TABLE(\n\t"+p_entity_name+"_"+C_RK+" "+C_BIGINT+",\n\t"+l_entity_attribute_name_datatype+C_SOURCE_ATTRIBUTE_NAME+" "+C_INT+"\n) AS\n"\
+          "TABLE(\n\t"+'"'+p_entity_name+"_"+C_RK+'"'+" "+C_BIGINT+",\n\t"+l_entity_attribute_name_datatype+'"'+C_SOURCE_ATTRIBUTE_NAME+'"'+" "+C_INT+"\n) AS\n"\
           "$$\ndeclare\n\tv_col varchar(1000) :=','||replace(col,' ','')||',';\n\t"+l_entity_attribute_var+""\
           "v_from_sql varchar(1000):=(' from "+C_AM_SCHEMA+"."+'"'+p_entity_name+C_TABLE_NAME_POSTFIX.get(C_ANCHOR)+'"'+" as "+'"main"'+"');\n\t"+l_entity_attribute_join_sql+""\
-          "v_select_sql varchar(1000) := ' select main."+p_entity_name+"_"+C_RK+",'||regexp_replace("+l_entity_attribute_select_sql+",',$','')"+""\
-          "||',main."+C_SOURCE_ATTRIBUTE_NAME+"';\n\t"\
-          "v_sql varchar(1000):=v_select_sql||' '||v_from_sql||' '||"+l_entity_attribute_sql+"';'"+";\n"\
+          "v_select_sql varchar(1000) := ' select main."+'"'+p_entity_name+"_"+C_RK+'"'+",'||regexp_replace("+l_entity_attribute_select_sql+",',$','')"+""\
+          "||',main."+'"'+C_SOURCE_ATTRIBUTE_NAME+'"'+"';\n\t"\
+          "v_sql text:=v_select_sql||' '||v_from_sql||' '||"+l_entity_attribute_sql+"';'"+";\n"\
           "begin\n\treturn query execute v_sql;\nend;\n$$\nlanguage plpgsql;"
+    return l_sql
+
+def idmap_max_rk_sql(p_idmap_id: str, p_idmap_rk_id: str)->str:
+    """
+    Генерирует SQL-запрос определения максимального RK в idmap
+
+    :param p_idmap_id: Id idmap
+    :param p_idmap_rk_id: Id атрибута RK в idmap
+    """
+    l_sql="SELECT COALESCE(MAX("+'"'+str(p_idmap_rk_id)+'"'+"),0) FROM "+'"'+C_IDMAP_SCHEMA+'"'+"."+'"'+str(p_idmap_id)+'";'
     return l_sql

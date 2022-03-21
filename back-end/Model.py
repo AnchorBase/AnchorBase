@@ -4,6 +4,8 @@ import json
 from DWH import *
 from collections import Counter
 from Constants import *
+import SystemObjects
+from SystemObjects import *
 
 class Model:
     """
@@ -40,7 +42,8 @@ class Model:
         Проверяет json на заполненность
         """
         if not self._json:
-            sys.exit("Json пуст")
+            AbaseError(p_error_text="JSON is empty", p_module="Model", p_class="Model",
+                       p_def="__json_checker").raise_error()
 
     @property
     def entity_param(self) -> object:
@@ -56,16 +59,12 @@ class Model:
         return l_entity
 
 
-    def create_model(self):
+    def create_entity(self):
         """
         Создает модель данных
         """
         # переменные для последующего использования
         l_source_table_name_list=[] # лист с уникальными наименованиями таблиц источников
-        l_source_table_meta=search_object(p_type=C_QUEUE)
-        if l_source_table_meta.__len__()>0:
-            for i_source_table in l_source_table_meta:
-                l_source_table_name_list.append(i_source_table.attrs.get(C_NAME))
         l_source_table_meta=search_object(p_type=C_QUEUE)
         if l_source_table_meta.__len__()>0:
             for i_source_table in l_source_table_meta:
@@ -93,7 +92,7 @@ class Model:
             for i_source_param in i_attribute_param.source_param:
                 # таблица источник
                 l_source_table=self.__create_source_table(p_entity=l_entity, p_source_param=i_source_param)
-                if l_source_table_list.__len__():
+                if l_source_table_list.__len__()>0:
                     for index, i_source_table in enumerate(l_source_table_list):
                         if i_source_table.queue_name==l_source_table.queue_name:
                             l_source_table=i_source_table
@@ -199,10 +198,35 @@ class Model:
         l_sql+=l_entity.get_drop_entity_function_sql()+"\n"
         # изменяем имя у сущности, а также у таблиц и ее атрибутов
         l_entity.name=self.entity_param.name # автоматически заменяются имена у всех производных объектов
-        # отдельно заменяем наименование у tie, где переименованная сущность - связанная
+        l_ent_attr=[] # список атрибутов сущностей  (в том числе и других сущностей), которые нужно переименовать
+        # ищем RK
+        l_rk=None
+        for i_attr in l_entity.entity_attribute:
+            if i_attr.rk==1:
+                l_rk=i_attr
+                l_ent_attr.append(l_rk)
+        # отдельно заменяем наименование у tie и атрибутов, где переименованная сущность - связанная
         if l_link_ties:
             for i_link_tie in l_link_ties:
+                # изменяем наименование tie
                 i_link_tie.link_entity=l_entity
+                # связання сущность
+                l_link_ent=i_link_tie.entity
+                # изменяем tie у атрибута связанной сущности
+                l_link_attr=[]
+                for i_link_attr in l_link_ent.entity_attribute:
+                    if i_link_attr.tie and i_link_attr.tie.id==i_link_tie.id:
+                        # изменяем наименование атрибута у связанной сущности
+                        i_link_attr.name=l_rk.name # берем наименование с PK переименованной сущности
+                        i_link_attr.tie=i_link_tie
+                        l_link_attr.append(i_link_attr)
+                        l_ent_attr.append(i_link_attr)
+                    else:
+                        l_link_attr.append(i_link_attr)
+                l_link_ent.entity_attribute=l_link_attr
+                i_link_tie.entity=l_link_ent
+                # переписываем конструктор запросов связанной сущности
+                l_sql+=l_link_ent.get_entity_function()
 
         l_obj=self.__get_object_list(
             p_entity_child=l_entity,
@@ -219,7 +243,8 @@ class Model:
             p_entity=l_entity,
             p_entity_child=l_entity,
             p_tie=l_link_ties,
-            p_attribute=1
+            p_attribute=1,
+            p_entity_attribute=l_ent_attr
         )
         # проверяем метаданные
         self.__metadata_checker(
@@ -255,7 +280,7 @@ class Model:
         l_entity=Entity(
             p_id=self.entity_param.id
         )
-        # находим tie, где переименованная сущность - связанная
+        # находим tie, где удаляемая сущность - связанная
         l_link_tie_meta=meta.search_object(
             p_type=C_TIE,
             p_attrs={C_LINK_ENTITY:self.entity_param.id}
@@ -266,6 +291,30 @@ class Model:
             for i_tie in l_link_tie_meta:
                 l_link_tie=Tie(p_id=str(i_tie.uuid))
                 l_link_ties.append(l_link_tie)
+        # находим атрибуты других сущностей, которые ссылаются на данную сущность
+        l_link_attr_meta=meta.search_object(
+            p_type=C_ENTITY_COLUMN,
+            p_attrs={C_LINK_ENTITY:l_entity.id}
+        )
+        l_link_attr_list=[]
+        if l_link_attr_meta.__len__()>0:
+            for i_attr in l_link_attr_meta:
+                l_attr=Attribute(p_type=C_ENTITY_COLUMN,p_id=str(i_attr.uuid))
+                # если FK - удаляем его
+                if l_attr.fk==1:
+                    l_link_attr_list.append(l_attr)
+                    # удаляем его также у сущности родителя
+                    l_ent=l_attr.entity
+                    l_ent_attr=l_ent.entity_attribute
+                    l_ent_attr_new=[]
+                    for i_ent_attr in l_ent_attr:
+                        if i_ent_attr.id!=l_attr.id:
+                            l_ent_attr_new.append(i_ent_attr)
+                    l_ent.entity_attribute=l_ent_attr_new
+                    l_ent.update_metadata()
+                else: # иначе удаляем у него связанную сущность
+                    l_attr.link_entity=None
+                    l_attr.update_metadata()
         # формируем список объектов, которые требуется удалить
         l_obj=self.__get_object_list(p_entity_child=l_entity, p_tie=l_link_ties)
         # формируем скрипт удаления объектов
@@ -282,6 +331,7 @@ class Model:
             p_tie=l_link_ties,
             p_attribute=1
         )
+        l_obj.extend(l_link_attr_list)
         # обновляем метаданные у сущностей, которые ссылались на удаленный tie (l_link_tie)
         if l_link_ties:
             for i_link_tie in l_link_ties:
@@ -295,9 +345,14 @@ class Model:
                 self.__update_metadata(p_objects=[l_link_entity])
         # удаляем метаданные
         self.__delete_metadata(p_objects=l_obj)
+        # собираем ETL, которые грузили таблицы dds данной сущности
+        l_job=search_object(p_type=C_ETL,p_attrs={C_ENTITY:l_entity.id})
+        # удаляем логи etl - оставляя логи по пакетам!
+        if l_job.__len__()>0:
+            for i_job in l_job:
+                delete_object(p_object=i_job)
         #удаляем объекты из ХД
         self.__ddl_execute(p_ddl=l_sql)
-        #TODO: вынести проверку метаданные и ddl, а также их запуск в отедльный метод
 
 
     def __create_entity(self) -> object:
@@ -439,6 +494,25 @@ class Model:
         l_anchor=Anchor(
             p_entity=p_entity
         )
+
+        # вытаскиваем rk
+        l_rk=None
+        for i_attr in l_anchor.anchor_attribute:
+            if i_attr.attribute_type==C_RK:
+                l_rk=i_attr
+
+        l_entity_rk=Attribute( # атрибут rk для добавления в метаданные сущности
+            p_name=l_rk.name,
+            p_desc=C_RK_DESC,
+            p_datatype=l_rk.datatype.data_type_name,
+            p_length=l_rk.datatype.data_type_length,
+            p_scale=l_rk.datatype.data_type_scale,
+            p_type=C_ENTITY_COLUMN,
+            p_rk=1,
+            p_anchor=l_anchor
+        )
+        add_attribute(p_table=p_entity, p_attribute=l_entity_rk) # добавляем в сущность
+
         return l_anchor
 
     def __create_attribute_table(self, p_entity: object, p_entity_attribute: object) -> object:
@@ -453,6 +527,7 @@ class Model:
             p_entity=p_entity,
             p_entity_attribute=p_entity_attribute
         )
+        p_entity_attribute.attribute_table=l_attribute_table
         return l_attribute_table
 
     def __create_tie(self,
@@ -479,6 +554,24 @@ class Model:
             p_link_entity=l_link_entity,
             p_source_table=p_source_table
         )
+        l_link_rk=None
+        # вытаскиваем link_rk атрибут
+        for i_attr in l_tie.tie_attribute:
+            if i_attr.attribute_type==C_LINK_RK:
+                l_link_rk=i_attr
+        l_entity_link_rk=Attribute( # создаем атрибут для добавления в метаданные сущности
+            p_name=l_link_rk.name,
+            p_desc=C_LINK_RK_DESC,
+            p_datatype=l_link_rk.datatype.data_type_name,
+            p_length=l_link_rk.datatype.data_type_length,
+            p_scale=l_link_rk.datatype.data_type_scale,
+            p_type=C_ENTITY_COLUMN,
+            p_link_entity=l_link_entity,
+            p_fk=1,
+            p_tie=l_tie
+        )
+        add_attribute(p_table=p_entity_attribute.entity, p_attribute=l_entity_link_rk)
+
         return l_tie
 
     def __create_idmap(self, p_entity: object, p_source_attribute: list) -> object:
@@ -498,6 +591,7 @@ class Model:
     def __get_object_list(
             self,
             p_entity: object =None,
+            p_entity_attribute: list =None,
             p_entity_child: object =None,
             p_idmap: list =None,
             p_anchor: list =None,
@@ -511,6 +605,7 @@ class Model:
         Если указана сущность (p_entity_child), будут собираться все ее дочерние объекты.
 
         :param p_entity: сущность
+        :param p_entity_attribute: атрибуты сущности
         :param p_entity_child: сущность, для которой нужно добавить дочерние объекты
         :param p_idmap: idmap (лист объектов)
         :param p_anchor: якорная таблица (лист объектов)
@@ -569,6 +664,9 @@ class Model:
             l_obj.append(p_entity)
             if p_attribute==1:
                 l_obj.extend(p_entity.entity_attribute)
+        if p_entity_attribute:
+            l_obj.extend(p_entity_attribute)
+
         return l_obj
 
     def __get_create_table_sql(self, p_objects: list) -> str:
@@ -632,7 +730,8 @@ class Model:
         # конкретный текст ошибки
         l_result=Connection().sql_exec(p_sql=p_ddl, p_rollback=1, p_result=0) # запускаем ddl с обязательным откатом
         if l_result[1]:
-            sys.exit("В сформированном DDL ошибка \n"+str(l_result[1]))
+            AbaseError(p_error_text="Created DDL is not correct \n"+str(l_result[1]), p_module="Model", p_class="Model",
+                       p_def="__ddl_checker").raise_error()
 
 
     def __metadata_checker(self,p_objects: list):
@@ -652,8 +751,16 @@ class Model:
         :param p_objects: лист объектов, которым требуется записать метаданные
         """
         # метаданные сущности и ее атрибутов
+        l_exist_obj=[] # список ранее созданных объектов в метаданных
         for i_obj in p_objects:
+            # проверяем, что объект не создан ранее, так как сперва объекты создаются, а потом изменяются
+            l_obj_meta=search_object(p_type=i_obj.type, p_uuid=[str(i_obj.id)])
+            if l_obj_meta.__len__()>0:
+                l_exist_obj.append(i_obj)
+                continue
             i_obj.create_metadata()
+        for i_obj in l_exist_obj:
+            i_obj.update_metadata()
 
     def __update_metadata(self,p_objects: list):
         """
@@ -757,12 +864,14 @@ class _SourceParam:
         Проверяет id источника
         """
         if not self.source_id:
-            sys.exit("Источник не заполнен") #TODO переделать
+            AbaseError(p_error_text="Source value is empty", p_module="Model", p_class="Model",
+                       p_def="__source_id_checker").raise_error()
         # проверка на корректное заполнение - uuid
         try:
             uuid.UUID(self.source_id)
         except ValueError as e:
-            sys.exit("Некорректное id источника")
+            AbaseError(p_error_text="ID of source is incorrect", p_module="Model", p_class="Model",
+                       p_def="__source_id_checker").raise_error()
         # проверка на существование в метаданных источника (просто инициализируем объект)
         l_source_meta=Source(p_id=self.source_id)
 
@@ -771,7 +880,8 @@ class _SourceParam:
         Проверяет таблицу источника
         """
         if not self.table:
-            sys.exit("Таблица источника не заполнена")
+            AbaseError(p_error_text="Table of source is empty", p_module="Model", p_class="Model",
+                       p_def="__table_checker").raise_error()
 
     def __column_checker(self):
         """
@@ -779,7 +889,8 @@ class _SourceParam:
         :return:
         """
         if not self.column:
-            sys.exit("Столбец источника не заполнен")
+            AbaseError(p_error_text="Column of source is empty", p_module="Model", p_class="Model",
+                       p_def="__column_checker").raise_error()
 
 class _AttributeParam:
     """
@@ -890,14 +1001,16 @@ class _AttributeParam:
         Проверяет правильность наименования атрибута
         """
         if not self.name:
-            sys.exit("Не задано наименование атрибута")
+            AbaseError(p_error_text="Name of attribute is empty", p_module="Model", p_class="_AttributeParam",
+                       p_def="__name_checker").raise_error()
 
     def __datatype_checker(self):
         """
         Проверяет правильность типа данных
         """
         if not self.datatype:
-            sys.exit("Не указан тип данных у атрибута")
+            AbaseError(p_error_text="Type of attribute is missed", p_module="Model", p_class="_AttributeParam",
+                       p_def="__datatype_checker").raise_error()
 
     def __link_entity_checker(self):
         """
@@ -907,7 +1020,8 @@ class _AttributeParam:
             try:
                 uuid.UUID(self.link_entity_id)
             except ValueError as e:
-                sys.exit("Некорректное id связанной сущности")
+                AbaseError(p_error_text="ID of linked entity is incorrect", p_module="Model", p_class="_AttributeParam",
+                           p_def="__link_entity_checker").raise_error()
             # проверка на существование сущности в метаданных источника (просто инициализируем объект)
             l_entity_meta=Entity(p_id=self.link_entity_id)
 
@@ -916,7 +1030,8 @@ class _AttributeParam:
         Проверяет корректность источника атрибута
         """
         if not self._source_param:
-            sys.exit("У атрибута не указан ни один источник")
+            AbaseError(p_error_text="Attribute doesn't have any source", p_module="Model", p_class="_AttributeParam",
+                       p_def="__source_checker").raise_error()
         else:
             l_source_table_name_list=[] # список уникальных наименований таблиц источников
             l_source=[]
@@ -930,7 +1045,8 @@ class _AttributeParam:
                                            +str(l_source_schema)+"_"\
                                            +str(l_source_table)
                 if l_unique_source_table_name in l_source_table_name_list:
-                    sys.exit("Таблица источник "+str(l_source_table)+" указана два раза у атрибута "+self._name)
+                    AbaseError(p_error_text="Source "+str(l_source_table)+" is mentioned two times "+self._name, p_module="Model",
+                               p_class="_AttributeParam", p_def="__source_checker").raise_error()
                 l_source.append(
                     _SourceParam(
                         p_source_id=l_source_id,
@@ -947,9 +1063,11 @@ class _AttributeParam:
         Проверка на целое число
         """
         if type(self._pk).__name__!="int":
-            sys.exit("Некорректное значение признака первичного ключа")
+            AbaseError(p_error_text="Incorrect value of PK", p_module="Model",
+                       p_class="_AttributeParam", p_def="__pk_checker").raise_error()
         elif self._pk>1:
-            sys.exit("Некорректное значение признака первичного ключа")
+            AbaseError(p_error_text="Incorrect value of PK", p_module="Model",
+                       p_class="_AttributeParam", p_def="__pk_checker").raise_error()
 
 class _EntityParam:
     """
@@ -1015,13 +1133,15 @@ class _EntityParam:
         self.entity_name_double_checker()
         self.source_attribute_double_checker()
         self.link_entity_double_checker()
+        self.rk_attribute_checker()
 
     def name_checker(self):
         """
         Проверяет корректность наименования сущности
         """
         if not self._name:
-            sys.exit("У сущности не указано наименование")
+            AbaseError(p_error_text="Name of entity is missed", p_module="Model",
+                       p_class="_EntityParam", p_def="name_checker").raise_error()
 
     def attribute_checker(self):
         """
@@ -1029,7 +1149,8 @@ class _EntityParam:
         """
         l_attribute=[]
         if not self._attribute_param:
-            sys.exit("У сущности нет ни одного атрибута")
+            AbaseError(p_error_text="Entity doesn't have any attribute", p_module="Model",
+                       p_class="_EntityParam", p_def="attribute_checker").raise_error()
         else:
             l_pk_cnt=0
             for i_attribute in self._attribute_param:
@@ -1047,7 +1168,8 @@ class _EntityParam:
                 )
                 l_pk_cnt=l_pk_cnt+i_attribute.get(C_PK)
             if l_pk_cnt==0:
-                sys.exit("Не указано ни одного первичного ключа у сущности")
+                AbaseError(p_error_text="PK of entity wasn't mentioned", p_module="Model",
+                           p_class="_EntityParam", p_def="attribute_checker").raise_error()
 
         return l_attribute
 
@@ -1064,7 +1186,8 @@ class _EntityParam:
                     l_source_table_pk.append(str(i_source.source_id)+"_"+str(i_source.schema)+"_"+str(i_source.table))
         for i_source_table in l_source_table:
             if i_source_table not in l_source_table_pk:
-                sys.exit("Таблица источник не указана в качестве источника у первичного ключа")
+                AbaseError(p_error_text="Source table "+i_source_table+" isn't mentioned like source of PK", p_module="Model",
+                           p_class="_EntityParam", p_def="source_table_pk_checker").raise_error()
 
     def attribute_double_checker(self):
             """
@@ -1075,7 +1198,8 @@ class _EntityParam:
                 l_attribute_list.append(i_attribute.name)
                 l_attribute_cnt=Counter(l_attribute_list).get(i_attribute.name)
                 if l_attribute_cnt>1:
-                    sys.exit("Атрибут "+i_attribute.name+" указан больше одного раза")
+                    AbaseError(p_error_text="Attribute "+i_attribute.name+" is mentioned more than one time", p_module="Model",
+                               p_class="_EntityParam", p_def="attribute_double_checker").raise_error()
 
     def entity_name_double_checker(self):
         """
@@ -1088,7 +1212,8 @@ class _EntityParam:
             }
         )
         if l_entity_meta_obj.__len__()>0:
-            sys.exit("Сущность с таким наименование уже существует")
+            AbaseError(p_error_text="Entity with the name "+self.name+" already exists",
+                       p_module="Model", p_class="_EntityParam", p_def="entity_name_double_checker").raise_error()
 
     def source_attribute_double_checker(self):
         """
@@ -1102,10 +1227,12 @@ class _EntityParam:
                                         +i_source_attribute.table+"_" \
                                         +i_source_attribute.column
                 if l_source_attribute_name in l_source_attribute_name_list:
-                    sys.exit("Атрибут источника "+str(i_source_attribute.source_id)+" "
+                    AbaseError(p_error_text="Attribute of source "+str(i_source_attribute.source_id)+" "
                              +i_source_attribute.schema+"."
                              +i_source_attribute.table+"."
-                             +i_source_attribute.column+" указан дважды")
+                             +i_source_attribute.column+" is mentioned twice",
+                               p_module="Model", p_class="_EntityParam",
+                               p_def="source_attribute_double_checker").raise_error()
                 else:
                     l_source_attribute_name_list.append(l_source_attribute_name)
 
@@ -1116,9 +1243,21 @@ class _EntityParam:
         l_link_entity_id_list=[]
         for i_attribute in self.attribute_param:
             if i_attribute.link_entity_id in l_link_entity_id_list:
-                sys.exit("Атрибуты сущности несколько раз ссылаются на сущность "+str(i_attribute.link_entity_id))
+                AbaseError(p_error_text=str(i_attribute.link_entity_id)+" is mentioned by attributes of entity more than one time" ,
+                           p_module="Model", p_class="_EntityParam",
+                           p_def="link_entity_double_checker").raise_error()
             elif i_attribute.link_entity_id:
                 l_link_entity_id_list.append(i_attribute.link_entity_id)
+
+    def rk_attribute_checker(self):
+        """
+        Проверяет, что у сущности не указан атрибут RK, так как он генерируется автоматически
+        """
+        for i_attribute in self.attribute_param:
+            if i_attribute.name==self.name+"_"+C_RK:
+                AbaseError(p_error_text="The name of attribute "+i_attribute.name+" is invalid" ,
+                           p_module="Model", p_class="_EntityParam",
+                           p_def="link_entity_double_checker").raise_error()
 
 
 

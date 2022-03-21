@@ -12,6 +12,9 @@ import Metadata as meta
 from Source import Source as Source
 import datetime
 from Constants import *
+from SystemObjects import *
+import math
+import threading
 
 class Connection:
     """
@@ -90,7 +93,8 @@ class Connection:
         """
         l_dbms_type=self._dbms_type.lower()
         if l_dbms_type not in C_AVAILABLE_DWH_LIST:
-            sys.exit("AnchorBase не умеет работать с СУБД "+l_dbms_type) #TODO: реализовать вывод ошибок, как сделал Рустем
+            AbaseError(p_error_text="AnchorBase doesn't support DBMS "+l_dbms_type, p_module="DWH", p_class="Connection",
+                       p_def="dbms_type").raise_error()
         return l_dbms_type
 
     @property
@@ -102,13 +106,14 @@ class Connection:
             return pgsql
 
 
-    def sql_exec(self, p_sql: str, p_result: int =1, p_rollback: int =0):
+    def sql_exec(self, p_sql: str, p_result: int =1, p_rollback: int =0, p_vl: list =None):
         """
         Выполнение запроса на стороне ХД
 
         :param p_sql: SQL-выражение
         :param p_result: Признак наличия результата запроса (по умолчанию 1)
         :param p_rollback: Признак необходимости отката транзакции в любом случае (по умолчанию 0)
+        :param p_vl: лист с кортежами значений для вставки INSERT
         """
         l_sql_result=self.dbms.sql_exec(
             p_server=self.server,
@@ -118,7 +123,8 @@ class Connection:
             p_port=self.port,
             p_sql=p_sql,
             p_result=p_result,
-            p_rollback=p_rollback
+            p_rollback=p_rollback,
+            p_vl=p_vl
         )
         return l_sql_result
 
@@ -154,6 +160,19 @@ class Connection:
             p_file_path=C_CONFIG_FILE_PATH,
             p_file_body=l_config
         ).write_file()
+
+
+def create_dwh_ddl():
+    """
+    Создает схемы и расширения ХД
+    """
+    l_dwh=Connection()
+    l_sql=""
+    for i_schema in C_SCHEMA_LIST:
+        l_sql+="DROP SCHEMA IF EXISTS "+'"'+i_schema+'" CASCADE;\n'+"CREATE SCHEMA "+'"'+i_schema+'";'+"\n"
+    l_dwh.sql_exec(p_sql=l_sql, p_result=0)
+
+
 
 def _class_define(p_class_name: str, p_id: str, p_type: str =None):
     """
@@ -209,8 +228,10 @@ def get_values_sql(p_data_frame: list, p_cast_dict: dict, p_etl_id: int):
     """
     Возвращает преобразованный data frame в конструкцию values (...,...),
 
+    Устаревший метод!!!
+
     :param p_data_frame: data frame
-    :param p_cast_list: словарь с порядковыми номерами атрибутов и конструкцией cast для каждого атрибута
+    :param p_cast_dict: словарь с порядковыми номерами атрибутов и конструкцией cast для каждого атрибута
     :param p_etl_id: id etl процесса
     """
     l_sql=""
@@ -219,14 +240,17 @@ def get_values_sql(p_data_frame: list, p_cast_dict: dict, p_etl_id: int):
         l_sql=l_sql+"(\n\t"
         for i_column in i_row:
             if p_cast_dict.get(i,None) is None:
-                sys.exit("Нет указания cast для атрибута "+str(i)) #TODO: реализовать вывод ошибок, как сделал Рустем
+                AbaseError(p_error_text="technical error", p_module="DWH", p_class="",
+                           p_def="get_values_sql").raise_error()
             if not i_column: # преобразуем none в null, если значение пустое
                 i_column="NULL "
             else:
                 i_column="'"+str(i_column).replace("'","''")+"' " # экранируем одинарную кавычку ' в строке
-            l_sql=l_sql+p_cast_dict.get(i,None).replace(str(i),i_column,1)+",\n\t"
+            # l_sql=l_sql+p_cast_dict.get(i,None).replace(str(i),i_column,1)+",\n\t"
+            l_sql=l_sql+i_column+",\n\t"
             i=i+1
-        l_sql=l_sql+"CAST("+str(p_etl_id)+" AS BIGINT)\n),\n" # добавляем etl_id
+        # l_sql=l_sql+"CAST("+str(p_etl_id)+" AS BIGINT)\n),\n" # добавляем etl_id
+        l_sql=l_sql+str(p_etl_id)+"\n),\n"
     return l_sql[:-2]
 
 def _object_class_checker(p_object: object, p_class_name: str):
@@ -236,7 +260,8 @@ def _object_class_checker(p_object: object, p_class_name: str):
     :param p_object: объект класса
     """
     if type(p_object).__name__.lower()!=p_class_name.lower():
-        sys.exit("Объект не является объектом класса "+p_class_name) # TODO переделать
+        AbaseError(p_error_text="Object doesn't belong to class " + p_class_name, p_module="DWH", p_class="",
+                   p_def="_object_class_checker").raise_error()
 
 
 def _class_checker(p_object, p_class_name: str):
@@ -251,7 +276,8 @@ def _class_checker(p_object, p_class_name: str):
     if type(p_object).__name__.lower()=="list": # если передан лист - проверяем каждый объект отдельно
         for i_object in p_object:
             if not i_object: # если пусто - ошибка
-                sys.exit("Объект не является объектом класса "+p_class_name)
+                AbaseError(p_error_text="Object doesn't belong to class " + p_class_name, p_module="DWH",
+                           p_class="Connection", p_def="_class_checker").raise_error()
             _object_class_checker(p_object=i_object, p_class_name=p_class_name)
     else:
         _object_class_checker(p_object=p_object, p_class_name=p_class_name) # в остальных случаях проверяем объект
@@ -263,7 +289,8 @@ def _get_attribute_type(p_attribute: object):
     :param p_attribute:
     """
     if not p_attribute:
-        sys.exit("Передан пустой атрибут")
+        AbaseError(p_error_text="Attribute is empty", p_module="DWH",
+                   p_class="Connection", p_def="_get_attribute_type").raise_error()
     if p_attribute.type==C_ENTITY_COLUMN:
         return "entity_attribute"
     if p_attribute.type==C_QUEUE_COLUMN:
@@ -340,7 +367,8 @@ def _add_object(p_parent_object: object, p_object: object, p_object_type: str):
         l_object.append(p_object)
         setattr(p_parent_object,p_object_type,l_object)# добавление дочернего элемента
     elif type(l_object).__name__=="object": # если атрибут есть, но он один - ошибка
-        sys.exit("Похоже нельзя добавить больше одного атрибута")
+        AbaseError(p_error_text="Can not add more than one attribute", p_module="DWH", p_class="",
+                   p_def="_add_object").raise_error()
     elif not l_object: # если нет атрибутов - добавляем список
         setattr(p_parent_object,p_object_type,[p_object])
 
@@ -409,7 +437,8 @@ def remove_attribute(p_table: object, p_attribute: object):
             l_attribute_list.pop(i) # убираем атрибут в соответствии с порядковым номером в листе
         i=i+1
     if l_attribute_list.__len__()==0:
-        sys.exit("Удалены все атрибуты") #TODO: переделать
+        AbaseError(p_error_text="All attributes already deleted", p_module="DWH", p_class="",
+                   p_def="remove_attribute").raise_error()
     p_table.attribute=l_attribute_list
 
 
@@ -503,7 +532,16 @@ def drop_view_ddl(p_table: object):
     l_sql="DROP VIEW IF EXISTS "+l_schema+"."+'"'+l_table_name+'";'
     return l_sql
 
-def get_source_table_etl(p_source_table: object, p_attribute_value: str):
+def get_source_table_delete_sql(p_source_table: object):
+    """
+    SQL-запрос удаления строк из таблицы источника
+
+    :param p_source_table: объект класса SourceTable
+    """
+    l_sql=Connection().dbms.get_source_table_delete_sql(p_source_table_id=str(p_source_table.id))
+    return l_sql
+
+def get_source_table_etl(p_source_table: object, p_attribute_value: str =None):
     """
     ETL таблицы источника
 
@@ -524,8 +562,8 @@ def get_source_table_etl(p_source_table: object, p_attribute_value: str):
             l_attribute_name_list.append(i_attribute.name)
         elif i_attribute.attribute_type==C_UPDATE:
             l_update_attribute_sql='"'+str(i_attribute.id)+'"'
-        elif i_attribute.attribute_type==C_ETL_ATTR:
-            l_etl_update_sql='"'+str(i_attribute.id)+'"'
+        # elif i_attribute.attribute_type==C_ETL_ATTR:
+        #     l_etl_update_sql='"'+str(i_attribute.id)+'"' # временно отказываемся от данного атрибута
     l_attribute_name_list.sort() # сортируем по наименованию
     # сортируем id в соответствии с наименованием атрибутов
     l_attribute_sql="\n\t\t"
@@ -533,12 +571,12 @@ def get_source_table_etl(p_source_table: object, p_attribute_value: str):
         for i_attribute in _get_table_attribute_property(p_table=p_source_table):
             if i_attribute.name==i_attribute_name:
                 l_attribute_sql=l_attribute_sql+'"'+str(i_attribute.id)+'"'+",\n\t\t"
-    l_attribute_sql=l_attribute_sql+l_update_attribute_sql+",\n\t\t"+l_etl_update_sql+"\n\t"
+    l_attribute_sql=l_attribute_sql+l_update_attribute_sql#",\n\t\t"+l_etl_update_sql+"\n\t"
 
     l_etl=Connection().dbms.get_source_table_etl(
         p_source_table_id=p_source_table.id,
         p_source_attribute=l_attribute_sql,
-        p_source_attribute_value=p_attribute_value
+        p_source_attribute_value=p_attribute_value or "%s"
     )
     return l_etl
 
@@ -573,7 +611,10 @@ def get_idmap_etl(
         if l_source_table_id and l_source_table_id!=i_source_table.id: # пропускаем таблицу источник, если не она указана
             continue
         l_column_nk_sql=""
-        for i_column_nk in p_idmap.source_attribute_nk:
+        # формируем скрипт для конкатенации натуральных ключей
+        # сортируем список натуральных ключей по наименованию
+        l_source_attribute_nk=sorted(p_idmap.source_attribute_nk, key=lambda nk: nk.name)
+        for i_column_nk in l_source_attribute_nk:
             if i_source_table.id==i_column_nk.source_table.id:
                 l_column_nk_sql=l_column_nk_sql+"CAST("+'"'+str(i_column_nk.id)+'"'+" AS VARCHAR(4000))\n\t\t||'@@'||\n\t\t"
         l_column_nk_sql=l_column_nk_sql[:-14]
@@ -588,7 +629,8 @@ def get_idmap_etl(
                 p_etl_value=p_etl_id,
                 p_source_table_id=i_source_table.id,
                 p_attribute_nk=l_column_nk_sql,
-                p_source_id=l_source_id
+                p_source_id=l_source_id,
+                p_max_rk=str(p_idmap.max_rk)
             )
         )
     return l_etl
@@ -674,7 +716,8 @@ def get_attribute_etl(p_attribute_table: object, p_etl_id: str, p_source_table: 
         if l_source_table_id and l_source_table_id!=i_source_attribute.source_table.id: # пропускаем таблицу источник, если не она указана
             continue
         l_column_nk_sql=""
-        for i_column_nk in p_attribute_table.entity.idmap.source_attribute_nk:
+        l_source_attribute_nk=sorted(p_attribute_table.entity.idmap.source_attribute_nk, key=lambda nk: nk.name)
+        for i_column_nk in l_source_attribute_nk:
             if i_source_attribute.source_table.id==i_column_nk.source_table.id:
                 l_column_nk_sql=l_column_nk_sql+"CAST("+'"'+str(i_column_nk.id)+'"'+" AS VARCHAR(4000))\n\t\t||'@@'||\n\t\t"
         l_column_value_id=i_source_attribute.id
@@ -758,14 +801,14 @@ def get_tie_etl(
         if l_source_table_id and l_source_table_id!=i_source_table.id:
             continue # пропускаем таблицу источник, если не она указана
         l_column_nk_sql=""
-        for i_column_nk in p_tie.entity.idmap.source_attribute_nk:
+        l_source_attribute_nk=sorted(p_tie.entity.idmap.source_attribute_nk, key=lambda nk: nk.name)
+        for i_column_nk in l_source_attribute_nk:
             if i_source_table.id==i_column_nk.source_table.id:
                 l_column_nk_sql=l_column_nk_sql+"CAST("+'"'+str(i_column_nk.id)+'"'+" AS VARCHAR(4000))\n\t\t||'@@'||\n\t\t"
         l_link_column_nk_sql=""
-        for i_entity_link_attribute in p_tie.entity_attribute:
-            for i_column_nk in i_entity_link_attribute.source_attribute:
-                if i_source_table.id==i_column_nk.source_table.id:
-                    l_link_column_nk_sql=l_link_column_nk_sql+"CAST("+'"'+str(i_column_nk.id)+'"'+" AS VARCHAR(4000))\n\t\t||'@@'||\n\t\t"
+        for i_column_nk in p_tie.entity_attribute.source_attribute:
+            if i_source_table.id==i_column_nk.source_table.id:
+                l_link_column_nk_sql=l_link_column_nk_sql+"CAST("+'"'+str(i_column_nk.id)+'"'+" AS VARCHAR(4000))\n\t\t||'@@'||\n\t\t"
         l_update_timestamp_id=None
         for i_source_attribute in i_source_table.source_attribute:
             if i_source_attribute.attribute_type==C_UPDATE:
@@ -903,7 +946,8 @@ class _DWHObject:
             ) # достаем метаданные источника
             # проверяет на наличие источника в метаданных
             if l_meta_objs.__len__()==0:
-                sys.exit("Нет "+self._type+" с указанным id "+self._id)
+                AbaseError(p_error_text="There's no "+self._type+" with id "+self._id, p_module="DWH", p_class="_DWHObject",
+                           p_def="__object_attrs_meta").raise_error()
             else:
                 l_attr_dict=l_meta_objs[0].attrs
         return l_attr_dict
@@ -1200,12 +1244,15 @@ class _DWHObject:
         """
         Описание атрибута
         """
-        return self._desc or self.object_attrs_meta.get(C_DESC,None)
+        if self._desc=='null':
+            return None
+        else:
+            return self._desc or self.object_attrs_meta.get(C_DESC,None)
 
     @desc.setter
     def desc(self, p_new_desc):
 
-        self._desc=p_new_desc
+        self._desc=p_new_desc if p_new_desc!='null' else None
         self.object_attrs_meta.pop(C_DESC, None)
 
     def __get_property_id(self,p_property):
@@ -1256,11 +1303,24 @@ class _DWHObject:
                     }
                 )
             if self.type==C_ENTITY_COLUMN: # если атрибут сущности
-                l_json.update(
-                    {
-                        C_PK:self.pk
-                    }
-                )
+                if self.pk:
+                    l_json.update(
+                        {
+                            C_PK:self.pk
+                        }
+                    )
+                if self.rk:
+                    l_json.update(
+                        {
+                            C_RK:self.rk
+                        }
+                    )
+                if self.fk:
+                    l_json.update(
+                        {
+                            C_FK:self.fk
+                        }
+                    )
 
 
         # атрибуты queue таблицы
@@ -1464,15 +1524,9 @@ class _DWHObject:
         """
         Записывает метаданные объекта
         """
-        l_obj_meta=meta.search_object(p_uuid=[str(self.id)], p_type=self.type)
-        if l_obj_meta.__len__()>0: # если объект уже существует в метаданных - обновляем его атрибуты
-            meta.update_object(
-                p_object=self.metadata_object(p_id=self.id, p_attrs=self.metadata_json)
-            )
-        else:
-            meta.create_object(
-                p_object=self.metadata_object(p_id=self.id, p_attrs=self.metadata_json)
-            )
+        meta.create_object(
+            p_object=self.metadata_object(p_id=self.id, p_attrs=self.metadata_json)
+        )
 
     def update_metadata(self):
         """
@@ -1506,6 +1560,8 @@ class Attribute(_DWHObject):
                  p_scale: int =None,
                  p_attribute_type: str =None,
                  p_pk: int =None,
+                 p_rk: int =None,
+                 p_fk: int =None,
                  p_desc: str =None,
                  p_source_table =None,
                  p_source_attribute =None,
@@ -1537,6 +1593,8 @@ class Attribute(_DWHObject):
         self._scale=p_scale
         self._attribute_type=p_attribute_type
         self._pk=p_pk
+        self._rk=p_rk
+        self._fk=p_fk
 
 
     @property
@@ -1566,7 +1624,8 @@ class Attribute(_DWHObject):
         if self._attribute_type is not None:
             l_attribute_type=self._attribute_type.lower()
             if l_attribute_type not in C_ATTRIBUTE_TABLE_TYPE_LIST:
-                sys.exit("Некорректно задан тип атрибута "+str(l_attribute_type))
+                AbaseError(p_error_text="Incorrect type of attribute" + self._id, p_module="DWH",
+                           p_class="Attribute", p_def="attribute_type").raise_error()
         return l_attribute_type or self.object_attrs_meta.get(C_TYPE_VALUE,None)
 
     @property
@@ -1579,13 +1638,34 @@ class Attribute(_DWHObject):
         else:
             return self.object_attrs_meta.get(C_PK,None)
 
+    @property
+    def rk(self):
+        """
+        Признак суррогата
+        """
+        if self._rk is not None:
+            return self._rk
+        else:
+            return self.object_attrs_meta.get(C_RK,None)
+
+    @property
+    def fk(self):
+        """
+        Признак внешнего ключа
+        """
+        if self._fk is not None:
+            return self._fk
+        else:
+            return self.object_attrs_meta.get(C_FK,None)
+
     def __source_attribute_exist_checker(self):
         """
         Проверяет наличие атрибута в таблице источнике
         """
         if self.source_table.schema+"."+self.source_table.name+"."+self.name not in self.source_table.source.source_attributes \
                 and self.attribute_type not in ([C_UPDATE, C_ETL_ATTR]):
-            sys.exit("На источнике на найден атрибут "+self.source_table.schema+"."+self.source_table.name+"."+self.name)
+            AbaseError(p_error_text="Attribute " +self.source_table.schema+"."+self.source_table.name+"."+self.name + "wasn't found", p_module="DWH",
+                       p_class="Attribute", p_def="__source_attribute_exist_checker").raise_error()
 
 
 class Entity(_DWHObject):
@@ -1637,6 +1717,15 @@ class Entity(_DWHObject):
 
         # изменяем наименование сущности
         self._name=p_new_name.lower()
+        # изменяем наименование у RK сущности
+        l_ent_attr=[]
+        for i_attr in self.entity_attribute:
+            if i_attr.rk==1:
+                i_attr.name=self.name+"_"+C_RK
+                l_ent_attr.append(i_attr)
+            else:
+                l_ent_attr.append(i_attr)
+        self.entity_attribute=l_ent_attr
         # изменяем наименования объектов путем изменения у них сущности
         # idmap
         l_idmap=self.idmap
@@ -1651,6 +1740,15 @@ class Entity(_DWHObject):
         for i_attribute in self.attribute_table:
             l_attribute=i_attribute
             l_attribute.entity=self
+            # изменяем таблицу атрибут и у атрибута сущности
+            l_new_ent_attr=[]
+            for i_ent_attr in self.entity_attribute:
+                if i_ent_attr.attribute_table and i_ent_attr.attribute_table.id==i_attribute.id:
+                    i_ent_attr.attribute_table=i_attribute
+                    l_new_ent_attr.append(i_ent_attr)
+                else:
+                    l_new_ent_attr.append(i_ent_attr)
+            self.entity_attribute=l_new_ent_attr
             l_attributes.append(l_attribute)
         self.attribute_table=l_attributes
         #tie
@@ -1659,6 +1757,15 @@ class Entity(_DWHObject):
             for i_tie in self.tie:
                 l_tie=i_tie
                 l_tie.entity=self
+                # изменяем tie и у атрибута сущности
+                l_new_ent_attr=[]
+                for i_ent_attr in self.entity_attribute:
+                    if i_ent_attr.tie and i_ent_attr.tie.id==i_tie.id:
+                        i_ent_attr.tie=i_tie
+                        l_new_ent_attr.append(i_ent_attr)
+                    else:
+                        l_new_ent_attr.append(i_ent_attr)
+                self.entity_attribute=l_new_ent_attr
                 l_ties.append(l_tie)
             self.tie=l_ties
 
@@ -1669,11 +1776,13 @@ class Entity(_DWHObject):
         # формируем словарь из атрибутов сущности и их типов данных
         l_entity_attr_dict={}
         for i_entity_attribute in self.entity_attribute:
-            l_entity_attr_dict.update(
-                {
-                    i_entity_attribute.name:i_entity_attribute.datatype.data_type_sql
-                }
-            )
+            if i_entity_attribute.rk!=1: # не добавляем RK сущности, так как он и так добавляется всегда
+                l_table=i_entity_attribute.tie or i_entity_attribute.attribute_table
+                l_entity_attr_dict.update(
+                    {
+                        i_entity_attribute.name:{C_DATATYPE:i_entity_attribute.datatype.data_type_sql, C_TABLE:l_table.name}
+                    }
+                )
         return Connection().dbms.get_entity_function_sql(
             p_entity_name=self.name,
             p_entity_attribute_dict=l_entity_attr_dict
@@ -1759,9 +1868,8 @@ class SourceTable(_DWHObject):
         """
         if self._increment:
             if type(self._increment).__name__!="Attribute":
-                sys.exit("p_increment не является объектом класса Attribute") #TODO переделать
-            # if self._increment.datatype.data_type_name!=C_TIMESTAMP_DBMS.get(self.source.type):
-            #     sys.exit("У инкремента некорректный тип данных") #TODO переделать
+                AbaseError(p_error_text="p_increment doesn't belong to class Attribute",
+                    p_module="DWH", p_class="SourceTable", p_def="increment").raise_error()
         l_increment_meta_obj=self.object_attrs_meta.get(C_INCREMENT,None)
         l_increment=None
         if l_increment_meta_obj:
@@ -1797,6 +1905,10 @@ class SourceTable(_DWHObject):
         """
         SQL-запрос захвата данных с источника
         """
+        if self.source.type in [C_MYSQL]: # double quotes with name of database objects are unacceptable in these DBMS
+            l_dbl_qts=''
+        else:
+            l_dbl_qts='"'
         l_attribute_sql=""
         l_attribute_name_list=[]
         for i_attribute in self.source_attribute:
@@ -1804,17 +1916,17 @@ class SourceTable(_DWHObject):
                 l_attribute_name_list.append(i_attribute.name)
         l_attribute_name_list.sort() # сортируем по наименоваию
         for i_attribute in l_attribute_name_list:
-            l_attribute_sql=l_attribute_sql+"\n"+'"'+i_attribute+'"'+","
+            l_attribute_sql=l_attribute_sql+"\n"+l_dbl_qts+i_attribute+l_dbl_qts+","
         l_attribute_sql=l_attribute_sql[1:] # убираем первый перенос строки
         l_increment_sql=""
         l_timestamp_type=C_TIMESTAMP_DBMS.get(self.source.type)
         if self.increment:
-            l_increment_attr_sql='"'+self.increment.name+'"'+" AS update_timestamp"
+            l_increment_attr_sql=l_dbl_qts+self.increment.name+l_dbl_qts+" AS update_timestamp"
         else:
             l_increment_attr_sql=self.source.current_timestamp_sql+" AS update_timestamp"
         if self.last_increment:
-            l_increment_sql="\nWHERE "+'"'+self.increment.name+'"'+">CAST('"+self.last_increment+"' AS "+l_timestamp_type+")"
-        l_sql="SELECT\n"+l_attribute_sql+"\n"+l_increment_attr_sql+"\nFROM "+'"'+self.schema+'"'+"."+'"'+self.name+'"'\
+            l_increment_sql="\nWHERE "+l_dbl_qts+self.increment.name+l_dbl_qts+">CAST('"+self.last_increment+"' AS "+l_timestamp_type+")"
+        l_sql="SELECT\n"+l_attribute_sql+"\n"+l_increment_attr_sql+"\nFROM "+l_dbl_qts+self.schema+l_dbl_qts+"."+l_dbl_qts+self.name+l_dbl_qts\
               +l_increment_sql+";"
         return l_sql
 
@@ -1847,6 +1959,33 @@ class SourceTable(_DWHObject):
                 add_attribute(p_table=self, p_attribute=update_column)
             if C_ETL_ATTR not in l_attribute_type_list:
                 add_attribute(p_table=self, p_attribute=etl_column)
+
+    @property
+    def cast_script(self):
+        """
+        Скрипт CAST AS для таблицы источника
+        """
+        # формирование словаря с cast() выражением для каждого атрибута
+        l_cast_dict={}
+        l_attribute_name_list=[] # список с наименованиями атрибутов для последующей сортировки
+        for i_attribute in self.source_attribute:
+            if i_attribute.attribute_type==C_QUEUE_ATTR:
+                l_attribute_name_list.append(i_attribute.name)
+        l_attribute_name_list.sort()
+        i=0
+        for i_attribute_name in l_attribute_name_list:
+            for i_attribute in self.source_attribute:
+                if i_attribute.name==i_attribute_name:
+                    l_cast_dict.update(
+                        {i:"CAST("+str(i)+"AS "+i_attribute.datatype.data_type_sql+")"}
+                    )
+                    i+=1
+        l_cast_dict.update(
+            {
+                i:"CAST("+str(i)+"AS "+C_TIMESTAMP_DBMS.get(Connection().dbms_type)+")"
+            }
+        )
+        return l_cast_dict
 
 
 
@@ -1965,8 +2104,23 @@ class Idmap(_DWHObject):
     @source_attribute_nk.setter
     def source_attribute_nk(self, p_new_source_attribute_nk):
         self._source_attribute_nk=p_new_source_attribute_nk
+        self.object_attrs_meta.pop(C_ATTRIBUTE_NK, None)
 
-
+    @property
+    def max_rk(self):
+        """
+        Максимальное значение RK
+        """
+        l_rk=None
+        for i_attr in self.idmap_attribute:
+            if i_attr.attribute_type==C_RK:
+                l_rk=i_attr
+        l_sql=Connection().dbms.idmap_max_rk_sql(
+            p_idmap_id=str(self.id),
+            p_idmap_rk_id=str(l_rk.id)
+        )
+        l_mx_rk=Connection().sql_exec(p_sql=l_sql)
+        return l_mx_rk[0][0][0]
 
 
 
@@ -2430,9 +2584,10 @@ class Job(_DWHObject):
         for i_anchr_pack in self.anchor_package:
             if i_anchr_pack.status==C_STATUS_FAIL:
                 l_fail=C_STATUS_FAIL
-        for i_attr_pack in self.attribute_table_package:
-            if i_attr_pack.status==C_STATUS_FAIL:
-                l_fail=C_STATUS_FAIL
+        if self.attribute_table_package:
+            for i_attr_pack in self.attribute_table_package:
+                if i_attr_pack.status==C_STATUS_FAIL:
+                    l_fail=C_STATUS_FAIL
         if self.tie_package: # так как может не быть tie у джоба
             for i_tie_pack in self.tie_package:
                 if i_tie_pack.status==C_STATUS_FAIL:
@@ -2554,21 +2709,25 @@ class Job(_DWHObject):
         l_tie_list=[]
         if self.entity or self.entity_attribute:
             if self.entity_attribute: # если указан атрибут грузим только его (даже если указана и таблица)
+                if self.entity_attribute.rk==1:
+                    AbaseError(p_error_text="Attribute " +self.entity_attribute.name+" is invalid for load independently", p_module="DWH",
+                               p_class="Job", p_def="start_job").raise_error()
                 # таблицы источники
-                for i_source_attribute in self.entity_attribute.source_attribute:
-                    l_source_table_list.append(i_source_attribute.source_table)
+                if self.entity_attribute.source_attribute:
+                    for i_source_attribute in self.entity_attribute.source_attribute:
+                        l_source_table_list.append(i_source_attribute.source_table)
+                if self.entity_attribute.tie: # у FK таблица источник хранится на tie
+                    for i_source_table in self.entity_attribute.tie.source_table:
+                        l_source_table_list.append(i_source_table)
                 # idmap
                 l_idmap_list.append(self.entity_attribute.entity.idmap)
                 # anchor
                 l_anchor_list.append(self.entity_attribute.entity.anchor)
-                # attribute
-                l_attribute_meta=meta.search_object( # поиск таблицы атрибута в метаданных
-                    p_type=C_ATTRIBUTE_TABLE,
-                    p_attrs={C_ENTITY_COLUMN:self.entity_attribute.id}
-                )[0]
-                l_attribute=AttributeTable(p_id=l_attribute_meta.uuid)
-                l_attribute_list.append(l_attribute)
-                # tie - не обновляем, если указан атрибут сущности!
+                # attribute or tie
+                if self.entity_attribute.tie:
+                    l_tie_list.append(self.entity_attribute.tie)
+                if self.entity_attribute.attribute_table:
+                    l_attribute_list.append(self.entity_attribute.attribute_table)
             else:
                 # таблицы источники
                 for i_source_table in self.entity.source_table:
@@ -2587,7 +2746,11 @@ class Job(_DWHObject):
             l_source_table_meta=meta.search_object(p_type=C_QUEUE)
             for i_source_table_meta in l_source_table_meta:
                  l_source_table=SourceTable(p_id=i_source_table_meta.uuid)
-                 l_source_table_list.append(l_source_table)
+                 l_entity_meta=meta.search_object(p_type=C_ENTITY)
+                 if l_entity_meta:
+                     for i_ent in l_entity_meta:
+                         if l_source_table.id in i_ent.attrs.get(C_QUEUE,None) and l_source_table not in l_source_table_list: # грузим только те таблицы источники, которые используются в сущностях
+                            l_source_table_list.append(l_source_table)
             # idmap
             l_idmap_table_meta=meta.search_object(p_type=C_IDMAP)
             for i_idmap_meta in l_idmap_table_meta:
@@ -2612,37 +2775,104 @@ class Job(_DWHObject):
 
         # грузим данные в таблицы источники
         if p_step_name==C_STG_SCHEMA:
-            print(C_COLOR_BOLD+"==============================")
+            print(C_COLOR_BOLD+C_COLOR_OKCYAN+"\n==============================")
             print("Source tables loading")
             print("=============================="+C_COLOR_ENDC)
-            self.source_table_load(p_source_table=l_source_table_list)
+            print("("+str(l_source_table_list.__len__())+" tables)"+"\n")
+            # грузим параллельно до 10 потоков
+            # определяем количество итераций
+            l_prt=math.ceil(l_source_table_list.__len__()/C_PARALLEL_OBJECT_NUM)
+            l_source_thread=[]
+            for i_prt in range(l_prt):
+                # лист для прогрузки объектов параллельно
+                l_source_table_load_list=l_source_table_list[i_prt*C_PARALLEL_OBJECT_NUM:(i_prt+1)*C_PARALLEL_OBJECT_NUM]
+                for i_obj in l_source_table_load_list:
+                    l_obj_list=[i_obj]
+                    l_thread=threading.Thread(target=self.source_table_load, args=(l_obj_list,))
+                    l_source_thread.append(l_thread)
+                    l_thread.start()
+
+            [thread.join() for thread in l_source_thread]
         # грузим данные в idmap
         if p_step_name in [
             C_IDMAP_SCHEMA,
             C_STG_SCHEMA
         ]:
-            print(C_COLOR_BOLD+"==============================")
+            print(C_COLOR_BOLD+C_COLOR_OKCYAN+"\n==============================")
             print("Idmap tables loading")
             print("=============================="+C_COLOR_ENDC)
-            self.idmap_load(p_idmap=l_idmap_list)
+            print("("+str(l_idmap_list.__len__())+" tables)"+"\n")
+            # грузим параллельно до 10 потоков
+            # определяем количество итераций
+            l_prt=math.ceil(l_idmap_list.__len__()/C_PARALLEL_OBJECT_NUM)
+            l_idmap_thread=[]
+            for i_prt in range(l_prt):
+                # лист для прогрузки объектов параллельно
+                l_idmap_table_load_list=l_idmap_list[i_prt*C_PARALLEL_OBJECT_NUM:(i_prt+1)*C_PARALLEL_OBJECT_NUM]
+                for i_obj in l_idmap_table_load_list:
+                    l_obj_list=[i_obj]
+                    l_thread=threading.Thread(target=self.idmap_load, args=(l_obj_list,))
+                    l_idmap_thread.append(l_thread)
+                    l_thread.start()
+            [thread.join() for thread in l_idmap_thread]
         if p_step_name in [
             C_IDMAP_SCHEMA,
             C_STG_SCHEMA,
             C_AM_SCHEMA
         ]:
-            print(C_COLOR_BOLD+"==============================")
+            print(C_COLOR_BOLD+C_COLOR_OKCYAN+"\n==============================")
             print("Anchor tables loading")
             print("=============================="+C_COLOR_ENDC)
-            self.anchor_load(p_anchor=l_anchor_list)
-            print(C_COLOR_BOLD+"==============================")
-            print("Attribute tables loading")
-            print("=============================="+C_COLOR_ENDC)
-            self.attribute_table_load(p_attribute_table=l_attribute_list)
+            print("("+str(l_anchor_list.__len__())+" tables)"+"\n")
+            # грузим параллельно до 10 потоков
+            # определяем количество итераций
+            l_prt=math.ceil(l_anchor_list.__len__()/C_PARALLEL_OBJECT_NUM)
+            l_anchor_thread=[]
+            for i_prt in range(l_prt):
+                # лист для прогрузки объектов параллельно
+                l_anchor_table_load_list=l_anchor_list[i_prt*C_PARALLEL_OBJECT_NUM:(i_prt+1)*C_PARALLEL_OBJECT_NUM]
+                for i_obj in l_anchor_table_load_list:
+                    l_obj_list=[i_obj]
+                    l_thread=threading.Thread(target=self.anchor_load, args=(l_obj_list,))
+                    l_anchor_thread.append(l_thread)
+                    l_thread.start()
+                [thread.join() for thread in l_anchor_thread]
+            if l_attribute_list.__len__()>0:
+                print(C_COLOR_BOLD+"\n==============================")
+                print("Attribute tables loading")
+                print("=============================="+C_COLOR_ENDC)
+                print("("+str(l_attribute_list.__len__())+" tables)"+"\n")
+                # грузим параллельно до 10 потоков
+                # определяем количество итераций
+                l_prt=math.ceil(l_attribute_list.__len__()/C_PARALLEL_OBJECT_NUM)
+                l_attr_thread=[]
+                for i_prt in range(l_prt):
+                    # лист для прогрузки объектов параллельно
+                    l_attr_table_load_list=l_attribute_list[i_prt*C_PARALLEL_OBJECT_NUM:(i_prt+1)*C_PARALLEL_OBJECT_NUM]
+                    for i_obj in l_attr_table_load_list:
+                        l_obj_list=[i_obj]
+                        l_thread=threading.Thread(target=self.attribute_table_load, args=(l_obj_list,))
+                        l_attr_thread.append(l_thread)
+                        l_thread.start()
+                    [thread.join() for thread in l_attr_thread]
             if l_tie_list.__len__()>0: # не всегда ест tie у сущности
-                print(C_COLOR_BOLD+"==============================")
+                print(C_COLOR_BOLD+C_COLOR_OKCYAN+"\n==============================")
                 print("Tie tables loading")
                 print("=============================="+C_COLOR_ENDC)
-                self.tie_load(p_tie=l_tie_list)
+                print("("+str(l_tie_list.__len__())+" tables)"+"\n")
+                # грузим параллельно до 10 потоков
+                # определяем количество итераций
+                l_prt=math.ceil(l_tie_list.__len__()/C_PARALLEL_OBJECT_NUM)
+                l_tie_thread=[]
+                for i_prt in range(l_prt):
+                    # лист для прогрузки объектов параллельно
+                    l_tie_table_load_list=l_tie_list[i_prt*C_PARALLEL_OBJECT_NUM:(i_prt+1)*C_PARALLEL_OBJECT_NUM]
+                    for i_obj in l_tie_table_load_list:
+                        l_obj_list=[i_obj]
+                        l_thread=threading.Thread(target=self.tie_load, args=(l_obj_list,))
+                        l_tie_thread.append(l_thread)
+                        l_thread.start()
+                    [thread.join() for thread in l_tie_thread]
         # записываем метаданные
         self.end_datetime=datetime.datetime.now() # проставляем дату окончания процесса
         # записываем в метаданные
@@ -2660,8 +2890,6 @@ class Job(_DWHObject):
             return C_COLOR_WARNING+p_status+C_COLOR_ENDC
         if p_status==C_STATUS_FAIL:
             return C_COLOR_FAIL+p_status+C_COLOR_ENDC
-        if p_status==C_STATUS_IN_PROGRESS:
-            return C_COLOR_OKBLUE+p_status+C_COLOR_ENDC
 
 
     def source_table_load(self, p_source_table: list):
@@ -2671,7 +2899,6 @@ class Job(_DWHObject):
         :param p_source_table: список таблиц источников, которые требуется прогрузить
         """
         for i_source_table in p_source_table:
-            print("("+i_source_table.source.name+") "+i_source_table.name+" : "+self.__status_color(C_STATUS_IN_PROGRESS), end="")
             l_package=Package(
                 p_source_table=i_source_table,
                 p_type=C_QUEUE_ETL,
@@ -2687,7 +2914,6 @@ class Job(_DWHObject):
         :param p_idmap: список idmap, которые требуется прогрузить
         """
         for i_idmap in p_idmap:
-            print(i_idmap.name+" : "+self.__status_color(C_STATUS_IN_PROGRESS), end="")
             l_error_cnt=0
             l_source_table_cnt=0
             for i_source_table in i_idmap.entity.source_table:
@@ -2716,7 +2942,6 @@ class Job(_DWHObject):
         :param p_anchor: список якорей, которые требуется прогрузить
         """
         for i_anchor in p_anchor:
-            print(i_anchor.name+" : "+self.__status_color(C_STATUS_IN_PROGRESS), end="")
             l_package=Package(
                 p_anchor=i_anchor,
                 p_type=C_ANCHOR_ETL,
@@ -2732,7 +2957,6 @@ class Job(_DWHObject):
         :param p_attribute_table: список таблиц атрибутов, которые требуется прогрузить
         """
         for i_attribute_table in p_attribute_table:
-            print(i_attribute_table.name+" : "+self.__status_color(C_STATUS_IN_PROGRESS), end="")
             l_error_cnt=0
             l_source_table_cnt=0
             for i_source_attribute in i_attribute_table.entity_attribute.source_attribute:
@@ -2761,7 +2985,6 @@ class Job(_DWHObject):
         :param p_tie: список таблиц tie, которые требуется прогрузить
         """
         for i_tie in p_tie:
-            print(i_tie.name+" : "+self.__status_color(C_STATUS_IN_PROGRESS), end="")
             l_error_cnt=0
             l_source_table_cnt=0
             for i_source_table in i_tie.source_table:
@@ -2782,9 +3005,6 @@ class Job(_DWHObject):
             else:
                 l_status=C_STATUS_PARTLY_SUCCESS
             print("\r"+i_tie.name+" : "+self.__status_color(l_status))
-
-
-
 
 
 class Package(Job):
@@ -2863,7 +3083,8 @@ class Package(Job):
         """
         # получаем etl в зависимости от типа объекта
         l_etl=None
-        l_result=None
+        l_result=(None, None)
+        l_attribute_value=(None, None)
         # загружаем данные
         # таблицы источники
         if self.type==C_QUEUE_ETL:
@@ -2872,7 +3093,7 @@ class Package(Job):
                 l_result=None, l_attribute_value[1]
             else:
                 # формируем sql-запрос
-                l_etl=get_source_table_etl(p_source_table=self.source_table, p_attribute_value=l_attribute_value[0])
+                l_etl=get_source_table_etl(p_source_table=self.source_table)
         # idmap
         elif self.type==C_IDMAP_ETL:
             # sql-запрос
@@ -2890,13 +3111,17 @@ class Package(Job):
             #sql-запрос
             l_etl=get_tie_etl(p_tie=self.tie, p_source_table=self.source_table, p_etl_id=str(self.etl_id))[0]
         # выполняем запрос в ХД
-        if not l_result:
-            l_result=Connection().sql_exec(p_sql=l_etl, p_result=0)
+        if self.type==C_QUEUE_ETL: # сперва очищаем таблицу источник
+            l_sql=get_source_table_delete_sql(p_source_table=self.source_table)
+            l_result=Connection().sql_exec(p_sql=l_sql, p_result=0)
+        if not l_result[1]:
+            l_result=Connection().sql_exec(p_sql=l_etl, p_result=0, p_vl=l_attribute_value[0])
         # логируем
         self.end_datetime=datetime.datetime.now() # проставляем дату окончания процесса
         if l_result[1]: # если завершилось с ошибкой
             self.status=C_STATUS_FAIL
-            self.error=getattr(l_result[1], "pgerror",None) or l_result[1].args[1] # бывают случаи, когда pgerror не указан
+            # self.error=getattr(l_result[1], "pgerror",None) or l_result[1] # бывают случаи, когда pgerror не указан
+            self.error=l_result[1]
         else:
             self.status=C_STATUS_SUCCESS
         # записываем в метаданные
@@ -2911,32 +3136,20 @@ class Package(Job):
         l_data_frame=self.source_table.source.sql_exec(
             p_sql=self.source_table.source_table_sql
         )
-        # формирование словаря с cast() выражением для каждого атрибута
-        l_cast_dict={}
-        l_attribute_name_list=[] # список с наименованиями атрибутов для последующей сортировки
-        for i_attribute in self.source_table.source_attribute:
-            if i_attribute.attribute_type!=C_ETL_ATTR:
-                l_attribute_name_list.append(i_attribute.name)
-        l_attribute_name_list.sort()
-        i=0
-        for i_attribute_name in l_attribute_name_list:
-            for i_attribute in self.source_table.source_attribute:
-                if i_attribute.name==i_attribute_name:
-                    l_cast_dict.update(
-                        {i:"CAST("+str(i)+"AS "+i_attribute.datatype.data_type_sql+")"}
-                    )
-                    i+=1
-        l_cast_dict.update(
-            {
-                i:"CAST("+str(i)+"AS "+C_TIMESTAMP_DBMS.get(Connection().dbms_type)+")"
-            }
-        )
         if l_data_frame[1]: # если возникла ошибка
             return None, l_data_frame[1]
         else:
-            l_insert_data_frame=get_values_sql(p_data_frame=l_data_frame[0], p_cast_dict=l_cast_dict, p_etl_id=self.etl_id) # data frame для вставки в таблицу
-
-        return l_insert_data_frame, None
+            # l_df_len=l_data_frame[0].__len__()
+            # # разбиваем на партиции по n строк
+            # l_prt_num=math.ceil(l_df_len/C_ROW_NUM)
+            # l_insert_data_frame=""
+            # for i_prt in range(l_prt_num):
+            #     l_insert_data_frame+=get_values_sql(
+            #         p_data_frame=l_data_frame[0][i_prt*C_ROW_NUM:(i_prt+1)*C_ROW_NUM], # берем только строки в диапазоне
+            #         p_cast_dict=self.source_table.cast_script,
+            #         p_etl_id=self.etl_id
+            #     )+",\n" # data frame для вставки в таблицу
+            return l_data_frame[0], None
 
     def __add_package_to_job(self):
         """
