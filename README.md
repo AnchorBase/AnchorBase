@@ -64,13 +64,13 @@ For full documentation click this [link](https://supabase.com/docs)
 
 <i>Only russian version (English version is comming soon)</i>
 
-## Community & Support
+## COMMUNITY & SUPPORT
 * [Community Forum](https://github.com/AnchorBase/AnchorBase/discussions) - For help with questions, discuss new ideas, view announcements 
 * [GitHub Issues](https://github.com/AnchorBase/AnchorBase/issues) - For bags and errors
 * Our Email - hello@anchorbase.tech
 * [Our Telegram](https://t.me/AnchorBase_official)
 
-## Status
+## STATUS
 MVP was developped. Now we are looking for customers in order to test AnchorBase for enterprise use-cases
 
 If you want to participate and develop your DWH using AnchorBase, please contact us via Email.
