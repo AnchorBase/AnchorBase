@@ -691,7 +691,7 @@ C_CONSOLE_COMMAND_DESC={
                  C_COLOR_OKCYAN+C_ID_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_GET_SOURCE).get(C_ID_CONSOLE_ARG).get(C_DESC)+"\n\t"+
                  C_COLOR_OKCYAN+C_NAME_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_GET_SOURCE).get(C_NAME_CONSOLE_ARG).get(C_DESC),
     C_ADD_SOURCE:"\n"+C_COLOR_HEADER+C_ADD_SOURCE+C_COLOR_ENDC+"\n"+
-                 C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tДобавляет новый источник\n"+
+                 C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tСоздает подключение к источнику\n"+
                  C_COLOR_BOLD+"Аргументы:"+C_COLOR_ENDC+"\n\t"+
                  C_COLOR_OKCYAN+C_NAME_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ADD_SOURCE).get(C_NAME_CONSOLE_ARG).get(C_DESC)+"\n\t"+
                  C_COLOR_OKCYAN+C_DESC_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ADD_SOURCE).get(C_DESC_CONSOLE_ARG).get(C_DESC)+"\n\t"+
@@ -702,7 +702,7 @@ C_CONSOLE_COMMAND_DESC={
                  C_COLOR_OKCYAN+C_PORT_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ADD_SOURCE).get(C_PORT_CONSOLE_ARG).get(C_DESC)+"\n\t"+
                  C_COLOR_OKCYAN+C_TYPE_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ADD_SOURCE).get(C_TYPE_CONSOLE_ARG).get(C_DESC)+"\n\t",
     C_ALTER_SOURCE:"\n"+C_COLOR_HEADER+C_ALTER_SOURCE+C_COLOR_ENDC+"\n"+
-                   C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tДобавляет новый источник\n"+
+                   C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tИзменяет ранее созданное подключение к источнику\n"+
                    C_COLOR_BOLD+"Аргументы:"+C_COLOR_ENDC+"\n\t"+
                    C_COLOR_OKCYAN+C_ID_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ALTER_SOURCE).get(C_ID_CONSOLE_ARG).get(C_DESC)+"\n\t"+
                    C_COLOR_OKCYAN+C_NAME_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ALTER_SOURCE).get(C_NAME_CONSOLE_ARG).get(C_DESC)+"\n\t"+
@@ -776,28 +776,32 @@ C_CONSOLE_COMMAND_DESC={
 
 # шаблон json для создания сущности
 C_ENTITY_PARAM_TEMPLATE="""{
-    "entity":"description: name of the entity, type: str",
-    "description":"description: description of the entity, type: str",
+    "entity":"name of the entity (str)",
+    "description":"description of the entity (str/null)",
     "attribute":
     [
         {
-            "name":"description: name of the attribute, type: str",
-            "description":"description: description of the attribute, type: str",
-            "pk":"description: the attribute is the entity's primary key (0 or 1 or null), type: int",
-            "datatype":"description: datatype of the attribute, type: str",
-            "length":"description: length of the attribute (number or null), type: int",
-            "scale":"description: scale of the attribute (number or null), type: int",
-            "link_entity":"description: id of the linked entity, type: str",
+            "name":"name of the attribute (str)",
+            "description":"description of the attribute (str/null)",
+            "pk":"business key or not (0/1/null)",
+            "datatype":"datatype of the attribute (str)",
+            "length":"length of the attribute (int/null)",
+            "scale":"scale of the attribute (int/null)",
+            "link_entity":"id of the linked entity (str/null)",
             "source":
             [
                 {
-                    "source":"description: id of the source, type: str",
-                    "schema":"description: the source schema, type: str",
-                    "table":"description: the source table, type: str",
-                    "column":"the source column"
+                    "source":"id of the source (str)",
+                    "schema":"source schema (str)",
+                    "table":"name of the source table (str)",
+                    "column":"name of the source column (str)"
                 }
+                ,
+                ...
             ]
         }
+        ,
+        ...
     ]
 
 }"""
