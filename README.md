@@ -5,4 +5,4 @@
 ---
 
 # AnchorBase
-AnchorBase - Система по автоматизации внедрения Хранилищ данных в концепции Якорной модели (Anchor modeling)
+AnchorBase is a framework which allows to develop an analytical data warehouse with a flexible data model and with less costs
