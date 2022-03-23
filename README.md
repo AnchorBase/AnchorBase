@@ -60,7 +60,8 @@ AnchorBase solves this problem by creating **SQL-functions**.
 
 
 ## DOCUMENTATION
-For full documentation click this [link](https://docs.google.com/document/d/1BhWxaM9ti-6MBm7syrHv7sSkBYMeWrLYTfNYhY6hI00/edit?usp=sharing)
+[English](https://docs.google.com/document/d/1dcZMBpaxeHbCJgJy-xVdtYrmAMGXQXuphfyobn94OJQ/edit?usp=sharing)
+[Russian](https://docs.google.com/document/d/1BhWxaM9ti-6MBm7syrHv7sSkBYMeWrLYTfNYhY6hI00/edit?usp=sharing)
 
 <i>Only russian version (English version is comming soon)</i>
 
