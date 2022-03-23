@@ -776,32 +776,32 @@ C_CONSOLE_COMMAND_DESC={
 
 # шаблон json для создания сущности
 C_ENTITY_PARAM_TEMPLATE="""{
-    "entity":"name of the entity (str)",
-    "description":"description of the entity (str/null)",
+    "entity":"entity’s name (str)",
+    "description":"entity’s description (str)",
     "attribute":
     [
         {
-            "name":"name of the attribute (str)",
-            "description":"description of the attribute (str/null)",
-            "pk":"business key or not (0/1/null)",
-            "datatype":"datatype of the attribute (str)",
-            "length":"length of the attribute (int/null)",
-            "scale":"scale of the attribute (int/null)",
-            "link_entity":"id of the linked entity (str/null)",
+            "name":"attribute’s name (str)",
+            "description":"attribute’s description (str)",
+            "pk":"primary key flag (int) (0/1/null)",
+            "datatype":"attribute’s data type (str)",
+            "length":"attribute’s data type length (int/null)",
+            "scale":"attribute’s data type scale (int/null)",
+            "link_entity":"linked entity’s ID (str/null)",
             "source":
             [
                 {
-                    "source":"id of the source (str)",
-                    "schema":"source schema (str)",
-                    "table":"name of the source table (str)",
-                    "column":"name of the source column (str)"
+                    "source":"data source ID (str)",
+                    "schema":"source table schema (str)",
+                    "table":"source table name (str)",
+                    "column":"source column name (str)"
                 }
                 ,
-                ...
+                …
             ]
         }
         ,
-        ...
+        …
     ]
 
 }"""
