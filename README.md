@@ -64,8 +64,6 @@ AnchorBase solves this problem by creating **SQL-functions**.
 
 [Russian](https://docs.google.com/document/d/1BhWxaM9ti-6MBm7syrHv7sSkBYMeWrLYTfNYhY6hI00/edit?usp=sharing)
 
-<i>Only russian version (English version is comming soon)</i>
-
 ## COMMUNITY & SUPPORT
 * [Community Forum](https://github.com/AnchorBase/AnchorBase/discussions) - For help with questions, discuss new ideas, view announcements 
 * [GitHub Issues](https://github.com/AnchorBase/AnchorBase/issues) - For bags and errors
