@@ -54,7 +54,7 @@ def get_source(p_source_name: str =None, p_source_id: str =None):
         l_error=None
         if l_json_object.__len__()==0:
             l_json_object=None
-            l_error="Ничего не найдено"
+            l_error="No results"
         return _JsonOutput(p_json_object=l_json_object, p_error=l_error).body
     except Exception as e:
         return _JsonOutput(p_json_object=None, p_error=e.args[0]).body
@@ -97,7 +97,7 @@ def add_source(p_type: str, p_name: str, p_server: str, p_database: str, p_user:
             C_SOURCE_ID:l_source.source_id
         }
         l_json_object=[_JsonObject(p_id=str(l_source.id), p_type=C_SOURCE, p_attribute=l_attribute_dict)]
-        return _JsonOutput(p_json_object=l_json_object, p_message="Источник успешно добавлен").body
+        return _JsonOutput(p_json_object=l_json_object, p_message="Source has created successfully").body
     except Exception as e:
         return _JsonOutput(p_json_object=None, p_error=e.args[0]).body
 
@@ -137,7 +137,7 @@ def update_source(
             p_desc=p_desc
         )
         l_source.update_source()
-        return _JsonOutput(p_json_object=None, p_message="Источник успешно обновлен").body
+        return _JsonOutput(p_json_object=None, p_message="Source has modified successfully").body
     except Exception as e:
         return _JsonOutput(p_json_object=None, p_error=e.args[0]).body
 
@@ -151,7 +151,7 @@ def get_source_type():
         for i_source_type in l_available_source_type:
             l_source_type_str+=i_source_type+","
         l_source_type_str=l_source_type_str[:-1] # убираем последнюю запятую
-        return _JsonOutput(p_json_object=None, p_message="AnchorBase умеет работать со следующими типами источников: "+l_source_type_str).body
+        return _JsonOutput(p_json_object=None, p_message="AnchorBase can work with such sources: "+l_source_type_str).body
     except Exception as e:
         return _JsonOutput(p_json_object=None, p_error=e.args[0]).body
 
@@ -173,7 +173,7 @@ def get_entity(p_name: str =None, p_id: str =None):
             l_attr={C_NAME:p_name}
         l_entity_meta=search_object(p_type=C_ENTITY, p_uuid=l_id, p_attrs=l_attr)
         if l_entity_meta.__len__()==0:
-            l_error="Ничего не найдено"
+            l_error="No results"
         else:
             l_json_object=[]
             for i_entity in l_entity_meta:
@@ -220,7 +220,7 @@ def get_entity_attr(p_id: str =None, p_name: str =None, p_entity: str =None):
                   l_attr.update({C_ENTITY:C_DUMMY_UUID}) # если указано неправильное имя сущности - ничего не найдется
       l_ent_attr_meta=search_object(p_type=C_ENTITY_COLUMN, p_uuid=l_id, p_attrs=l_attr)
       if l_ent_attr_meta.__len__()==0:
-          l_error="Ничего не найдено"
+          l_error="No results"
       else:
           l_json_object=[]
           for i_ent_attr in l_ent_attr_meta:
@@ -273,7 +273,7 @@ def get_attr_source(p_id: str =None, p_name: str =None, p_entity: str =None, p_s
                     l_attr.update({C_ENTITY:C_DUMMY_UUID}) # если указано неправильное имя сущности - ничего не найдется
         l_ent_attr_meta=search_object(p_type=C_ENTITY_COLUMN, p_uuid=l_id, p_attrs=l_attr)
         if l_ent_attr_meta.__len__()==0:
-            l_error="Ничего не найдено"
+            l_error="No results"
         else:
             l_json_object=[]
             for i_ent_attr in l_ent_attr_meta:
@@ -319,7 +319,7 @@ def get_entity_source(p_id: str =None, p_name: str =None, p_source_id: str =None
             l_attr={C_NAME:p_name}
         l_ent_meta=search_object(p_type=C_ENTITY, p_uuid=l_id, p_attrs=l_attr)
         if l_ent_meta.__len__()==0:
-            l_error="Ничего не найдено"
+            l_error="No results"
         else:
             l_json_object=[]
             for i_ent in l_ent_meta:
@@ -352,11 +352,11 @@ def start_job(p_entity: str =None, p_entity_attribute: str =None):
         l_entity=None
         l_entity_attribute=None
         if p_entity_attribute and not p_entity:
-            return _JsonOutput(p_json_object=None, p_error="Не указана сущность").body
+            return _JsonOutput(p_json_object=None, p_error="Entity is not mentioned").body
         if p_entity:
             l_entity_meta=search_object(p_type=C_ENTITY, p_attrs={C_NAME:p_entity})
             if l_entity_meta.__len__()==0:
-                return _JsonOutput(p_json_object=None, p_error="Сущность "+p_entity+" не найдена").body
+                return _JsonOutput(p_json_object=None, p_error="Entity "+p_entity+" has not found").body
             l_entity=Entity(
                 p_id=str(l_entity_meta[0].uuid)
             )
@@ -366,7 +366,7 @@ def start_job(p_entity: str =None, p_entity_attribute: str =None):
                     p_attrs={C_NAME:p_entity_attribute, C_ENTITY:l_entity.id}
                 )
                 if l_entity_attr_meta.__len__()==0:
-                    return _JsonOutput(p_json_object=None, p_error="Атрибут "+p_entity_attribute+" не найден").body
+                    return _JsonOutput(p_json_object=None, p_error="Attribute "+p_entity_attribute+" has not found").body
                 l_entity_attribute=Attribute(
                     p_type=C_ENTITY_COLUMN,
                     p_id=str(l_entity_attr_meta[0].uuid)
@@ -376,7 +376,7 @@ def start_job(p_entity: str =None, p_entity_attribute: str =None):
             p_entity_attribute=l_entity_attribute
         )
         l_job.start_job()
-        return _JsonOutput(p_json_object=None, p_message="Загрузка данных завершена").body
+        return _JsonOutput(p_json_object=None, p_message="Load finished").body
     except Exception as e:
         return _JsonOutput(p_json_object=None, p_error=e.args[0]).body
 
@@ -393,7 +393,7 @@ def get_last_etl():
         l_etl_meta_attrs={C_ETL_ATTRIBUTE_NAME:l_max_etl_id}
         l_last_etl_meta=search_object(p_type=C_ETL, p_attrs=l_etl_meta_attrs) # ищем в метаданных по etl_id
         if l_last_etl_meta.__len__()==0:
-            l_error="Нет завершенных etl-процессов"
+            l_error="No ETL-processes"
         else:
             l_etl=Job(
                 p_id=str(l_last_etl_meta[0].uuid)
@@ -434,7 +434,7 @@ def get_etl_hist(p_date: str =None, p_etl: str =None):
         l_json_object=[]
         l_etl_meta=search_object(p_type=C_ETL)
         if l_etl_meta.__len__()==0:
-            l_error="Нет завершенных etl-процессов"
+            l_error="No ETL-processes"
         else:
             for i_etl_meta in l_etl_meta:
                 l_etl=Job(
@@ -480,7 +480,7 @@ def get_etl_detail(p_etl: str =None, p_etl_id: str =None):
         l_json_object=[]
         l_attr={}
         if not p_etl and not p_etl_id: # хоть одно должен быть заполнено
-            l_error="Либо "+C_ID_CONSOLE_ARG+", либо "+C_ETL_ID_CONSOLE_ARG+" должны быть заполнены"
+            l_error=C_ID_CONSOLE_ARG+" or "+C_ETL_ID_CONSOLE_ARG+" is required"
             return _JsonOutput(p_json_object=l_json_object, p_error=l_error).body
         elif p_etl:
             l_attr.update(
@@ -494,7 +494,7 @@ def get_etl_detail(p_etl: str =None, p_etl_id: str =None):
                     {C_ETL:str(l_etl_id[0].uuid)}
                 )
             else:
-                l_error="Не найдено логов по указанному "+C_ETL_ID_CONSOLE_ARG
+                l_error="There is no logs with such etl ID "+C_ETL_ID_CONSOLE_ARG
                 return _JsonOutput(p_json_object=l_json_object, p_error=l_error).body
         else:
             l_attr=None
@@ -622,7 +622,7 @@ def create_entity(p_json: json):
     try:
         l_model=Model(p_json=p_json)
         l_model.create_entity()
-        return _JsonOutput(p_json_object=None, p_message="Сущность успешно создана").body
+        return _JsonOutput(p_json_object=None, p_message="Entity has created successfully").body
     except Exception as e:
         return _JsonOutput(p_json_object=None, p_error=e.args[0]).body
 
@@ -638,13 +638,13 @@ def alter_entity(p_json: json):
         l_model=Model(p_json=p_json)
         #  хотя бы один параметр для изменения должен быть задан
         if list(l_json.keys()).__len__()<2: # указан только id
-            return _JsonOutput(p_json_object=None, p_error="Не указано что должно поменяться в сущности").body
+            return _JsonOutput(p_json_object=None, p_error="-name or -desc is required").body
         if l_json.get(C_ENTITY):
             l_model.rename_entity()
-            l_message+="\nСущность успешно переименована"
+            l_message+="\nEntity has renamed successfully"
         if l_json.get(C_DESC):
             l_model.alter_desc()
-            l_message+="\nОписание сущности успешно изменено"
+            l_message+="\nEntity description has modified successfully"
         l_message=l_message[1:]
         return _JsonOutput(p_json_object=None, p_message=l_message).body
     except Exception as e:
@@ -659,7 +659,7 @@ def drop_entity(p_json: json):
     try:
         l_model=Model(p_json=p_json)
         l_model.drop_entity()
-        return _JsonOutput(p_json_object=None, p_message="Сущность успешно удалена").body
+        return _JsonOutput(p_json_object=None, p_message="Entity has dropped successfully").body
     except Exception as e:
         return _JsonOutput(p_json_object=None, p_error=e.args[0]).body
 
@@ -714,7 +714,7 @@ def update_meta_config(
                C_PORT+"="+'"'+str(p_port)+'"'+"\n"+\
                C_DBMS_TYPE+"="+'"'+C_POSTGRESQL+'"'
         fl(p_file_path=C_META_CONFIG, p_file_body=l_cnfg).write_file()
-        return _JsonOutput(p_json_object=None, p_message="Параметры подключения к метаданным успешно изменены").body
+        return _JsonOutput(p_json_object=None, p_message="Metadata connection properties have modified successfully").body
     except Exception as e:
         return _JsonOutput(p_json_object=None, p_error=e.args[0]).body
 
@@ -724,7 +724,7 @@ def create_meta():
     """
     try:
         create_meta_tables()
-        return _JsonOutput(p_json_object=None, p_message="Таблицы метаданных успешно созданы").body
+        return _JsonOutput(p_json_object=None, p_message="Metadata tables have created successfully").body
     except Exception as e:
         return _JsonOutput(p_json_object=None, p_error=e.args[0]).body
 
@@ -779,7 +779,7 @@ def update_dwh_config(
                C_PORT+"="+'"'+str(p_port)+'"'+"\n"+ \
                C_DBMS_TYPE+"="+'"'+C_POSTGRESQL+'"'
         fl(p_file_path=C_CONFIG_FILE_PATH, p_file_body=l_cnfg).write_file()
-        return _JsonOutput(p_json_object=None, p_message="Параметры подключения к ХД успешно изменены").body
+        return _JsonOutput(p_json_object=None, p_message="DWH connection properties have modified successfully").body
     except Exception as e:
         return _JsonOutput(p_json_object=None, p_error=e.args[0]).body
 
@@ -789,7 +789,7 @@ def create_dwh_ddl():
     """
     try:
         dwh.create_dwh_ddl()
-        return _JsonOutput(p_json_object=None, p_message="ХД успешно установлено").body
+        return _JsonOutput(p_json_object=None, p_message="DWH schemas have created successully").body
     except Exception as e:
         return _JsonOutput(p_json_object=None, p_error=e.args[0]).body
 
