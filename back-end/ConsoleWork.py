@@ -27,7 +27,7 @@ def __get_command(p_input: str):
             if l_cmnd_num==0:
                 l_cmnd_num=i
             if l_cmnd_num==0:
-                print(C_COLOR_FAIL+"Неверно заданная команда"+C_COLOR_ENDC)
+                print(C_COLOR_FAIL+"Command is incorrect: "+C_COLOR_ENDC)
                 console_input()
         l_word.append(i_word)
     l_command=""
@@ -70,7 +70,7 @@ def __command_checker(p_command: str):
     :param p_command: команда
     """
     if p_command not in C_CONSOLE_COMMAND_LIST:
-        print(C_COLOR_FAIL+"Команды "+p_command+" не существует"+C_COLOR_ENDC)
+        print(C_COLOR_FAIL+"Command is incorrect: "+p_command+C_COLOR_ENDC)
         console_input()
 
 
@@ -83,10 +83,10 @@ def __arg_checker(p_command: str, p_arg: str):
     :param p_arg: аргумент команды
     """
     if not C_CONSOLE_ARGS.get(p_command) and p_arg!=C_HELP:
-        print(C_COLOR_FAIL+"У команды "+p_command+" не существует аргумента "+p_arg+C_COLOR_ENDC)
+        print(C_COLOR_FAIL+"Command "+p_command+" doesn't have the argument "+p_arg+C_COLOR_ENDC)
         console_input()
     if C_CONSOLE_ARGS.get(p_command) and p_arg not in list(C_CONSOLE_ARGS.get(p_command).keys()) and p_arg!=C_HELP:
-        print(C_COLOR_FAIL+"У команды "+p_command+" не существует аргумента "+p_arg+C_COLOR_ENDC)
+        print(C_COLOR_FAIL+"Command "+p_command+" doesn't have the argument "+p_arg+C_COLOR_ENDC)
         console_input()
 
 def __neccessary_args_checker(p_command: str, p_arg: list):
@@ -100,7 +100,7 @@ def __neccessary_args_checker(p_command: str, p_arg: list):
         for i_arg in list(C_CONSOLE_ARGS.get(p_command).keys()):
                 if C_CONSOLE_ARGS.get(p_command).get(i_arg).get(C_NOT_NULL)==1 \
                     and i_arg not in p_arg:  # если аргумент обязательный, но его нет в предоставленном списке
-                    print(C_COLOR_FAIL+"У команды "+p_command+" не указан аргумент "+i_arg+C_COLOR_ENDC)
+                    print(C_COLOR_FAIL+"Command "+p_command+" needs the argument "+i_arg+" be required"+C_COLOR_ENDC)
                     console_input()
 
 
@@ -190,7 +190,7 @@ def __command_exec(p_command: str, p_arg: dict =None, p_help_command: str =None)
             l_entity_param=l_file.file_body
             l_json=create_entity(p_json=l_entity_param)
         else: #  если пользователь не указал конкретный файл - передаем шаблон в json
-            print(C_ENTITY_PARAM_TEMPLATE+"\n"+C_COLOR_WARNING+"Вставьте параметры сущности в соответствии с шаблоном выше в файл '..\Entity param.json' и нажмите в консоли любую кнопку"+C_COLOR_ENDC)
+            print(C_ENTITY_PARAM_TEMPLATE+"\n"+C_COLOR_WARNING+"Enter entity parameters to the file '..\Entity param.json' and press any key in CLI"+C_COLOR_ENDC)
             input()
             l_entity_param=File(p_file_path=C_ENTITY_PARAM_TEMPLATE_FILE_PATH)
             l_json=create_entity(p_json=l_entity_param.file_body)
@@ -223,7 +223,7 @@ def __command_exec(p_command: str, p_arg: dict =None, p_help_command: str =None)
             p_port=p_arg.get(C_PORT_CONSOLE_ARG)
         )
     elif p_command==C_CREATE_META:
-        l_input=input("Все существующие метаданные будут удалены. Продолжить? (y|n):")
+        l_input=input("All existing metadata will be dropped. Continue? (y|n):")
         if l_input=='y':
             l_json=create_meta()
         else:
@@ -239,7 +239,7 @@ def __command_exec(p_command: str, p_arg: dict =None, p_help_command: str =None)
             p_port=p_arg.get(C_PORT_CONSOLE_ARG)
         )
     elif p_command==C_CREATE_DWH:
-        l_input=input("Все существующие таблицы ХД будут удалены. Продолжить? (y|n):")
+        l_input=input("All existing DWH tables will be dropped. Continue? (y|n):")
         if l_input=='y':
             l_json=create_dwh_ddl()
         else:

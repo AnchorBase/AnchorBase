@@ -577,122 +577,122 @@ C_ETL_ID_CONSOLE_ARG="-etl"
 C_FILE_CONSOLE_ARG="-file"
 C_CONSOLE_ARGS={
     C_GET_SOURCE:{
-        C_NAME_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"наименование источника (необязательный)"},
-        C_ID_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"id источника (необязательный)"},
+        C_NAME_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"source name (optional)"},
+        C_ID_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"source ID (optional)"},
     },
     C_ADD_SOURCE:{
-        C_NAME_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"наименование источника (обязательный)"},
-        C_DESC_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"описание источника (необязательный)"},
-        C_SERVER_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"сервер/хост (обязательный)"},
-        C_DATABASE_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"база данных (обязательный)"},
-        C_USER_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"логин (обязательный)"},
-        C_PASSWORD_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"пароль (необязательный)"},
-        C_PORT_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"порт (обязательный)"},
-        C_TYPE_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"тип источника (обязательный)"}
+        C_NAME_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"source name (required)"},
+        C_DESC_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"source description (optional)"},
+        C_SERVER_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"server/host (required)"},
+        C_DATABASE_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"database (required)"},
+        C_USER_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"login (required)"},
+        C_PASSWORD_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"password (required)"},
+        C_PORT_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"port (required)"},
+        C_TYPE_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"source type (required)"}
     },
     C_ALTER_SOURCE:{
-        C_ID_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"id источника (обязательный)"},
-        C_NAME_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"новое наименование источника (необязательный)"},
-        C_DESC_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"новое описание источника (необязательный)"},
-        C_SERVER_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"новый сервер/хост (необязательный)"},
-        C_DATABASE_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"новая база данных (необязательный)"},
-        C_USER_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"новый логин (необязательный)"},
-        C_PASSWORD_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"новый пароль (необязательный)"},
-        C_PORT_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"новый порт (необязательный)"},
-        C_TYPE_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"новый тип источника (необязательный)"}
+        C_ID_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"source ID (required)"},
+        C_NAME_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"new source name (optional)"},
+        C_DESC_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"new source description (optional)"},
+        C_SERVER_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"new server/host (optional)"},
+        C_DATABASE_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"new database (optional)"},
+        C_USER_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"new login (optional)"},
+        C_PASSWORD_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"new password (optional)"},
+        C_PORT_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"new port (optional)"},
+        C_TYPE_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"new source type (optional)"}
     },
     C_UPDATE_META_CONFIG:{
-        C_SERVER_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"сервер/хост (обязательный)"},
-        C_DATABASE_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"база данных (обязательный)"},
-        C_USER_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"логин (обязательный)"},
-        C_PASSWORD_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"пароль (обязательный)"},
-        C_PORT_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"порт (обязательный)"}
+        C_SERVER_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"server/host (required)"},
+        C_DATABASE_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"database (required)"},
+        C_USER_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"login (required)"},
+        C_PASSWORD_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"password (required)"},
+        C_PORT_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"port (required)"}
     },
     C_UPDATE_DWH_CONFIG:{
-        C_SERVER_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"сервер/хост (обязательный)"},
-        C_DATABASE_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"база данных (обязательный)"},
-        C_USER_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"логин (обязательный)"},
-        C_PASSWORD_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"пароль (обязательный)"},
-        C_PORT_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"порт (обязательный)"}
+        C_SERVER_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"server/host (required)"},
+        C_DATABASE_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"database (required)"},
+        C_USER_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"login (required)"},
+        C_PASSWORD_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"password (required)"},
+        C_PORT_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"port (required)"}
     },
     C_GET_ENTITY:{
-        C_NAME_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"наименование сущности (необязательный)"},
-        C_ID_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"id сущности (необязательный)"},
+        C_NAME_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"Entity’s ID (optional)"},
+        C_ID_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"Entity’s name (optional)"},
     },
     C_GET_ENTITY_ATTR:{
-        C_NAME_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"наименование атрибута (необязательный)"},
-        C_ID_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"id атрибута (необязательный)"},
-        C_ENTITY_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"наименование сущности (необязательный)"}
+        C_NAME_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"attribute’s ID (optional)"},
+        C_ID_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"attribute’s name (optional)"},
+        C_ENTITY_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"Entity’s name (optional)"}
     },
     C_GET_ATTR_SOURCE:{
-        C_NAME_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"наименование атрибута (необязательный)"},
-        C_ID_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"id атрибута (необязательный)"},
-        C_ENTITY_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"наименование сущности (необязательный)"},
-        C_SOURCE_ID_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"id источника (необязательный)"}
+        C_NAME_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"attribute’s ID (optional)"},
+        C_ID_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"attribute’s name (optional)"},
+        C_ENTITY_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"Entity’s name (optional)"},
+        C_SOURCE_ID_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"source ID (optional)"}
     },
     C_GET_ENTITY_SOURCE:{
-        C_NAME_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"наименование сущности (необязательный)"},
-        C_ID_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"id сущности (необязательный)"},
-        C_SOURCE_ID_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"id источника (необязательный)"}
+        C_NAME_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"entity ID (optional)"},
+        C_ID_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"entity name (optional)"},
+        C_SOURCE_ID_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"source ID (optional)"}
     },
     C_ADD_ENTITY:{
-        C_FILE_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"путь до файла с параметрами сущности в формате json (необязательный)"}
+        C_FILE_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"the json file path (optional)"}
     },
     C_START_JOB:{
-        C_ENTITY_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"наименование сущности, данные которой требуется обновить (необязательный)"},
-        C_ENTITY_ATTR_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"наименование атрибута, данные которого требуется обновить (необязательный)"}
+        C_ENTITY_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"entity name which needs to be updated (optional)"},
+        C_ENTITY_ATTR_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"attribute name which needs to be updated (optional)"}
     },
     C_GET_ETL_HIST:{
-        C_DATE_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"дата выполнения etl-процесса в формате YYYY-MM-DD (необязательный)"},
-        C_ETL_ID_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"etl_id (необязательный)"}
+        C_DATE_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"the end date of ETL process, in format YYYY-MM-DD (optional)"},
+        C_ETL_ID_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"ETL ID (optional)"}
     },
     C_GET_ETL_DETAIL:{
-        C_ID_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"id (uuid) etl процесса (необязательный)"},
-        C_ETL_ID_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"etl_id (необязательный)"}
+        C_ID_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"ETL ID (uuid) (optional)"},
+        C_ETL_ID_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"ETL ID (optional)"}
     },
     C_ALTER_ENTITY:{
-        C_ID_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"id сущности (обязательный)"},
-        C_NAME_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"наименование сущности (необязательный)"},
-        C_DESC_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"наименование сущности (необязательный)"}
+        C_ID_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"entity ID (required)"},
+        C_NAME_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"entity name (optional)"},
+        C_DESC_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"entity description (optional)"}
     },
     C_DROP_ENTITY:{
-        C_ID_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"id сущности (обязательный)"}
+        C_ID_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"entity ID (required)"}
     }
 }
 # описание команд консоли
 C_CONSOLE_COMMAND_DESC={
     C_GET_META_CONFIG:"\n"+C_COLOR_HEADER+C_GET_META_CONFIG+C_COLOR_ENDC+"\n"+
-                       C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tВозвращает параметры подключения к метаданным ХД",
+                       C_COLOR_BOLD+"Description:"+C_COLOR_ENDC+"\n\tGets the metadata connection properties",
     C_UPDATE_META_CONFIG:"\n"+C_COLOR_HEADER+C_UPDATE_META_CONFIG+C_COLOR_ENDC+"\n"+
-                         C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tИзменяет параметры подключения к метаданным\n"+
-                         C_COLOR_BOLD+"Аргументы:"+C_COLOR_ENDC+"\n\t"+
+                         C_COLOR_BOLD+"Description:"+C_COLOR_ENDC+"\n\tModifies the metadata connection properties\n"+
+                         C_COLOR_BOLD+"Arguments:"+C_COLOR_ENDC+"\n\t"+
                          C_COLOR_OKCYAN+C_SERVER_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_UPDATE_META_CONFIG).get(C_SERVER_CONSOLE_ARG).get(C_DESC)+"\n\t"+
                          C_COLOR_OKCYAN+C_DATABASE_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_UPDATE_META_CONFIG).get(C_DATABASE_CONSOLE_ARG).get(C_DESC)+"\n\t"+
                          C_COLOR_OKCYAN+C_USER_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_UPDATE_META_CONFIG).get(C_USER_CONSOLE_ARG).get(C_DESC)+"\n\t"+
                          C_COLOR_OKCYAN+C_PASSWORD_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_UPDATE_META_CONFIG).get(C_PASSWORD_CONSOLE_ARG).get(C_DESC)+"\n\t"+
                          C_COLOR_OKCYAN+C_PORT_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_UPDATE_META_CONFIG).get(C_PORT_CONSOLE_ARG).get(C_DESC),
     C_CREATE_META:"\n"+C_COLOR_HEADER+C_CREATE_META+C_COLOR_ENDC+"\n"+
-                  C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tСоздает таблицы метаданных\n",
+                  C_COLOR_BOLD+"Description:"+C_COLOR_ENDC+"\n\tCreates the metadata tables\n",
     C_GET_DWH_CONFIG:"\n"+C_COLOR_HEADER+C_GET_DWH_CONFIG+C_COLOR_ENDC+"\n"+
-                      C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tВозвращает параметры подключения к ХД",
+                      C_COLOR_BOLD+"Description:"+C_COLOR_ENDC+"\n\tGet the DWH connection properties",
     C_UPDATE_DWH_CONFIG:"\n"+C_COLOR_HEADER+C_UPDATE_DWH_CONFIG+C_COLOR_ENDC+"\n"+
-                         C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tИзменяет параметры подключения к ХД\n"+
-                         C_COLOR_BOLD+"Аргументы:"+C_COLOR_ENDC+"\n\t"+
+                         C_COLOR_BOLD+"Description:"+C_COLOR_ENDC+"\n\tModifies the DWH connection properties\n"+
+                         C_COLOR_BOLD+"Arguments:"+C_COLOR_ENDC+"\n\t"+
                          C_COLOR_OKCYAN+C_SERVER_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_UPDATE_DWH_CONFIG).get(C_SERVER_CONSOLE_ARG).get(C_DESC)+"\n\t"+
                          C_COLOR_OKCYAN+C_DATABASE_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_UPDATE_DWH_CONFIG).get(C_DATABASE_CONSOLE_ARG).get(C_DESC)+"\n\t"+
                          C_COLOR_OKCYAN+C_USER_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_UPDATE_DWH_CONFIG).get(C_USER_CONSOLE_ARG).get(C_DESC)+"\n\t"+
                          C_COLOR_OKCYAN+C_PASSWORD_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_UPDATE_DWH_CONFIG).get(C_PASSWORD_CONSOLE_ARG).get(C_DESC)+"\n\t"+
                          C_COLOR_OKCYAN+C_PORT_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_UPDATE_DWH_CONFIG).get(C_PORT_CONSOLE_ARG).get(C_DESC),
     C_CREATE_DWH:"\n"+C_COLOR_HEADER+C_CREATE_DWH+C_COLOR_ENDC+"\n"+
-                  C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tСоздает схемы для ХД\n",
+                  C_COLOR_BOLD+"Description:"+C_COLOR_ENDC+"\n\tCreates the DWH schemas\n",
     C_GET_SOURCE:"\n"+C_COLOR_HEADER+C_GET_SOURCE+C_COLOR_ENDC+"\n"+
-                 C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tВозвращает источники и их свойства\n"+
-                 C_COLOR_BOLD+"Аргументы:"+C_COLOR_ENDC+"\n\t"+
+                 C_COLOR_BOLD+"Description:"+C_COLOR_ENDC+"\n\tGets sources and their connection properties\n"+
+                 C_COLOR_BOLD+"Arguments:"+C_COLOR_ENDC+"\n\t"+
                  C_COLOR_OKCYAN+C_ID_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_GET_SOURCE).get(C_ID_CONSOLE_ARG).get(C_DESC)+"\n\t"+
                  C_COLOR_OKCYAN+C_NAME_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_GET_SOURCE).get(C_NAME_CONSOLE_ARG).get(C_DESC),
     C_ADD_SOURCE:"\n"+C_COLOR_HEADER+C_ADD_SOURCE+C_COLOR_ENDC+"\n"+
-                 C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tСоздает подключение к источнику\n"+
-                 C_COLOR_BOLD+"Аргументы:"+C_COLOR_ENDC+"\n\t"+
+                 C_COLOR_BOLD+"Description:"+C_COLOR_ENDC+"\n\tCreates a source\n"+
+                 C_COLOR_BOLD+"Arguments:"+C_COLOR_ENDC+"\n\t"+
                  C_COLOR_OKCYAN+C_NAME_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ADD_SOURCE).get(C_NAME_CONSOLE_ARG).get(C_DESC)+"\n\t"+
                  C_COLOR_OKCYAN+C_DESC_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ADD_SOURCE).get(C_DESC_CONSOLE_ARG).get(C_DESC)+"\n\t"+
                  C_COLOR_OKCYAN+C_SERVER_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ADD_SOURCE).get(C_SERVER_CONSOLE_ARG).get(C_DESC)+"\n\t"+
@@ -702,8 +702,8 @@ C_CONSOLE_COMMAND_DESC={
                  C_COLOR_OKCYAN+C_PORT_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ADD_SOURCE).get(C_PORT_CONSOLE_ARG).get(C_DESC)+"\n\t"+
                  C_COLOR_OKCYAN+C_TYPE_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ADD_SOURCE).get(C_TYPE_CONSOLE_ARG).get(C_DESC)+"\n\t",
     C_ALTER_SOURCE:"\n"+C_COLOR_HEADER+C_ALTER_SOURCE+C_COLOR_ENDC+"\n"+
-                   C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tИзменяет ранее созданное подключение к источнику\n"+
-                   C_COLOR_BOLD+"Аргументы:"+C_COLOR_ENDC+"\n\t"+
+                   C_COLOR_BOLD+"Description:"+C_COLOR_ENDC+"\n\tModifies a previously created source\n"+
+                   C_COLOR_BOLD+"Arguments:"+C_COLOR_ENDC+"\n\t"+
                    C_COLOR_OKCYAN+C_ID_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ALTER_SOURCE).get(C_ID_CONSOLE_ARG).get(C_DESC)+"\n\t"+
                    C_COLOR_OKCYAN+C_NAME_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ALTER_SOURCE).get(C_NAME_CONSOLE_ARG).get(C_DESC)+"\n\t"+
                    C_COLOR_OKCYAN+C_DESC_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ALTER_SOURCE).get(C_DESC_CONSOLE_ARG).get(C_DESC)+"\n\t"+
@@ -714,64 +714,64 @@ C_CONSOLE_COMMAND_DESC={
                    C_COLOR_OKCYAN+C_PORT_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ALTER_SOURCE).get(C_PORT_CONSOLE_ARG).get(C_DESC)+"\n\t"+
                    C_COLOR_OKCYAN+C_TYPE_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ALTER_SOURCE).get(C_TYPE_CONSOLE_ARG).get(C_DESC)+"\n\t",
     C_GET_SOURCE_TYPE:"\n"+C_COLOR_HEADER+C_GET_SOURCE_TYPE+C_COLOR_ENDC+"\n"+
-                      C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tПоказывает все типы источников, с которыми AnchorBase умеет работать",
+                      C_COLOR_BOLD+"Description:"+C_COLOR_ENDC+"\n\tShows all source types that Anchor Base can work with",
     C_GET_ENTITY:"\n"+C_COLOR_HEADER+C_GET_ENTITY+C_COLOR_ENDC+"\n"+
-                 C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tВозвращает сущности и их свойства\n"+
-                 C_COLOR_BOLD+"Аргументы:"+C_COLOR_ENDC+"\n\t"+
+                 C_COLOR_BOLD+"Description:"+C_COLOR_ENDC+"\n\tGets entities and their properties\n"+
+                 C_COLOR_BOLD+"Arguments:"+C_COLOR_ENDC+"\n\t"+
                  C_COLOR_OKCYAN+C_ID_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_GET_ENTITY).get(C_ID_CONSOLE_ARG).get(C_DESC)+"\n\t"+
                  C_COLOR_OKCYAN+C_NAME_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_GET_ENTITY).get(C_NAME_CONSOLE_ARG).get(C_DESC),
     C_GET_ENTITY_ATTR:"\n"+C_COLOR_HEADER+C_GET_ENTITY_ATTR+C_COLOR_ENDC+"\n"+
-                     C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tВозвращает атрибуты и их свойства\n"+
-                     C_COLOR_BOLD+"Аргументы:"+C_COLOR_ENDC+"\n\t"+
+                     C_COLOR_BOLD+"Description:"+C_COLOR_ENDC+"\n\tGets attributes and their properties\n"+
+                     C_COLOR_BOLD+"Arguments:"+C_COLOR_ENDC+"\n\t"+
                      C_COLOR_OKCYAN+C_ID_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_GET_ENTITY_ATTR).get(C_ID_CONSOLE_ARG).get(C_DESC)+"\n\t"+
                      C_COLOR_OKCYAN+C_NAME_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_GET_ENTITY_ATTR).get(C_NAME_CONSOLE_ARG).get(C_DESC)+"\n\t"+
                      C_COLOR_OKCYAN+C_ENTITY_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_GET_ENTITY_ATTR).get(C_ENTITY_CONSOLE_ARG).get(C_DESC),
     C_GET_ATTR_SOURCE:"\n"+C_COLOR_HEADER+C_GET_ATTR_SOURCE+C_COLOR_ENDC+"\n"+
-                      C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tВозвращает атрибуты и их источники\n"+
-                      C_COLOR_BOLD+"Аргументы:"+C_COLOR_ENDC+"\n\t"+
+                      C_COLOR_BOLD+"Description:"+C_COLOR_ENDC+"\n\tGets attributes and their sources\n"+
+                      C_COLOR_BOLD+"Arguments:"+C_COLOR_ENDC+"\n\t"+
                       C_COLOR_OKCYAN+C_ID_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_GET_ATTR_SOURCE).get(C_ID_CONSOLE_ARG).get(C_DESC)+"\n\t"+
                       C_COLOR_OKCYAN+C_NAME_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_GET_ATTR_SOURCE).get(C_NAME_CONSOLE_ARG).get(C_DESC)+"\n\t"+
                       C_COLOR_OKCYAN+C_ENTITY_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_GET_ATTR_SOURCE).get(C_ENTITY_CONSOLE_ARG).get(C_DESC)+"\n\t"+
                       C_COLOR_OKCYAN+C_SOURCE_ID_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_GET_ATTR_SOURCE).get(C_SOURCE_ID_CONSOLE_ARG).get(C_DESC),
     C_GET_ENTITY_SOURCE:"\n"+C_COLOR_HEADER+C_GET_ENTITY_SOURCE+C_COLOR_ENDC+"\n"+
-                        C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tВозвращает сущности и их источники\n"+
-                        C_COLOR_BOLD+"Аргументы:"+C_COLOR_ENDC+"\n\t"+
+                        C_COLOR_BOLD+"Description:"+C_COLOR_ENDC+"\n\tGets entities and their sources\n"+
+                        C_COLOR_BOLD+"Arguments:"+C_COLOR_ENDC+"\n\t"+
                         C_COLOR_OKCYAN+C_ID_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_GET_ENTITY_SOURCE).get(C_ID_CONSOLE_ARG).get(C_DESC)+"\n\t"+
                         C_COLOR_OKCYAN+C_NAME_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_GET_ENTITY_SOURCE).get(C_NAME_CONSOLE_ARG).get(C_DESC)+"\n\t"+
                         C_COLOR_OKCYAN+C_SOURCE_ID_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_GET_ENTITY_SOURCE).get(C_SOURCE_ID_CONSOLE_ARG).get(C_DESC),
     C_ADD_ENTITY:"\n"+C_COLOR_HEADER+C_ADD_ENTITY+C_COLOR_ENDC+"\n"+
-                        C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tДобавляет сущность в ХД на основе заданных параметров. Генерирует таблицы и ETL.\n"+
-                        C_COLOR_BOLD+"Аргументы:"+C_COLOR_ENDC+"\n\t"+
+                        C_COLOR_BOLD+"Description:"+C_COLOR_ENDC+"\n\tCreates an entity based on the given parameters. Generates tables and ETL.\n"+
+                        C_COLOR_BOLD+"Arguments:"+C_COLOR_ENDC+"\n\t"+
                         C_COLOR_OKCYAN+C_ID_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ADD_ENTITY).get(C_FILE_CONSOLE_ARG).get(C_DESC),
     C_ALTER_ENTITY:"\n"+C_COLOR_HEADER+C_ALTER_ENTITY+C_COLOR_ENDC+"\n"+
-                    C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tИзменяет созданную ранее сущность.\n"+
-                    C_COLOR_BOLD+"Аргументы:"+C_COLOR_ENDC+"\n\t"+
+                    C_COLOR_BOLD+"Description:"+C_COLOR_ENDC+"\n\tModifies a previously created entity\n"+
+                    C_COLOR_BOLD+"Arguments:"+C_COLOR_ENDC+"\n\t"+
                     C_COLOR_OKCYAN+C_ID_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ALTER_ENTITY).get(C_ID_CONSOLE_ARG).get(C_DESC)+"\n\t"+
                     C_COLOR_OKCYAN+C_NAME_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ALTER_ENTITY).get(C_NAME_CONSOLE_ARG).get(C_DESC)+"\n\t"+
                     C_COLOR_OKCYAN+C_DESC_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ALTER_ENTITY).get(C_DESC_CONSOLE_ARG).get(C_DESC),
     C_DROP_ENTITY:"\n"+C_COLOR_HEADER+C_DROP_ENTITY+C_COLOR_ENDC+"\n"+
-                   C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tУдаляет сущность.\n"+
-                   C_COLOR_BOLD+"Аргументы:"+C_COLOR_ENDC+"\n\t"+
+                   C_COLOR_BOLD+"Description:"+C_COLOR_ENDC+"\n\tDrops an entity\n"+
+                   C_COLOR_BOLD+"Arguments:"+C_COLOR_ENDC+"\n\t"+
                    C_COLOR_OKCYAN+C_ID_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_DROP_ENTITY).get(C_ID_CONSOLE_ARG).get(C_DESC),
     C_START_JOB:"\n"+C_COLOR_HEADER+C_START_JOB+C_COLOR_ENDC+"\n"+
-                C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tЗапускает загрузку данных в ХД\n"+
-                C_COLOR_BOLD+"Аргументы:"+C_COLOR_ENDC+"\n\t"+
+                C_COLOR_BOLD+"Description:"+C_COLOR_ENDC+"\n\tRuns the data upload\n"+
+                C_COLOR_BOLD+"Arguments:"+C_COLOR_ENDC+"\n\t"+
                 C_COLOR_OKCYAN+C_ENTITY_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_START_JOB).get(C_ENTITY_CONSOLE_ARG).get(C_DESC)+"\n\t"+
                 C_COLOR_OKCYAN+C_ENTITY_ATTR_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_START_JOB).get(C_ENTITY_ATTR_CONSOLE_ARG).get(C_DESC),
     C_GET_LAST_ETL:"\n"+C_COLOR_HEADER+C_GET_LAST_ETL+C_COLOR_ENDC+"\n"+
-                   C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tВыдает информацию о последнем ETL",
+                   C_COLOR_BOLD+"Description:"+C_COLOR_ENDC+"\n\tGets the last ETL-process log",
     C_GET_ETL_HIST:"\n"+C_COLOR_HEADER+C_GET_ETL_HIST+C_COLOR_ENDC+"\n"+
-                  C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tВыдает логи по ETL-процессу\n"+
-                  C_COLOR_BOLD+"Аргументы:"+C_COLOR_ENDC+"\n\t"+
+                  C_COLOR_BOLD+"Description:"+C_COLOR_ENDC+"\n\tGets the previous ETL-processes logs\n"+
+                  C_COLOR_BOLD+"v:"+C_COLOR_ENDC+"\n\t"+
                   C_COLOR_OKCYAN+C_DATE_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_GET_ETL_HIST).get(C_DATE_CONSOLE_ARG).get(C_DESC)+"\n\t"+
                   C_COLOR_OKCYAN+C_ETL_ID_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_GET_ETL_HIST).get(C_ETL_ID_CONSOLE_ARG).get(C_DESC),
     C_GET_ETL_DETAIL:"\n"+C_COLOR_HEADER+C_GET_ETL_DETAIL+C_COLOR_ENDC+"\n"+
-                      C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tВыдает детализацию по ETL-процессу\n"+
-                      C_COLOR_BOLD+"Аргументы (хотя бы один должен быть заполнен):"+C_COLOR_ENDC+"\n\t"+
+                      C_COLOR_BOLD+"Description:"+C_COLOR_ENDC+"\n\tGets the detailed ETL-process logs\n"+
+                      C_COLOR_BOLD+"Arguments (at least one argument must be specify):"+C_COLOR_ENDC+"\n\t"+
                       C_COLOR_OKCYAN+C_ID_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_GET_ETL_DETAIL).get(C_ID_CONSOLE_ARG).get(C_DESC)+"\n\t"+
                       C_COLOR_OKCYAN+C_ETL_ID_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_GET_ETL_DETAIL).get(C_ETL_ID_CONSOLE_ARG).get(C_DESC),
     C_EXIT:"\n"+C_COLOR_HEADER+C_EXIT+C_COLOR_ENDC+"\n"+
-           C_COLOR_BOLD+"Описание:"+C_COLOR_ENDC+"\n\tЗавершает работу"
+           C_COLOR_BOLD+"Description:"+C_COLOR_ENDC+"\n\tEnds the program"
 }
 
 # шаблон json для создания сущности
