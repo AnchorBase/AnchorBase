@@ -1,5 +1,4 @@
-import sys
-import SystemObjects
+
 from SystemObjects import *
 class File:
     """

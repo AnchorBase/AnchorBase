@@ -3,7 +3,6 @@ import psycopg2
 import psycopg2.extensions
 from psycopg2 import extras
 from Constants import *
-import sys
 
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
 

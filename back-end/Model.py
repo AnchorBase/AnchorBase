@@ -4,7 +4,6 @@ import json
 from DWH import *
 from collections import Counter
 from Constants import *
-import SystemObjects
 from SystemObjects import *
 
 class Model:
