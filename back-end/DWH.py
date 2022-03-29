@@ -1,7 +1,6 @@
 """
 Работа с ХД
 """
-import sys
 import dwh_config
 import Driver
 import Postgresql as pgsql

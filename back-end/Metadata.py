@@ -1,12 +1,10 @@
 # coding=utf-8
 import Postgresql as pgsql
-import sys
 import json
 from Constants import *
 import metadata_config
 import uuid
 import copy
-import SystemObjects
 from SystemObjects import *
 
 

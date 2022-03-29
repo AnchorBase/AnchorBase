@@ -1,7 +1,5 @@
 import dwh_config
-import sys
 from Constants import *
-import SystemObjects
 from SystemObjects import *
 
 C_DWH_TYPE=dwh_config.dbms_type
