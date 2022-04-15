@@ -3131,7 +3131,7 @@ class Package(Job):
         # выполняем запрос в ХД
         if self.type==C_QUEUE_ETL: # сперва очищаем таблицу источник
             l_sql=get_source_table_delete_sql(p_source_table=self.source_table)
-            l_result=Connection().sql_exec(p_sql=l_sql, p_result=0)
+            Connection().sql_exec(p_sql=l_sql, p_result=0)
         if not l_result[1]:
             l_result=Connection().sql_exec(p_sql=l_etl, p_result=0, p_vl=l_attribute_value[0])
         # логируем
@@ -3163,6 +3163,8 @@ class Package(Job):
             for i_attr in self.source_table.source_attribute:
                 if i_attr.attribute_type==C_QUEUE_ATTR:
                     l_attribute_list.append(i_attr.source_name)
+            # sort list of attributes
+            l_attribute_list.sort()
             l_data_frame=self.source_table.source.get_response(
                 p_table=self.source_table.name,
                 p_attribute_list=l_attribute_list

@@ -2,6 +2,7 @@ import OData
 import json
 from Constants import *
 from SystemObjects import *
+import datetime
 
 def get_response(
         p_server: str,
@@ -45,17 +46,21 @@ def get_response(
     l_connection_string=l_connection_string+C_1C_DATA_DATA_FORMAT+l_select_string
     #get the data using OData
     l_response=OData.get_response(p_connection_string=l_connection_string, p_user=p_user, p_pwrd=p_password, p_https=p_https)
-    l_data=json.loads(l_response)
+    if l_response[1]:
+        return None, l_response[1]
+    l_data=json.loads(l_response[0])
     # if error, return error
     if l_data.get('odata.error'):
         l_error=l_data.get('odata.error').get('message').get('value')
         return l_query_output, l_error
     else:
-        # transform the list of dicts into list of tuples
+        # transform the list of dicts into list of tuples and add current_timestamp value
         l_data=l_data.get('value')
         for index, i_row in enumerate(l_data):
-            l_transform_row=tuple(i_row.values())
-            l_data[index]=l_transform_row
+            l_row_list=list(i_row.values())
+            l_row_list.append(str(datetime.datetime.now()))
+            l_row_tuple=tuple(l_row_list)
+            l_data[index]=l_row_tuple
         return l_data, None
 
 def get_onec_select(p_attribute_list: list) -> str:
