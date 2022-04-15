@@ -23,7 +23,7 @@
 # - Атрибуты таблиц ХД
 # - Настройки системы
 # - Метаданные
-# - СУБД
+# - Источники
 # - Типы данных
 # - Цвета шрифтов для консоли
 # - Команды консоли
@@ -172,9 +172,9 @@ C_META_CONFIG="metadata_config.py" # наименование файла с па
 C_DBMS_TYPE="dbms_type" # тип СУБД
 C_PAGE_SIZE=10000 # количество строк для вставки батчом
 C_PARALLEL_OBJECT_NUM=20 # количество объектов, обрабатываемых параллельно
-C_1C_DATA_DATA_FORMAT="&$format=json" # string with data format for odata connection
+C_1C_DATA_DATA_FORMAT="?$format=json" # string with data format for odata connection
 C_1C_CONNECTION_STRING="odata/standard.odata" # connection string of 1C
-C_1C_SELECT_COMMAND="?$select=" # string for selecting particular attributes
+C_1C_SELECT_COMMAND="&$select=" # string for selecting particular attributes
 #================================
 #  Метаданные
 #================================
@@ -420,16 +420,28 @@ C_META_ATTRIBUTES = { # таблица метаданных и необходи�
     C_ETL:C_ETL_META_ATTRIBUTES
 }
 #================================
-#  СУБД
+#  Источники
 #================================
 C_MSSQL = "mssql"  # MSSQL
 C_POSTGRESQL = "postgresql" # PostgreSQL
 C_MYSQL ="mysql" # MySQL
+C_1C="1c" #1C
+# source types
 C_AVAILABLE_SOURCE_LIST = [
     C_MSSQL,
     C_POSTGRESQL,
-    C_MYSQL
+    C_MYSQL,
+    C_1C
 ] # фиксированный список СУБД, с которым AnchorBase умеет работать как с источником
+# source types
+C_DBMS="dbms"
+C_WEB="web"
+C_SOURCE_TYPE={
+    C_MSSQL:C_DBMS,
+    C_MYSQL:C_DBMS,
+    C_POSTGRESQL:C_DBMS,
+    C_1C:C_WEB
+}
 C_AVAILABLE_DWH_LIST = [C_POSTGRESQL] # фиксированный список СУБД, с которым AnchorBase умеет работать как с DWH
 C_CNCT_PARAMS = [  # фиксированный список параметров подключения
     C_SERVER,

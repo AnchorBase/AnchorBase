@@ -3,6 +3,7 @@ import Metadata
 import MSSQL as mssql
 import Postgresql as pgsql
 import MySQL as mysql
+import OneC as onec
 import sys
 from Constants import *
 import SystemObjects
@@ -171,6 +172,13 @@ class Source:
         return self.source_meta_attrs.get(C_SOURCE_ID, None) or self._max_source_id
 
     @property
+    def source_type(self)->str:
+        """
+        Source type
+        """
+        return C_SOURCE_TYPE.get(self.type)
+
+    @property
     def type(self):
         """
         Тип источника
@@ -225,12 +233,14 @@ class Source:
             return pgsql
         elif self.type==C_MYSQL:
             return mysql
+        elif self.type==C_1C:
+            return onec
 
     def sql_exec(self, p_sql: str):
         """
-        Выполняет запросы на источнике
+        Execute the SQL-query in the source (only for dbms source)
 
-        :param p_sql: SQL-запрос
+        :param p_sql: SQL-query
         """
         l_result=self.__cnct.sql_exec(
             p_server=self.server,
@@ -243,14 +253,38 @@ class Source:
         )
         return l_result
 
+    def get_response(self, p_table: str =None, p_attribute_list: list =None):
+        """
+        Get the response from the web-server (only for web source)
+
+        :param p_table: table/catalog/entity
+        :param p_attribute_list: List of attributes to get from web source
+        """
+        l_result=self.__cnct.get_response(
+            p_server=self.server,
+            p_database=self.database,
+            p_user=self.user,
+            p_password=self.password,
+            p_port=self.port,
+            p_table=p_table,
+            p_attribute_list=p_attribute_list
+        )
+        return l_result
+
+
+
     def connection_checker(self):
         """
-        Проверяет подключение к источнику
+        Check the source connection
         """
-        # выполняет простой запрос на источнике
-        l_rslt=self.sql_exec(
-            p_sql="SELECT 1;"
-        )
+        l_rslt=None
+        if self.source_type==C_DBMS: # if the source is dbms
+            # execute sql-query in the source
+            l_rslt=self.sql_exec(
+                p_sql="SELECT 1;"
+            )
+        if self.source_type==C_WEB: # if the source is web
+            l_rslt=self.get_response()
         if l_rslt[1]:
             AbaseError(p_error_text=l_rslt[1], p_module="Source",
                        p_class="Source", p_def="type").raise_error()
