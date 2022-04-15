@@ -1320,6 +1320,12 @@ class _DWHObject:
                             C_FK:self.fk
                         }
                     )
+            if self.source_name:
+                l_json.update(
+                    {
+                        C_NAME:self.source_name,
+                    }
+                )
 
 
         # атрибуты queue таблицы
@@ -1657,6 +1663,17 @@ class Attribute(_DWHObject):
         else:
             return self.object_attrs_meta.get(C_FK,None)
 
+    @property
+    def source_name(self) -> str:
+        """
+        Attribute name in source. \n
+        The difference between name and source_name - name has only lower letters, source_name can have upper letters
+        """
+        l_name=None
+        if self._name is not None:
+            l_name=self._name
+        return l_name or self.object_attrs_meta.get(C_NAME,None)
+
     def __source_attribute_exist_checker(self):
         """
         Проверяет наличие атрибута в таблице источнике
@@ -1830,11 +1847,11 @@ class SourceTable(_DWHObject):
     @property
     def name(self):
         """
-        Наименование таблицы источника
+        Name of source table
         """
         l_name=None
         if self._name is not None:
-            l_name=self._name.lower()
+            l_name=self._name
         return l_name or self.object_attrs_meta.get(C_SOURCE_NAME,None)
 
     @name.setter
@@ -1845,20 +1862,21 @@ class SourceTable(_DWHObject):
     @property
     def schema(self):
         """
-        Наименование схемы таблицы источника
+        Source table layer name
         """
         l_schema=None
         if self._schema is not None:
             l_schema=self._schema.lower()
-        return l_schema or self.object_attrs_meta.get(C_SCHEMA,None)
+        return l_schema or self.object_attrs_meta.get(C_SCHEMA,None) or '' # <- if schema is none
 
 
     @property
     def queue_name(self):
         """
-        Наименование таблицы queue
+        Name of source table in AnchorBase DWH (STG-layer)
         """
-        return self.source.name.replace(" ","_") +"_" + self.schema +"_" + self.name +"_" + C_QUEUE
+        l_schema="_"+self.schema if self.schema else ''
+        return self.source.name.replace(" ","_") +l_schema+"_" + self.name.lower() +"_" + C_QUEUE
 
     @property
     def increment(self):
@@ -1902,7 +1920,7 @@ class SourceTable(_DWHObject):
     @property
     def source_table_sql(self):
         """
-        SQL-запрос захвата данных с источника
+        SQL-query for selecting data from source (only for DBMS source)
         """
         if self.source.type in [C_MYSQL]: # double quotes with name of database objects are unacceptable in these DBMS
             l_dbl_qts=''
@@ -1925,7 +1943,8 @@ class SourceTable(_DWHObject):
             l_increment_attr_sql=self.source.current_timestamp_sql+" AS update_timestamp"
         if self.last_increment:
             l_increment_sql="\nWHERE "+l_dbl_qts+self.increment.name+l_dbl_qts+">CAST('"+self.last_increment+"' AS "+l_timestamp_type+")"
-        l_sql="SELECT\n"+l_attribute_sql+"\n"+l_increment_attr_sql+"\nFROM "+l_dbl_qts+self.schema+l_dbl_qts+"."+l_dbl_qts+self.name+l_dbl_qts\
+        l_schema=l_dbl_qts+self.schema+l_dbl_qts+"." if self.schema else ''
+        l_sql="SELECT\n"+l_attribute_sql+"\n"+l_increment_attr_sql+"\nFROM "+l_schema+l_dbl_qts+self.name+l_dbl_qts\
               +l_increment_sql+";"
         return l_sql
 
@@ -3129,26 +3148,30 @@ class Package(Job):
 
     def get_source_data(self):
         """
-        Получает данные с источника и преобразует их для вставки в queue
+        Get the data from the source
         """
-        # захват данных с источника
-        l_data_frame=self.source_table.source.sql_exec(
-            p_sql=self.source_table.source_table_sql
-        )
-        if l_data_frame[1]: # если возникла ошибка
+        # get the data from dbms source
+        l_data_frame=None
+        if self.source_table.source.source_type==C_DBMS:
+            l_data_frame=self.source_table.source.sql_exec(
+                p_sql=self.source_table.source_table_sql
+            )
+
+        elif self.source_table.source.source_type==C_WEB:
+            l_attribute_list=[]
+            # get the list of source table attributes
+            for i_attr in self.source_table.source_attribute:
+                if i_attr.attribute_type==C_QUEUE_ATTR:
+                    l_attribute_list.append(i_attr.source_name)
+            l_data_frame=self.source_table.source.get_response(
+                p_table=self.source_table.name,
+                p_attribute_list=l_attribute_list
+            )
+        if l_data_frame[1]: # if error occurs
             return None, l_data_frame[1]
         else:
-            # l_df_len=l_data_frame[0].__len__()
-            # # разбиваем на партиции по n строк
-            # l_prt_num=math.ceil(l_df_len/C_ROW_NUM)
-            # l_insert_data_frame=""
-            # for i_prt in range(l_prt_num):
-            #     l_insert_data_frame+=get_values_sql(
-            #         p_data_frame=l_data_frame[0][i_prt*C_ROW_NUM:(i_prt+1)*C_ROW_NUM], # берем только строки в диапазоне
-            #         p_cast_dict=self.source_table.cast_script,
-            #         p_etl_id=self.etl_id
-            #     )+",\n" # data frame для вставки в таблицу
             return l_data_frame[0], None
+
 
     def __add_package_to_job(self):
         """

@@ -217,7 +217,7 @@ C_META_TABLES = [ # список таблиц метаданных (для пр�
     C_QUEUE_INCREMENT
 ]
 # АТРИБУТЫ МЕТАДАННЫХ
-C_SOURCE_NAME = C_SOURCE+"_"+C_NAME # наименование таблицы на источнике
+C_SOURCE_NAME = C_SOURCE+"_"+C_NAME # наименование таблицы/атрибута на источнике
 C_SOURCE_ID="source_id"
 C_ATTRIBUTE_NK = "column_nk"
 C_LINK_ATTRIBUTE_NK = "link_column_nk"
@@ -267,7 +267,7 @@ C_ENTITY_COLUMN_META_ATTRIBUTES = { # необходимые атрибуты а
 C_QUEUE_META_ATTRIBUTES = { # необходимые атрибуты таблицы очереди
     C_NAME:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:1},
     C_SOURCE_NAME:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:0},
-    C_SCHEMA:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:0},
+    C_SCHEMA:{C_NOT_NULL:0,C_TYPE_VALUE:"str",C_PK:0},
     C_SOURCE:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:0},
     C_QUEUE_COLUMN:{C_NOT_NULL:1,C_TYPE_VALUE:"list",C_PK:0},
     C_INCREMENT:{C_NOT_NULL:0,C_TYPE_VALUE:"str",C_PK:0}

@@ -56,7 +56,7 @@ def get_response(
         for index, i_row in enumerate(l_data):
             l_transform_row=tuple(i_row.values())
             l_data[index]=l_transform_row
-        return l_data
+        return l_data, None
 
 def get_onec_select(p_attribute_list: list) -> str:
     """
