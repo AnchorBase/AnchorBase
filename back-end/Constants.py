@@ -172,7 +172,9 @@ C_META_CONFIG="metadata_config.py" # наименование файла с па
 C_DBMS_TYPE="dbms_type" # тип СУБД
 C_PAGE_SIZE=10000 # количество строк для вставки батчом
 C_PARALLEL_OBJECT_NUM=20 # количество объектов, обрабатываемых параллельно
-C_ODATA_DATA_FORMAT="?$format=json" # string with data format for odata connection
+C_1C_DATA_DATA_FORMAT="&$format=json" # string with data format for odata connection
+C_1C_CONNECTION_STRING="odata/standard.odata" # connection string of 1C
+C_1C_SELECT_COMMAND="?$select=" # string for selecting particular attributes
 #================================
 #  Метаданные
 #================================

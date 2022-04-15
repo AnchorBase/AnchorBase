@@ -3,21 +3,25 @@ from requests.auth import HTTPBasicAuth
 import json
 from Constants import *
 from SystemObjects import *
+import sys
 
 
-def get_data(
+def get_response(
         p_connection_string,
         p_user: str =None,
-        p_pwrd: str =None
+        p_pwrd: str =None,
+        p_https: int =0
 ) -> dict:
     """
-    Get data from web using http
+    Get the data from web using http
 
-    :param p_connection_string: connection string
+    :param p_connection_string: connection string (without HTTP|HTTPS://)
     :param p_user: login
     :param p_pwrd: password
+    ;param p_https: 1 - HTTPS, 0 - HTTP
     :return : dict with values
     """
+    l_http="https" if p_https==1 else "http"
     # login and password should be in UTF-8
     l_auth=None
     if p_user or p_pwrd:
@@ -25,8 +29,8 @@ def get_data(
         if p_pwrd:
             p_pwrd=p_pwrd.encode('utf-8')
         l_auth = HTTPBasicAuth(p_user, p_pwrd)
-    # add data format to the end of connection string
-    p_connection_string=p_connection_string+C_ODATA_DATA_FORMAT
+    # add http/https
+    p_connection_string=l_http+"://"+p_connection_string
     # get data from server
     l_response=requests.get(p_connection_string,auth=l_auth)
     # if the 'text' property is none - it's an error
