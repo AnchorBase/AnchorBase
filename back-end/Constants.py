@@ -23,7 +23,7 @@
 # - Атрибуты таблиц ХД
 # - Настройки системы
 # - Метаданные
-# - СУБД
+# - Источники
 # - Типы данных
 # - Цвета шрифтов для консоли
 # - Команды консоли
@@ -172,6 +172,9 @@ C_META_CONFIG="metadata_config.py" # наименование файла с па
 C_DBMS_TYPE="dbms_type" # тип СУБД
 C_PAGE_SIZE=10000 # количество строк для вставки батчом
 C_PARALLEL_OBJECT_NUM=20 # количество объектов, обрабатываемых параллельно
+C_1C_DATA_DATA_FORMAT="?$format=json" # string with data format for odata connection
+C_1C_CONNECTION_STRING="odata/standard.odata" # connection string of 1C
+C_1C_SELECT_COMMAND="&$select=" # string for selecting particular attributes
 #================================
 #  Метаданные
 #================================
@@ -214,7 +217,7 @@ C_META_TABLES = [ # список таблиц метаданных (для пр�
     C_QUEUE_INCREMENT
 ]
 # АТРИБУТЫ МЕТАДАННЫХ
-C_SOURCE_NAME = C_SOURCE+"_"+C_NAME # наименование таблицы на источнике
+C_SOURCE_NAME = C_SOURCE+"_"+C_NAME # наименование таблицы/атрибута на источнике
 C_SOURCE_ID="source_id"
 C_ATTRIBUTE_NK = "column_nk"
 C_LINK_ATTRIBUTE_NK = "link_column_nk"
@@ -264,7 +267,7 @@ C_ENTITY_COLUMN_META_ATTRIBUTES = { # необходимые атрибуты а
 C_QUEUE_META_ATTRIBUTES = { # необходимые атрибуты таблицы очереди
     C_NAME:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:1},
     C_SOURCE_NAME:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:0},
-    C_SCHEMA:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:0},
+    C_SCHEMA:{C_NOT_NULL:0,C_TYPE_VALUE:"str",C_PK:0},
     C_SOURCE:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:0},
     C_QUEUE_COLUMN:{C_NOT_NULL:1,C_TYPE_VALUE:"list",C_PK:0},
     C_INCREMENT:{C_NOT_NULL:0,C_TYPE_VALUE:"str",C_PK:0}
@@ -417,16 +420,28 @@ C_META_ATTRIBUTES = { # таблица метаданных и необходи�
     C_ETL:C_ETL_META_ATTRIBUTES
 }
 #================================
-#  СУБД
+#  Источники
 #================================
 C_MSSQL = "mssql"  # MSSQL
 C_POSTGRESQL = "postgresql" # PostgreSQL
 C_MYSQL ="mysql" # MySQL
+C_1C="1c" #1C
+# source types
 C_AVAILABLE_SOURCE_LIST = [
     C_MSSQL,
     C_POSTGRESQL,
-    C_MYSQL
+    C_MYSQL,
+    C_1C
 ] # фиксированный список СУБД, с которым AnchorBase умеет работать как с источником
+# source types
+C_DBMS="dbms"
+C_WEB="web"
+C_SOURCE_TYPE={
+    C_MSSQL:C_DBMS,
+    C_MYSQL:C_DBMS,
+    C_POSTGRESQL:C_DBMS,
+    C_1C:C_WEB
+}
 C_AVAILABLE_DWH_LIST = [C_POSTGRESQL] # фиксированный список СУБД, с которым AnchorBase умеет работать как с DWH
 C_CNCT_PARAMS = [  # фиксированный список параметров подключения
     C_SERVER,

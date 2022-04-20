@@ -833,21 +833,24 @@ class _SourceParam:
         """
         Схема источника
         """
-        return self._schema.lower()
+        if self._schema:
+            return self._schema
+        else:
+            return ''
 
     @property
     def table(self) -> str:
         """
         Таблица источника
         """
-        return self._table.lower()
+        return self._table
 
     @property
     def column(self) -> str:
         """
         Столбец источника
         """
-        return self._column.lower()
+        return self._column
 
     def __source_param_checker(self):
         """
