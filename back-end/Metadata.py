@@ -278,7 +278,7 @@ class MetaObject:
                       p_def="attrs_checker").raise_error()
             # проверка, что тип данных у атрибутов указан верно
             if type(self._attrs.get(i_attr,None)).__name__!=l_all_attrs_dict.get(i_attr,None).get(C_TYPE_VALUE) and self._attrs.get(i_attr,None) is not None:
-                AbaseError(p_error_text="Attribute value" + str(i_attr) + " " + str(self.uuid) + " is incorrect", p_module="Metadata",
+                AbaseError(p_error_text="Attribute value " + str(i_attr) + " " + str(self.uuid) + " is incorrect", p_module="Metadata",
                       p_class="MetaObject", p_def="attrs_checker").raise_error()
             # проверка на дубль значения атрибута (только у ключевых атрибутов метаданных)
             if l_all_attrs_dict.get(i_attr, None).get(C_PK)==1: # если атрибут ключевой

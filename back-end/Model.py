@@ -843,7 +843,10 @@ class _SourceParam:
         """
         Таблица источника
         """
-        return self._table
+        if self._table:
+            return self._table
+        else:
+            return ''
 
     @property
     def column(self) -> str:
@@ -858,6 +861,7 @@ class _SourceParam:
         """
         self.__source_id_checker()
         self.__table_checker()
+        self.__schema_checker()
         self.__column_checker()
 
 
@@ -881,8 +885,24 @@ class _SourceParam:
         """
         Проверяет таблицу источника
         """
-        if not self.table:
-            AbaseError(p_error_text="Table of source is empty", p_module="Model", p_class="Model",
+        # determine source type
+        l_source=Source(p_id=self.source_id)
+        if l_source.source_type in (C_DBMS, C_WEB):
+            if not self.table:
+                AbaseError(p_error_text="Table of source is empty", p_module="Model", p_class="Model",
+                           p_def="__table_checker").raise_error()
+        elif l_source.source_type in (C_FILE):
+            if self.table:
+                AbaseError(p_error_text="File source doesn't have parameter 'table'", p_module="Model", p_class="Model",
+                           p_def="__table_checker").raise_error()
+
+    def __schema_checker(self):
+        """
+        Check that schema doesn't mention for file source
+        """# determine source type
+        l_source=Source(p_id=self.source_id)
+        if l_source.source_type in (C_FILE) and self.schema:
+            AbaseError(p_error_text="File source doesn't have parameter 'schema'", p_module="Model", p_class="Model",
                        p_def="__table_checker").raise_error()
 
     def __column_checker(self):

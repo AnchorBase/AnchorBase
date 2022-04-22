@@ -4,6 +4,7 @@ import MSSQL as mssql
 import Postgresql as pgsql
 import MySQL as mysql
 import OneC as onec
+import Excel as excel
 import sys
 from Constants import *
 import SystemObjects
@@ -24,20 +25,27 @@ class Source:
                  p_user: str =None,
                  p_password: str =None,
                  p_port: int =None,
-                 p_type: str =None
+                 p_type: str =None,
+                 p_file: str =None,
+                 p_worksheet: str =None,
+                 p_header: bool =None,
+                 p_first_row: int =None
     ):
         """
         Конструктор
 
-        :param p_id: id источника
-        :param p_name: наименование источника
-        :param p_desc: описание источника
-        :param p_server: сервер
-        :param p_database: бд
-        :param p_user: логин
-        :param p_password: пароль
-        :param p_port: порт
-        :param p_type: тип источника
+        :param p_id: source id
+        :param p_name: source name
+        :param p_desc: source description
+        :param p_server: server
+        :param p_database: database
+        :param p_user: login
+        :param p_password: password
+        :param p_port: port
+        :param p_type: source type
+        :param p_file: file (path + name)
+        :param p_worksheet: worksheet (for excel only)
+        :param p_header: there is a header or not
         """
         self._id=p_id
         self._name=p_name
@@ -48,9 +56,14 @@ class Source:
         self._password=p_password
         self._type=p_type
         self._port=p_port
-
+        self._file=p_file
+        self._worksheet=p_worksheet
+        self._header=p_header
+        self._first_row=p_first_row
         # проверяем, есть ли указанный id и определяем атрибуты из метаданных
         self.source_meta_attrs=self.__source_meta_attrs()
+        # проверяет полноту указанных атрибутов в соответствии с типом источника
+        self.__necessary_cnct_params_check()
         # максимальный source_id
         self._max_source_id=self.__max_source_id()
 
@@ -118,6 +131,11 @@ class Source:
         """
         return self._server or self.source_meta_attrs.get(C_SERVER, None)
 
+    @server.setter
+    def server(self, p_new_server: str):
+        self._server=p_new_server
+        self.source_meta_attrs.pop(C_SERVER, None)
+
     @property
     def database(self):
         """
@@ -125,12 +143,22 @@ class Source:
         """
         return self._database or self.source_meta_attrs.get(C_DATABASE, None)
 
+    @database.setter
+    def database(self, p_new_database: str):
+        self._database=p_new_database
+        self.source_meta_attrs.pop(C_DATABASE, None)
+
     @property
     def user(self):
         """
         Логин
         """
         return self._user or self.source_meta_attrs.get(C_USER, None)
+
+    @user.setter
+    def user(self, p_new_user: str):
+        self._user=p_new_user
+        self.source_meta_attrs.pop(C_USER, None)
 
     @property
     def password(self):
@@ -142,12 +170,22 @@ class Source:
         else:
             return self._password or self.source_meta_attrs.get(C_PASSWORD, None)
 
+    @password.setter
+    def password(self, p_new_password: str):
+        self._password=p_new_password
+        self.source_meta_attrs.pop(C_PASSWORD, None)
+
     @property
     def port(self):
         """
         Порт
         """
         return self._port or self.source_meta_attrs.get(C_PORT, None)
+
+    @port.setter
+    def port(self, p_new_port: str):
+        self._port=p_new_port
+        self.source_meta_attrs.pop(C_PORT, None)
 
     def __max_source_id(self) -> int:
         """
@@ -187,6 +225,72 @@ class Source:
             AbaseError(p_error_text="The source is incorrect: " + self._type, p_module="Source",
                        p_class="Source", p_def="type").raise_error()
         return self._type or self.source_meta_attrs.get(C_TYPE_VALUE, None)
+
+    @property
+    def file(self) -> str:
+        """
+        File (path + name)
+        """
+        l_file=None
+        if self._file is not None:
+            l_file=self._file
+        return l_file or self.source_meta_attrs.get(C_FILE,None)
+
+    @file.setter
+    def file(self, p_new_file: str):
+        self._file=p_new_file
+        self.source_meta_attrs.pop(C_FILE, None)
+
+    @property
+    def worksheet(self) -> str:
+        """
+        Worksheet (for excel only)
+        """
+        l_worksheet=None
+        if self._worksheet is not None:
+            l_worksheet=self._worksheet
+        return l_worksheet or self.source_meta_attrs.get(C_WORKSHEET,None)
+
+    @worksheet.setter
+    def worksheet(self, p_new_worksheet: str):
+        self._worksheet=p_new_worksheet
+        self.source_meta_attrs.pop(C_WORKSHEET, None)
+
+    @property
+    def header(self) -> bool:
+        """
+        Sign that table header exists
+        """
+        l_header=None
+        if self._header is not None:
+            if str(self._header).lower()=='false':
+                l_header=False
+            elif str(self._header).lower()=='true':
+                l_header=True
+            else:
+                AbaseError(p_error_text="Unexpected value of header parameter (bool type)", p_module="Source",
+                           p_class="Source", p_def="header").raise_error()
+        return l_header if l_header is not None else self.source_meta_attrs.get(C_HEADER,None)
+
+    @header.setter
+    def header(self, p_new_header: bool):
+        self._header=p_new_header
+        self.source_meta_attrs.pop(C_HEADER, None)
+
+    @property
+    def first_row(self) -> int:
+        """
+        Number of a first row
+        """
+        l_first_row=None
+        if self._first_row is not None:
+            l_first_row=int(self._first_row)
+        return l_first_row or self.source_meta_attrs.get(C_FIRST_ROW,None)
+
+    @first_row.setter
+    def first_row(self, p_first_row: int):
+        self._first_row=p_first_row
+        self.source_meta_attrs.pop(C_FIRST_ROW, None)
 
     # @property
     #     # def __source_objects(self):
@@ -235,6 +339,8 @@ class Source:
             return mysql
         elif self.type==C_1C:
             return onec
+        elif self.type==C_EXCEL:
+            return excel
 
     def sql_exec(self, p_sql: str):
         """
@@ -271,6 +377,21 @@ class Source:
         )
         return l_result
 
+    def get_data(self, p_attribute_list: list =None):
+        """
+        Get the data from a file
+
+        :param p_attribute_list: list of columns
+        """
+        l_result=self.__cnct.get_data(
+            p_file=self.file,
+            p_worksheet=self.worksheet,
+            p_columns=p_attribute_list,
+            p_header=self.header,
+            p_first_row=self.first_row
+        )
+        return l_result
+
 
 
     def connection_checker(self):
@@ -285,6 +406,8 @@ class Source:
             )
         if self.source_type==C_WEB: # if the source is web
             l_rslt=self.get_response()
+        if self.source_type==C_FILE: # if the source is file
+            l_rslt=self.get_data()
         if l_rslt[1]:
             AbaseError(p_error_text=l_rslt[1], p_module="Source",
                        p_class="Source", p_def="type").raise_error()
@@ -293,26 +416,42 @@ class Source:
     @property
     def __meta_obj(self):
         """
-        Объект метаданных
+        Source metadata object
         """
-        l_source_meta_obj=Metadata.MetaObject(
-            p_type=C_SOURCE_META,
-            p_attrs={
-                C_SERVER:self.server,
-                C_DATABASE:self.database,
-                C_USER:self.user,
-                C_PASSWORD:self.password,
-                C_PORT:self.port,
-                C_TYPE_VALUE:self.type,
-                C_NAME:self.name,
-                C_DESC:self.description,
-                C_SOURCE_ID:self.source_id
-            },
-            p_uuid=self._id
-        )
+        l_source_meta_obj=None
+        if self.type in (C_MSSQL, C_MYSQL, C_POSTGRESQL, C_1C):
+            l_source_meta_obj=Metadata.MetaObject(
+                p_type=C_SOURCE_META,
+                p_attrs={
+                    C_SERVER:self.server,
+                    C_DATABASE:self.database,
+                    C_USER:self.user,
+                    C_PASSWORD:self.password,
+                    C_PORT:self.port,
+                    C_TYPE_VALUE:self.type,
+                    C_NAME:self.name,
+                    C_DESC:self.description,
+                    C_SOURCE_ID:self.source_id
+                },
+                p_uuid=self._id
+            )
+        elif self.type in (C_EXCEL):
+            l_source_meta_obj=Metadata.MetaObject(
+                p_type=C_SOURCE_META,
+                p_attrs={
+                    C_FILE:self.file,
+                    C_WORKSHEET:self.worksheet,
+                    C_HEADER:self.header,
+                    C_FIRST_ROW: self.first_row,
+                    C_TYPE_VALUE:self.type,
+                    C_NAME:self.name,
+                    C_DESC:self.description,
+                    C_SOURCE_ID:self.source_id
+                },
+                p_uuid=self._id
+            )
         # проставляем id источника
         self.id=l_source_meta_obj.uuid
-
         return l_source_meta_obj
 
     def create_source(self):
@@ -349,6 +488,21 @@ class Source:
         Скрипт текущей даты и времени
         """
         return self.__cnct.C_CURRENT_TIMESTAMP_SQL
+
+    def __necessary_cnct_params_check(self):
+        """
+        Check that all necessary connection parameters are mentioned
+
+        :raises error: if not all connection parameters are mentioned
+        """
+        if self.type in (C_MSSQL, C_MYSQL, C_POSTGRESQL, C_1C):
+            if not self.server or not self.database or not self.port:
+                AbaseError(p_error_text="Incomplete list of connection parameters", p_module="Source",
+                           p_class="Source", p_def="__necessary_cnct_params_check").raise_error()
+        elif self.type in (C_EXCEL):
+            if not self.file:
+                AbaseError(p_error_text="Incomplete list of connection parameters", p_module="Source",
+                           p_class="Source", p_def="__necessary_cnct_params_check").raise_error()
 
 
 

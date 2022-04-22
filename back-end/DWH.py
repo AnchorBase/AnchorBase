@@ -1875,8 +1875,9 @@ class SourceTable(_DWHObject):
         """
         Name of source table in AnchorBase DWH (STG-layer)
         """
-        l_schema="_"+self.schema if self.schema else ''
-        return self.source.name.replace(" ","_") +l_schema+"_" + self.name.lower() +"_" + C_QUEUE
+        l_schema="_"+self.schema.lower() if self.schema else ''
+        l_name="_"+self.name.lower() if self.name else ''
+        return self.source.name.replace(" ","_") +l_schema + l_name +"_" + C_QUEUE
 
     @property
     def increment(self):
@@ -2923,7 +2924,8 @@ class Job(_DWHObject):
                 p_job=self
             )
             l_package.start_etl()
-            print("\r"+"("+i_source_table.source.name+") "+i_source_table.name+" : "+self.__status_color(l_package.status))
+            l_source_table_name='' if i_source_table.source.source_type in (C_FILE) else i_source_table.name
+            print("\r"+"("+i_source_table.source.name+") "+l_source_table_name+" : "+self.__status_color(l_package.status))
 
     def idmap_load(self, p_idmap: list):
         """
@@ -3157,7 +3159,7 @@ class Package(Job):
                 p_sql=self.source_table.source_table_sql
             )
 
-        elif self.source_table.source.source_type==C_WEB:
+        elif self.source_table.source.source_type in (C_WEB, C_FILE):
             l_attribute_list=[]
             # get the list of source table attributes
             for i_attr in self.source_table.source_attribute:
@@ -3165,10 +3167,15 @@ class Package(Job):
                     l_attribute_list.append(i_attr.source_name)
             # sort list of attributes
             l_attribute_list.sort()
-            l_data_frame=self.source_table.source.get_response(
-                p_table=self.source_table.name,
-                p_attribute_list=l_attribute_list
-            )
+            if self.source_table.source.source_type==C_WEB:
+                l_data_frame=self.source_table.source.get_response(
+                    p_table=self.source_table.name,
+                    p_attribute_list=l_attribute_list
+                )
+            elif self.source_table.source.source_type==C_FILE:
+                l_data_frame=self.source_table.source.get_data(
+                    p_attribute_list=l_attribute_list
+                )
         if l_data_frame[1]: # if error occurs
             return None, l_data_frame[1]
         else:

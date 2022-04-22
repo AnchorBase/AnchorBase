@@ -130,19 +130,25 @@ def __command_exec(p_command: str, p_arg: dict =None, p_help_command: str =None)
             p_user=p_arg.get(C_USER_CONSOLE_ARG),
             p_password=p_arg.get(C_PASSWORD_CONSOLE_ARG),
             p_port=p_arg.get(C_PORT_CONSOLE_ARG),
-            p_type=p_arg.get(C_TYPE_CONSOLE_ARG)
+            p_type=p_arg.get(C_TYPE_CONSOLE_ARG),
+            p_file=p_arg.get(C_FILE_CONSOLE_ARG),
+            p_first_row=p_arg.get(C_FIRST_ROW_CONSOLE_ARG),
+            p_header=p_arg.get(C_HEADER_CONSOLE_ARG),
+            p_worksheet=p_arg.get(C_WORKSHEET_CONSOLE_ARG)
         )
     elif p_command==C_ALTER_SOURCE:
         l_json=update_source(
             p_id=p_arg.get(C_ID_CONSOLE_ARG),
-            p_name=p_arg.get(C_NAME_CONSOLE_ARG),
             p_desc=p_arg.get(C_DESC_CONSOLE_ARG),
             p_server=p_arg.get(C_SERVER_CONSOLE_ARG),
             p_database=p_arg.get(C_DATABASE_CONSOLE_ARG),
             p_user=p_arg.get(C_USER_CONSOLE_ARG),
             p_password=p_arg.get(C_PASSWORD_CONSOLE_ARG),
             p_port=p_arg.get(C_PORT_CONSOLE_ARG),
-            p_type=p_arg.get(C_TYPE_CONSOLE_ARG)
+            p_file=p_arg.get(C_FILE_CONSOLE_ARG),
+            p_first_row=p_arg.get(C_FIRST_ROW_CONSOLE_ARG),
+            p_header=p_arg.get(C_HEADER_CONSOLE_ARG),
+            p_worksheet=p_arg.get(C_WORKSHEET_CONSOLE_ARG)
         )
     elif p_command==C_GET_SOURCE_TYPE:
         l_json=get_source_type()

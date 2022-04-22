@@ -41,9 +41,9 @@ def get_source(p_source_name: str =None, p_source_id: str =None):
                 C_ID:str(i_source.id),
                 C_NAME:i_source.name,
                 C_DESC:i_source.description,
-                C_SERVER:i_source.server,
-                C_DATABASE:i_source.database,
-                C_PORT:i_source.port,
+                C_SERVER+"/"+C_FILE:i_source.server or i_source.file,
+                C_DATABASE+"/"+C_WORKSHEET:i_source.database or i_source.worksheet,
+                C_PORT+"/"+C_FIRST_ROW+"-"+C_HEADER:i_source.port or str(i_source.first_row or 1)+"-"+str(i_source.header if i_source.header else 'False'),
                 C_USER:i_source.user,
                 C_PASSWORD:i_source.password,
                 C_SOURCE_ID:i_source.source_id
@@ -59,39 +59,70 @@ def get_source(p_source_name: str =None, p_source_id: str =None):
     except Exception as e:
         return _JsonOutput(p_json_object=None, p_error=e.args[0]).body
 
-def add_source(p_type: str, p_name: str, p_server: str, p_database: str, p_user: str, p_password: str, p_port: int, p_desc: str =None):
+def add_source(
+        p_type: str,
+        p_name: str,
+        p_server: str =None,
+        p_database: str =None,
+        p_file: str =None,
+        p_worksheet: str =None,
+        p_user: str =None,
+        p_password: str =None,
+        p_port: int =None,
+        p_header: bool =None,
+        p_first_row: int =None,
+        p_desc: str =None
+):
+    """
+        Create new source
+
+        :param p_type: source type
+        :param p_name: source name
+        :param p_server: server
+        :param p_database: database
+        :param p_user: login
+        :param p_password: password
+        :param p_port: port
+        :param p_desc: source description
+        :param p_file: file (path + name)
+        :param p_worksheet: worksheet (only for excel)
+        :param p_header: sign of header existing
+        :param p_first_row: number of a first row
+    """
+
     try:
-        """
-        Добавляет новый источник
-    
-        :param p_type: тип источника
-        :param p_name: наименование источника
-        :param p_server: сервер
-        :param p_database: база данных
-        :param p_user: логин
-        :param p_password: пароль
-        :param p_port: порт
-        :param p_desc: описание источника
-        """
-        l_source=Source(
-            p_type=p_type,
-            p_name=p_name,
-            p_server=p_server,
-            p_database=p_database,
-            p_user=p_user,
-            p_password=p_password,
-            p_port=int(p_port),
-            p_desc=p_desc
-        )
+        l_source_category=C_SOURCE_TYPE.get(p_type)
+        l_source=None
+        if l_source_category in (C_DBMS, C_WEB):
+            l_source=Source(
+                p_type=p_type,
+                p_name=p_name,
+                p_server=p_server,
+                p_database=p_database,
+                p_user=p_user,
+                p_password=p_password,
+                p_port=int(p_port),
+                p_desc=p_desc
+            )
+        elif l_source_category in (C_FILE):
+            l_source=Source(
+                p_type=p_type,
+                p_name=p_name,
+                p_desc=p_desc,
+                p_file=p_file,
+                p_worksheet=p_worksheet,
+                p_header=p_header,
+                p_first_row=p_first_row
+            )
         l_source.create_source()
         l_attribute_dict={
             C_TYPE_VALUE:l_source.type,
             C_ID:str(l_source.id),
             C_NAME:l_source.name,
             C_DESC:l_source.description,
-            C_SERVER:l_source.server,
-            C_DATABASE:l_source.database,
-            C_PORT:l_source.port,
+            C_SERVER+"/"+C_FILE:l_source.server or l_source.file,
+            C_DATABASE+"/"+C_WORKSHEET:l_source.database or l_source.worksheet,
+            C_PORT+"/"+C_FIRST_ROW+"-"+C_HEADER:l_source.port or str(l_source.first_row or 1)+"-"+str(l_source.header if l_source.header else 'False'),
             C_USER:l_source.user,
             C_PASSWORD:l_source.password,
             C_SOURCE_ID:l_source.source_id
@@ -103,39 +134,62 @@ def add_source(p_type: str, p_name: str, p_server: str, p_database: str, p_user:
 
 def update_source(
         p_id: str,
-        p_type: str =None,
-        p_name: str =None,
         p_server: str =None,
         p_database: str =None,
         p_user: str =None,
         p_password: str =None,
         p_port: int =None,
-        p_desc: str =None
+        p_desc: str =None,
+        p_file: str =None,
+        p_worksheet: str =None,
+        p_header: bool =None,
+        p_first_row: int =None
 ):
-    try:
-        """
+    """
         Изменяет параметры источника
-    
-        :param p_name: наименование источника
-        :param p_type: тип источника
-        :param p_server: сервер
-        :param p_database: база данных
-        :param p_user: логин
-        :param p_password: пароль
-        :param p_port: порт
-        :param p_desc: описание источника
-        """
+
+        :param p_id: source id
+        :param p_name: new source name
+        :param p_server: new server
+        :param p_database: new database
+        :param p_user: new login
+        :param p_password: new password
+        :param p_port: new port
+        :param p_desc: new source description
+        :param p_file: new file (path + name)
+        :param p_worksheet: new worksheet (only for excel)
+        :param p_header: new sign of header existing
+        :param p_first_row: new number of a first row
+    """
+    try:
+
         l_source=Source(
-            p_id=p_id,
-            p_type=p_type,
-            p_name=p_name,
-            p_server=p_server,
-            p_database=p_database,
-            p_user=p_user,
-            p_password=p_password,
-            p_port=p_port,
-            p_desc=p_desc
+            p_id=p_id
         )
+        if l_source.source_type in (C_DBMS, C_WEB):
+            if p_server:
+                l_source.server=p_server
+            if p_database:
+                l_source.database=p_database
+            if p_user:
+                l_source.user=p_user
+            if p_password:
+                l_source.password=p_password
+            if p_port:
+                l_source.port=p_port
+            if p_desc:
+                l_source.desc=p_desc
+        elif l_source.source_type in (C_FILE):
+            if p_file:
+                l_source.file=p_file
+            if p_worksheet is not None:
+                l_source.worksheet=p_worksheet
+            if p_header is not None:
+                l_source.header=p_header
+            if p_first_row:
+                l_source.first_row=p_first_row
+            if p_desc:
+                l_source.description=p_desc
         l_source.update_source()
         return _JsonOutput(p_json_object=None, p_message="Source has modified successfully").body
     except Exception as e:
@@ -157,12 +211,12 @@ def get_source_type():
 
 
 def get_entity(p_name: str =None, p_id: str =None):
-    try:
-        """
+    """
         Выдает информацию о созданной сущности
-    
+
         :param p_name: наименование сущности
-        """
+    """
+    try:
         l_error=None
         l_json_object=None
         l_id=None

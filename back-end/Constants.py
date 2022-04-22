@@ -57,6 +57,10 @@ C_DESC="description" # описание
 C_ID="id" # идентификатор
 C_DATA="data" # данные
 C_MESSAGE="message" # сообщение
+C_FILE="file"
+C_WORKSHEET="worksheet"
+C_HEADER="header"
+C_FIRST_ROW="first_row"
 #================================
 #  Параметры подключения к СУБД
 #================================
@@ -227,15 +231,19 @@ C_TYPE_VALUE = "type" # тип атрибута (строка, лист)
 # НЕОБХОДИМЫЕ АТРИБУТЫ МЕТАДАННЫХ ДЛЯ КАЖДОЙ ТАБЛИЦЫ МЕТАДАННЫХ
 # !!! Добавить необходимые атрибуты в список C_META_ATTRIBUTES!!!
 C_SOURCE_META_ATTRIBUTES = { # необходимые атрибуты источника
-    C_SERVER:{C_NOT_NULL:1,C_TYPE_VALUE:"str", C_PK:0},
-    C_DATABASE:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:0},
-    C_USER:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:0},
+    C_SERVER:{C_NOT_NULL:0,C_TYPE_VALUE:"str", C_PK:0},
+    C_DATABASE:{C_NOT_NULL:0,C_TYPE_VALUE:"str",C_PK:0},
+    C_USER:{C_NOT_NULL:0,C_TYPE_VALUE:"str",C_PK:0},
     C_PASSWORD:{C_NOT_NULL:0,C_TYPE_VALUE:"str",C_PK:0},
-    C_PORT:{C_NOT_NULL:1,C_TYPE_VALUE:"int",C_PK:0},
+    C_PORT:{C_NOT_NULL:0,C_TYPE_VALUE:"int",C_PK:0},
     C_TYPE_VALUE:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:0},
     C_NAME:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:1},
     C_DESC:{C_NOT_NULL:0,C_TYPE_VALUE:"str",C_PK:0},
-    C_SOURCE_ID:{C_NOT_NULL:1,C_TYPE_VALUE:"int",C_PK:1}
+    C_SOURCE_ID:{C_NOT_NULL:1,C_TYPE_VALUE:"int",C_PK:1},
+    C_FILE:{C_NOT_NULL:0,C_TYPE_VALUE:"str",C_PK:0},
+    C_HEADER:{C_NOT_NULL:0,C_TYPE_VALUE:"bool",C_PK:0},
+    C_WORKSHEET:{C_NOT_NULL:0,C_TYPE_VALUE:"str",C_PK:0},
+    C_FIRST_ROW:{C_NOT_NULL:0,C_TYPE_VALUE:"int",C_PK:0}
 }
 C_ENTITY_META_ATTRIBUTES = { # необходимые атрибуты сущности
     C_NAME:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:1},
@@ -266,7 +274,7 @@ C_ENTITY_COLUMN_META_ATTRIBUTES = { # необходимые атрибуты а
 }
 C_QUEUE_META_ATTRIBUTES = { # необходимые атрибуты таблицы очереди
     C_NAME:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:1},
-    C_SOURCE_NAME:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:0},
+    C_SOURCE_NAME:{C_NOT_NULL:0,C_TYPE_VALUE:"str",C_PK:0},
     C_SCHEMA:{C_NOT_NULL:0,C_TYPE_VALUE:"str",C_PK:0},
     C_SOURCE:{C_NOT_NULL:1,C_TYPE_VALUE:"str",C_PK:0},
     C_QUEUE_COLUMN:{C_NOT_NULL:1,C_TYPE_VALUE:"list",C_PK:0},
@@ -426,12 +434,14 @@ C_MSSQL = "mssql"  # MSSQL
 C_POSTGRESQL = "postgresql" # PostgreSQL
 C_MYSQL ="mysql" # MySQL
 C_1C="1c" #1C
+C_EXCEL="excel"
 # source types
 C_AVAILABLE_SOURCE_LIST = [
     C_MSSQL,
     C_POSTGRESQL,
     C_MYSQL,
-    C_1C
+    C_1C,
+    C_EXCEL
 ] # фиксированный список СУБД, с которым AnchorBase умеет работать как с источником
 # source types
 C_DBMS="dbms"
@@ -440,7 +450,8 @@ C_SOURCE_TYPE={
     C_MSSQL:C_DBMS,
     C_MYSQL:C_DBMS,
     C_POSTGRESQL:C_DBMS,
-    C_1C:C_WEB
+    C_1C:C_WEB,
+    C_EXCEL:C_FILE
 }
 C_AVAILABLE_DWH_LIST = [C_POSTGRESQL] # фиксированный список СУБД, с которым AnchorBase умеет работать как с DWH
 C_CNCT_PARAMS = [  # фиксированный список параметров подключения
@@ -590,6 +601,9 @@ C_SOURCE_ID_CONSOLE_ARG="-source_id"
 C_DATE_CONSOLE_ARG="-date"
 C_ETL_ID_CONSOLE_ARG="-etl"
 C_FILE_CONSOLE_ARG="-file"
+C_WORKSHEET_CONSOLE_ARG="-worksheet"
+C_HEADER_CONSOLE_ARG="-header"
+C_FIRST_ROW_CONSOLE_ARG="-firstrow"
 C_CONSOLE_ARGS={
     C_GET_SOURCE:{
         C_NAME_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"source name (optional)"},
@@ -598,23 +612,29 @@ C_CONSOLE_ARGS={
     C_ADD_SOURCE:{
         C_NAME_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"source name (required)"},
         C_DESC_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"source description (optional)"},
-        C_SERVER_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"server/host (required)"},
-        C_DATABASE_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"database (required)"},
-        C_USER_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"login (required)"},
-        C_PASSWORD_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"password (required)"},
-        C_PORT_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"port (required)"},
+        C_SERVER_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"server/host (for web/rdbms sources) (optional)"},
+        C_FILE_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"file path and file name (for file sources) (optional)"},
+        C_WORKSHEET_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"worksheet name (only for excel) (optional)"},
+        C_DATABASE_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"database (for web/rdbms sources) (optional)"},
+        C_USER_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"login (for web/rdbms sources) (optional)"},
+        C_PASSWORD_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"password (for web/rdbms sources) (optional)"},
+        C_PORT_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"port (for web/rdbms sources) (optional)"},
+        C_HEADER_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"header (for file sources - True/False) (optional)"},
+        C_FIRST_ROW_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"number of a first row (for file sources) (optional)"},
         C_TYPE_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"source type (required)"}
     },
     C_ALTER_SOURCE:{
         C_ID_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"source ID (required)"},
-        C_NAME_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"new source name (optional)"},
         C_DESC_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"new source description (optional)"},
         C_SERVER_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"new server/host (optional)"},
+        C_FILE_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"new file path and file name (for file sources) (optional)"},
+        C_WORKSHEET_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"new worksheet name (only for excel) (optional)"},
         C_DATABASE_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"new database (optional)"},
         C_USER_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"new login (optional)"},
         C_PASSWORD_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"new password (optional)"},
         C_PORT_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"new port (optional)"},
-        C_TYPE_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"new source type (optional)"}
+        C_HEADER_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"new header (for file sources - True/False) (optional)"},
+        C_FIRST_ROW_CONSOLE_ARG:{C_NOT_NULL:0,C_DESC:"new number of a first row (for file sources) (optional)"}
     },
     C_UPDATE_META_CONFIG:{
         C_SERVER_CONSOLE_ARG:{C_NOT_NULL:1,C_DESC:"server/host (required)"},
@@ -711,23 +731,29 @@ C_CONSOLE_COMMAND_DESC={
                  C_COLOR_OKCYAN+C_NAME_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ADD_SOURCE).get(C_NAME_CONSOLE_ARG).get(C_DESC)+"\n\t"+
                  C_COLOR_OKCYAN+C_DESC_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ADD_SOURCE).get(C_DESC_CONSOLE_ARG).get(C_DESC)+"\n\t"+
                  C_COLOR_OKCYAN+C_SERVER_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ADD_SOURCE).get(C_SERVER_CONSOLE_ARG).get(C_DESC)+"\n\t"+
+                 C_COLOR_OKCYAN+C_FILE_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ADD_SOURCE).get(C_FILE_CONSOLE_ARG).get(C_DESC)+"\n\t"+
                  C_COLOR_OKCYAN+C_DATABASE_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ADD_SOURCE).get(C_DATABASE_CONSOLE_ARG).get(C_DESC)+"\n\t"+
+                 C_COLOR_OKCYAN+C_WORKSHEET_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ADD_SOURCE).get(C_WORKSHEET_CONSOLE_ARG).get(C_DESC)+"\n\t"+
                  C_COLOR_OKCYAN+C_USER_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ADD_SOURCE).get(C_USER_CONSOLE_ARG).get(C_DESC)+"\n\t"+
                  C_COLOR_OKCYAN+C_PASSWORD_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ADD_SOURCE).get(C_PASSWORD_CONSOLE_ARG).get(C_DESC)+"\n\t"+
                  C_COLOR_OKCYAN+C_PORT_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ADD_SOURCE).get(C_PORT_CONSOLE_ARG).get(C_DESC)+"\n\t"+
+                 C_COLOR_OKCYAN+C_HEADER_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ADD_SOURCE).get(C_HEADER_CONSOLE_ARG).get(C_DESC)+"\n\t"+
+                 C_COLOR_OKCYAN+C_FIRST_ROW_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ADD_SOURCE).get(C_FIRST_ROW_CONSOLE_ARG).get(C_DESC)+"\n\t"+
                  C_COLOR_OKCYAN+C_TYPE_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ADD_SOURCE).get(C_TYPE_CONSOLE_ARG).get(C_DESC)+"\n\t",
     C_ALTER_SOURCE:"\n"+C_COLOR_HEADER+C_ALTER_SOURCE+C_COLOR_ENDC+"\n"+
                    C_COLOR_BOLD+"Description:"+C_COLOR_ENDC+"\n\tModifies a previously created source\n"+
                    C_COLOR_BOLD+"Arguments:"+C_COLOR_ENDC+"\n\t"+
                    C_COLOR_OKCYAN+C_ID_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ALTER_SOURCE).get(C_ID_CONSOLE_ARG).get(C_DESC)+"\n\t"+
-                   C_COLOR_OKCYAN+C_NAME_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ALTER_SOURCE).get(C_NAME_CONSOLE_ARG).get(C_DESC)+"\n\t"+
                    C_COLOR_OKCYAN+C_DESC_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ALTER_SOURCE).get(C_DESC_CONSOLE_ARG).get(C_DESC)+"\n\t"+
                    C_COLOR_OKCYAN+C_SERVER_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ALTER_SOURCE).get(C_SERVER_CONSOLE_ARG).get(C_DESC)+"\n\t"+
+                   C_COLOR_OKCYAN+C_FILE_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ALTER_SOURCE).get(C_FILE_CONSOLE_ARG).get(C_DESC)+"\n\t"+
                    C_COLOR_OKCYAN+C_DATABASE_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ALTER_SOURCE).get(C_DATABASE_CONSOLE_ARG).get(C_DESC)+"\n\t"+
+                   C_COLOR_OKCYAN+C_WORKSHEET_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ALTER_SOURCE).get(C_WORKSHEET_CONSOLE_ARG).get(C_DESC)+"\n\t"+
                    C_COLOR_OKCYAN+C_USER_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ALTER_SOURCE).get(C_USER_CONSOLE_ARG).get(C_DESC)+"\n\t"+
                    C_COLOR_OKCYAN+C_PASSWORD_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ALTER_SOURCE).get(C_PASSWORD_CONSOLE_ARG).get(C_DESC)+"\n\t"+
                    C_COLOR_OKCYAN+C_PORT_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ALTER_SOURCE).get(C_PORT_CONSOLE_ARG).get(C_DESC)+"\n\t"+
-                   C_COLOR_OKCYAN+C_TYPE_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ALTER_SOURCE).get(C_TYPE_CONSOLE_ARG).get(C_DESC)+"\n\t",
+                   C_COLOR_OKCYAN+C_HEADER_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ALTER_SOURCE).get(C_HEADER_CONSOLE_ARG).get(C_DESC)+"\n\t"+
+                   C_COLOR_OKCYAN+C_FIRST_ROW_CONSOLE_ARG+C_COLOR_ENDC+": "+C_CONSOLE_ARGS.get(C_ALTER_SOURCE).get(C_FIRST_ROW_CONSOLE_ARG).get(C_DESC)+"\n\t",
     C_GET_SOURCE_TYPE:"\n"+C_COLOR_HEADER+C_GET_SOURCE_TYPE+C_COLOR_ENDC+"\n"+
                       C_COLOR_BOLD+"Description:"+C_COLOR_ENDC+"\n\tShows all source types that Anchor Base can work with",
     C_GET_ENTITY:"\n"+C_COLOR_HEADER+C_GET_ENTITY+C_COLOR_ENDC+"\n"+

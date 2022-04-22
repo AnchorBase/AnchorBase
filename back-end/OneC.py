@@ -26,6 +26,7 @@ def get_response(
     :param p_password: 1C password which is used while connecting to information base
     :return: tuple with data or error text
     """
+    l_datetime=str(datetime.datetime.now())
     l_query_output=None
     l_error=None
     # create the connection string
@@ -58,7 +59,7 @@ def get_response(
         l_data=l_data.get('value')
         for index, i_row in enumerate(l_data):
             l_row_list=list(i_row.values())
-            l_row_list.append(str(datetime.datetime.now()))
+            l_row_list.append(l_datetime)
             l_row_tuple=tuple(l_row_list)
             l_data[index]=l_row_tuple
         return l_data, None
