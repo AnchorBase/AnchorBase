@@ -1,1 +1,42 @@
+{
+    "entity":"excel",
+    "description":"",
+    "attribute":
+    [
+        {
+            "name":"code",
+            "description":"Ключ документа с источника",
+            "pk":1,
+            "datatype":"int",
+            "length":null,
+            "scale":null,
+            "link_entity":null,
+            "source":
+            [
+                {
+                    "source":"02463de3-c313-4f58-b38d-7ee57ee9ae8e",
+                    "column":"1"
+                }
+          
+            ]
+        }
+        ,
+        {
+            "name":"name",
+            "description":"Номер проводки",
+            "pk":0,
+            "datatype":"varchar",
+            "length":100,
+            "scale":null,
+            "link_entity":null,
+            "source":
+            [
+                {
+                    "source":"02463de3-c313-4f58-b38d-7ee57ee9ae8e",
+                    "column":"3"
+                }
+            ]
+        }
+    ]
 
+}
