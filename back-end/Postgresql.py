@@ -48,7 +48,9 @@ def sql_exec(
     cnct.autocommit = False
     crsr = cnct.cursor()
     try:
-        if p_vl:
+        if p_vl is not None and p_vl.__len__()==0: # if no data to be inserted
+            pass
+        elif p_vl is not None and p_vl.__len__()>0:
             extras.execute_values(crsr, p_sql, p_vl, page_size=C_PAGE_SIZE)
         else:
             crsr.execute(p_sql)
