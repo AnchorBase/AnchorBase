@@ -59,6 +59,14 @@ def __search_uuid_sql(p_uuid_list: list):
         l_sql=l_sql+"'"+str(i_uuid)+"'"+","
     return l_sql[:-1]+")"
 
+def __tranform_reserved_symbols(p_str: str) -> str:
+    """
+    Transform reserved (technical) symbols for SQL
+
+    *Example: ' -> ''*
+    """
+    return p_str.replace("'","''")
+
 def __search_attr_sql(p_attr_dict: dict):
     """
     Формирует SQL запрос поиска по метаданным с помощью параметров атрибута
@@ -73,24 +81,25 @@ def __search_attr_sql(p_attr_dict: dict):
 
 def __insert_object_sql(p_type: str, p_uuid: str, p_attrs: dict):
     """
-    Формирует запрос вставки метаданных
+    Generate SQL-query to insert metadata
 
-    :param p_type: тип объекта метаданных
-    :param p_uuid: uuid объекта метаданных
-    :param p_attrs: атрибуты объекта метаданных
+    :param p_type: metadata object type
+    :param p_uuid: metadata object uuid
+    :param p_attrs: metadata object params
     """
-    l_attrs=json.dumps(p_attrs) # преобразуем в json строку
+    l_attrs=__tranform_reserved_symbols(json.dumps(p_attrs))
     l_sql='INSERT INTO "'+C_META_SCHEMA+'"."'+p_type+'"'+" (id, value) VALUES \n('"+str(p_uuid)+"','"+l_attrs+"');"
     return l_sql
 
 def __update_object_sql(p_type: str, p_uuid: str, p_attrs: dict):
     """
-    Формирует запрос изменения данных
-    :param p_type: тип объекта метаданных
-    :param p_uuid: uuid объекта метаданных
-    :param p_attrs: атрибуты объекта метаданных
+    Generate SQL-query to update metadata
+
+    :param p_type: metadata object type
+    :param p_uuid: metadata object uuid
+    :param p_attrs: metadata object params
     """
-    l_attrs=json.dumps(p_attrs) # преобразуем в json строку
+    l_attrs=__tranform_reserved_symbols(json.dumps(p_attrs))
     l_sql='UPDATE "'+C_META_SCHEMA+'"."'+p_type+'"'+"\nSET value='"+l_attrs+"'\nWHERE id='"+str(p_uuid)+"';"
     return l_sql
 
